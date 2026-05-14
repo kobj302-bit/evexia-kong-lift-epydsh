@@ -3,7 +3,7 @@
 **Train like Kong.** AI-powered fitness app — routines, hero WODs, ranks, and team battles.
 
 🌐 **Website:** [evexia.app](https://evexia.app)
-📧 **Contact:** support@evexia.app
+📧 **Contact:** kobj302@gmail.com
 🔒 **Privacy:** [Privacy Policy](privacy.html)
 
 ---
