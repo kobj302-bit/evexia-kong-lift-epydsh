@@ -1,0 +1,246 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { useApp } from '@/contexts/AppContext';
+import { COLORS } from '@/constants/data';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
+  const { state, updateState, showToast } = useApp();
+  const [apiKey, setApiKey] = useState(state.apiKey);
+  const [showKey, setShowKey] = useState(false);
+
+  const handleSaveKey = () => {
+    console.log('[Settings] API key saved');
+    updateState({ apiKey });
+    showToast('✅ API Key saved!', true);
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      '⚠️ Reset All Data',
+      'This will delete ALL your progress, workouts, and settings. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            console.log('[Settings] Reset all data confirmed');
+            await AsyncStorage.removeItem('evexia_state_v1');
+            showToast('Data reset. Restart the app.', false);
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* AI Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🤖 AI Configuration</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>Anthropic API Key</Text>
+          <Text style={styles.hint}>Required for AI-powered routines, meal plans, and nutrition</Text>
+          <View style={styles.keyRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              value={apiKey}
+              onChangeText={setApiKey}
+              secureTextEntry={!showKey}
+              placeholderTextColor={COLORS.textTertiary}
+              placeholder="sk-ant-..."
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <AnimatedPressable onPress={() => setShowKey(!showKey)} style={styles.eyeBtn}>
+              <Text style={styles.eyeText}>{showKey ? '🙈' : '👁️'}</Text>
+            </AnimatedPressable>
+          </View>
+          <AnimatedPressable onPress={handleSaveKey} style={styles.saveBtn}>
+            <Text style={styles.saveBtnText}>Save API Key</Text>
+          </AnimatedPressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>Model</Text>
+          <View style={styles.modelRow}>
+            <Text style={styles.modelName}>claude-sonnet-4-20250514</Text>
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>ACTIVE</Text>
+            </View>
+          </View>
+          <Text style={styles.hint}>Anthropic's latest Claude Sonnet model</Text>
+        </View>
+      </View>
+
+      {/* Profile Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>👤 Profile</Text>
+        <View style={styles.card}>
+          <View style={styles.profileRow}>
+            <Text style={styles.profileAvatar}>{state.profile.avatar}</Text>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{state.profile.username || 'KongLifter'}</Text>
+              <Text style={styles.profileSub}>{state.profile.exp} • {state.profile.goal}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.toggleRow}>
+            <View>
+              <Text style={styles.toggleLabel}>Expert Mode</Text>
+              <Text style={styles.hint}>Skips profile context in AI calls</Text>
+            </View>
+            <Switch
+              value={state.expertMode}
+              onValueChange={(v) => {
+                console.log('[Settings] Expert mode toggled:', v);
+                updateState({ expertMode: v });
+              }}
+              trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
+              thumbColor={state.expertMode ? COLORS.goldBright : COLORS.textSecondary}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Stats Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📊 Your Stats</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{state.xp.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Total XP ⚡</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{state.totalWorkouts}</Text>
+            <Text style={styles.statLabel}>Workouts 🏋️</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{state.streak}</Text>
+            <Text style={styles.statLabel}>Streak 🔥</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{state.prs.length}</Text>
+            <Text style={styles.statLabel}>PRs 🏆</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Danger Zone */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
+        <View style={[styles.card, styles.dangerCard]}>
+          <Text style={styles.dangerTitle}>Reset All Data</Text>
+          <Text style={styles.dangerDesc}>Permanently delete all progress, workouts, and settings</Text>
+          <AnimatedPressable onPress={handleReset} style={styles.dangerBtn}>
+            <Text style={styles.dangerBtnText}>Reset Everything</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+
+      {/* App Info */}
+      <View style={styles.appInfo}>
+        <Text style={styles.appInfoText}>🦍 Evexia: Kong Lift</Text>
+        <Text style={styles.appInfoSub}>Version 1.0.0 • Train Like a Gorilla</Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  content: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
+  section: { gap: 12 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5 },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 10,
+  },
+  label: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  hint: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
+  keyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  input: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontFamily: 'SpaceMono',
+  },
+  eyeBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  eyeText: { fontSize: 18 },
+  saveBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  saveBtnText: { fontSize: 14, fontWeight: '800', color: '#0A0A0A' },
+  modelRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  modelName: { fontSize: 14, color: COLORS.text, fontFamily: 'SpaceMono', flex: 1 },
+  activeBadge: { backgroundColor: `${COLORS.green}20`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: COLORS.green },
+  activeBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.green, letterSpacing: 1 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  profileAvatar: { fontSize: 40 },
+  profileInfo: { gap: 2 },
+  profileName: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  profileSub: { fontSize: 13, color: COLORS.textSecondary },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toggleLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 4,
+  },
+  statValue: { fontSize: 24, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
+  statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  dangerCard: { borderColor: `${COLORS.red}40` },
+  dangerTitle: { fontSize: 15, fontWeight: '700', color: COLORS.red },
+  dangerDesc: { fontSize: 13, color: COLORS.textSecondary },
+  dangerBtn: {
+    backgroundColor: `${COLORS.red}20`,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.red,
+  },
+  dangerBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.red },
+  appInfo: { alignItems: 'center', gap: 4, paddingVertical: 8 },
+  appInfoText: { fontSize: 16, fontWeight: '800', color: COLORS.textSecondary },
+  appInfoSub: { fontSize: 12, color: COLORS.textTertiary },
+});

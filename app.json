@@ -4,10 +4,10 @@
     "slug": "evexia-kong-lift",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/natively-dark.png",
+    "icon": "./assets/images/app-icon-tzk.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/natively-dark.png",
+      "image": "./assets/images/app-icon-tzk.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/natively-dark.png",
+        "foregroundImage": "./assets/images/app-icon-tzk.png",
         "backgroundColor": "#000000"
       },
       "package": "com.placeholder.app"

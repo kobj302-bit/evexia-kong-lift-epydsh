@@ -1,0 +1,129 @@
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { KongMascot } from '@/components/KongMascot';
+import { useApp } from '@/contexts/AppContext';
+import { COLORS } from '@/constants/data';
+
+const MISS_TIERS = [
+  { days: 1, label: '1 Day 😄', msg: 'Still fresh, get back at it!', color: COLORS.green },
+  { days: 2, label: '2 Days 😅', msg: 'Kong is getting impatient...', color: COLORS.blue },
+  { days: 3, label: '3 Days 😤', msg: 'The gains are leaving...', color: '#F0A020' },
+  { days: 4, label: '4 Days 😰', msg: 'Your muscles are crying', color: '#E07020' },
+  { days: 5, label: '5 Days 😱', msg: 'EMERGENCY! Muscle loss detected!', color: COLORS.red },
+  { days: 7, label: '7+ Days 💀', msg: 'You have become... a Resolutioner', color: '#808080' },
+];
+
+export default function MissScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { state, updateState, addXP, showToast } = useApp();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const daysMissed = (() => {
+    if (!state.lastWorkout) return 7;
+    const last = new Date(state.lastWorkout);
+    const now = new Date();
+    return Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+  })();
+
+  const activeTier = MISS_TIERS.reduce((acc, tier) => {
+    if (daysMissed >= tier.days) return tier;
+    return acc;
+  }, MISS_TIERS[0]);
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+  }, []);
+
+  const handleImBack = () => {
+    console.log('[Miss] I\'m Back pressed — awarding comeback XP');
+    addXP(50);
+    showToast('🔥 COMEBACK! +50 XP', true);
+    updateState({ streak: 1 });
+    router.replace('/(tabs)/tracker');
+  };
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 20 }]}>
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        <Text style={styles.title}>KONG IS WAITING</Text>
+        <Text style={styles.subtitle}>You missed your workout</Text>
+
+        <KongMascot size={100} shake />
+
+        <View style={styles.tilesContainer}>
+          {MISS_TIERS.map((tier) => {
+            const isActive = tier.days === activeTier.days;
+            return (
+              <View
+                key={tier.days}
+                style={[
+                  styles.tile,
+                  isActive && { borderColor: tier.color, backgroundColor: `${tier.color}20` },
+                ]}
+              >
+                <Text style={[styles.tileLabel, isActive && { color: tier.color }]}>{tier.label}</Text>
+                {isActive && <Text style={styles.tileMsg}>{tier.msg}</Text>}
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={[styles.activeBox, { borderColor: activeTier.color, backgroundColor: `${activeTier.color}15` }]}>
+          <Text style={[styles.activeLabel, { color: activeTier.color }]}>{activeTier.label}</Text>
+          <Text style={styles.activeMsg}>{activeTier.msg}</Text>
+          <Text style={styles.daysText}>{daysMissed} day{daysMissed !== 1 ? 's' : ''} missed</Text>
+        </View>
+
+        <AnimatedPressable onPress={handleImBack} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>I'M BACK 🔥</Text>
+        </AnimatedPressable>
+
+        <Text style={styles.bonusText}>+50 COMEBACK XP</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
+  content: { alignItems: 'center', paddingHorizontal: 24, gap: 20, width: '100%' },
+  title: { fontSize: 28, fontWeight: '900', color: COLORS.gold, letterSpacing: 3 },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: -12 },
+  tilesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' },
+  tile: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  tileLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  tileMsg: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  activeBox: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    alignItems: 'center',
+    gap: 6,
+  },
+  activeLabel: { fontSize: 24, fontWeight: '900' },
+  activeMsg: { fontSize: 16, color: COLORS.text, fontWeight: '600', textAlign: 'center' },
+  daysText: { fontSize: 13, color: COLORS.textSecondary },
+  backBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 48,
+    width: '100%',
+    alignItems: 'center',
+  },
+  backBtnText: { fontSize: 20, fontWeight: '900', color: '#0A0A0A', letterSpacing: 2 },
+  bonusText: { fontSize: 13, color: COLORS.gold, fontWeight: '700', letterSpacing: 1 },
+});
