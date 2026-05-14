@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp, getRank } from '@/contexts/AppContext';
 import { COLORS, STARTER_TEAMS, CHALLENGES, FAKE_LEADERBOARD, FAKE_FRIENDS } from '@/constants/data';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { ProGate } from '@/components/ProGate';
 
 const TEAM_EMOJIS = ['🦁', '🦅', '💀', '🌊', '🔥', '⚡', '🐺', '👑', '🦍', '🏆'];
 const TEAM_COLORS = [COLORS.red, COLORS.blue, '#606060', COLORS.green, '#FF6B00', COLORS.gold];
@@ -11,10 +13,13 @@ const TEAM_COLORS = [COLORS.red, COLORS.blue, '#606060', COLORS.green, '#FF6B00'
 export default function CommunityTab() {
   const insets = useSafeAreaInsets();
   const { state, updateState, addXP, showToast } = useApp();
+  const { isSubscribed } = useSubscription();
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamEmoji, setNewTeamEmoji] = useState('🦁');
   const [newTeamColor, setNewTeamColor] = useState(COLORS.red);
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  if (!isSubscribed) return <ProGate feature="Community" icon="👥" description="Team leaderboards, battles, and challenges" />;
 
   const allTeams = [...STARTER_TEAMS, ...state.teams];
 

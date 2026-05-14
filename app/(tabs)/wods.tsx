@@ -4,14 +4,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, FAMOUS_WODS, HOLIDAY_WODS } from '@/constants/data';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { ProGate } from '@/components/ProGate';
 
 type WodFilter = 'all' | 'famous' | 'holiday';
 
 export default function WodsTab() {
   const insets = useSafeAreaInsets();
   const { state, updateState, addXP, showToast } = useApp();
+  const { isSubscribed } = useSubscription();
   const [filter, setFilter] = useState<WodFilter>(state.wodFilter || 'all');
   const [expandedWod, setExpandedWod] = useState<string | null>(null);
+
+  if (!isSubscribed) return <ProGate feature="WODs" icon="🏋️" description="Famous hero workouts and holiday challenges" />;
 
   const allWods = [...FAMOUS_WODS, ...HOLIDAY_WODS];
   const filteredWods = filter === 'all' ? allWods : allWods.filter((w) => w.category === filter);

@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { PurchasesPackage } from "react-native-purchases";
 
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -30,48 +30,29 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 // Premium features for the paywall
 const FEATURES = [
   {
-    icon: "👑",
-    title: "Kong Pro Workouts",
-    description: "Unlock elite AI-generated programs, advanced splits, and custom WODs built for serious lifters",
+    icon: "🏋️",
+    title: "WODs & Hero Workouts",
+    description: "Murph, Cindy, Fran, holiday challenges — log them for XP",
+  },
+  {
+    icon: "🥗",
+    title: "Diet & Meal Plans",
+    description: "AI meal plans for bulk, cut, or maintain across 8 diet styles",
+  },
+  {
+    icon: "🧮",
+    title: "Nutrition Calculator",
+    description: "TDEE, macros, meal ideas, and optional grocery list",
+  },
+  {
+    icon: "👥",
+    title: "Community & Teams",
+    description: "Join teams, compete in leaderboards, and take on challenges",
   },
   {
     icon: "🤖",
-    title: "Unlimited AI Coaching",
-    description: "Unlimited AI meal plans, routine generation, and real-time form feedback powered by Claude",
-  },
-  {
-    icon: "📊",
-    title: "Advanced Analytics",
-    description: "Deep performance tracking, PR trends, volume charts, and recovery insights to optimize every session",
-  },
-  {
-    icon: "⚡",
-    title: "XP Multiplier",
-    description: "Earn 2x XP on every workout, WOD, and challenge — climb the rank ladder twice as fast",
-  },
-];
-
-// Athlete Pro tier features
-const ATHLETE_FEATURES = [
-  {
-    icon: "🏆",
-    title: "Copy Elite Athlete Routines",
-    description: "AI-powered routine cloning from any athlete description",
-  },
-  {
-    icon: "🤖",
-    title: "Advanced AI Coaching",
-    description: "Deeper personalization with athlete-level programming",
-  },
-  {
-    icon: "📈",
-    title: "Progressive Overload Plans",
-    description: "Auto-scaling programs that adapt to your PRs",
-  },
-  {
-    icon: "⚡",
-    title: "Priority AI Processing",
-    description: "Faster generation, longer programs",
+    title: "Athlete AI Routines",
+    description: "Generate routines from any athlete description — train like the pros",
   },
 ];
 
@@ -84,13 +65,10 @@ const colors = {
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { tier } = useLocalSearchParams<{ tier?: string }>();
-  const isAthleteTier = tier === "athlete";
 
   // Get subscription state and methods from context
   const {
     packages,
-    athletePackages,
     loading,
     isSubscribed,
     isWeb,
@@ -100,11 +78,8 @@ export default function PaywallScreen() {
     mockNativePurchase,
   } = useSubscription();
 
-  // Use athlete packages if on athlete tier, fall back to regular packages
-  const activePackages = isAthleteTier
-    ? (athletePackages.length > 0 ? athletePackages : packages)
-    : packages;
-  const activeFeatures = isAthleteTier ? ATHLETE_FEATURES : FEATURES;
+  const activePackages = packages;
+  const activeFeatures = FEATURES;
 
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(activePackages[0] || null);
@@ -344,24 +319,12 @@ export default function PaywallScreen() {
             <View style={styles.header}>
               {/* Premium badge */}
               <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>{isAthleteTier ? "ATHLETE ADD-ON" : "PREMIUM"}</Text>
+                <Text style={styles.premiumBadgeText}>PREMIUM</Text>
               </View>
-              <Text style={styles.title}>{isAthleteTier ? "🦍 Athlete AI Pro" : "Upgrade to Premium"}</Text>
+              <Text style={styles.title}>Upgrade to Kong Pro</Text>
               <Text style={styles.subtitle}>
-                {isAthleteTier
-                  ? "Copy elite athlete routines with AI — $2/month add-on (requires Kong Pro)"
-                  : "Unlock all features for just $7/month"}
+                Unlock all 5 premium features for $7/month
               </Text>
-              {isAthleteTier && (
-                <View style={styles.athletePriceRow}>
-                  <Text style={styles.athletePriceText}>$7/month total</Text>
-                </View>
-              )}
-              {isAthleteTier && !isSubscribed && (
-                <View style={styles.requiresProBanner}>
-                  <Text style={styles.requiresProBannerText}>⚠️ Requires Kong Pro ($7/month)</Text>
-                </View>
-              )}
             </View>
 
             {/* Features List - Glass Card */}
@@ -469,13 +432,11 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {isAthleteTier
-                        ? "Subscribe — $7/month total"
-                        : selectedPackage
-                          ? selectedPackage.product.priceString
-                            ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe for $7/month"
-                          : "Subscribe for $7/month"}
+                      {selectedPackage
+                        ? selectedPackage.product.priceString
+                          ? `Subscribe for ${selectedPackage.product.priceString}`
+                          : "Subscribe for $7/month"
+                        : "Subscribe for $7/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -511,13 +472,11 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {isAthleteTier
-                        ? "Subscribe — $7/month total"
-                        : selectedPackage
-                          ? selectedPackage.product.priceString
-                            ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe for $7/month"
-                          : "Subscribe for $7/month"}
+                      {selectedPackage
+                        ? selectedPackage.product.priceString
+                          ? `Subscribe for ${selectedPackage.product.priceString}`
+                          : "Subscribe for $7/month"
+                        : "Subscribe for $7/month"}
                     </Text>
                   )}
                 </TouchableOpacity>

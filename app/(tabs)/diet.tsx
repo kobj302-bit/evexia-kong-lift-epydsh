@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, DIET_TYPES } from '@/constants/data';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { ProGate } from '@/components/ProGate';
 
 const GOALS = [
   { label: 'Bulk', emoji: '📈' },
@@ -14,6 +16,7 @@ const GOALS = [
 export default function DietTab() {
   const insets = useSafeAreaInsets();
   const { state, updateState, showToast } = useApp();
+  const { isSubscribed } = useSubscription();
   const [description, setDescription] = useState('');
   const [goal, setGoal] = useState('Maintain');
   const [dietType, setDietType] = useState('Balanced');
@@ -35,6 +38,8 @@ export default function DietTab() {
   }, [loading]);
 
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  if (!isSubscribed) return <ProGate feature="Diet" icon="🥗" description="AI-powered meal plans tailored to your goals" />;
 
   const handleGenerate = async () => {
     if (!state.apiKey) {

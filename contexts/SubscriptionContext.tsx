@@ -35,6 +35,7 @@ import Purchases, {
 } from "react-native-purchases";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Read API keys from app.json (expo.extra)
 const extra = Constants.expoConfig?.extra || {};
@@ -44,6 +45,7 @@ const TEST_IOS_API_KEY = extra.revenueCatTestApiKeyIos || "";
 const TEST_ANDROID_API_KEY = extra.revenueCatTestApiKeyAndroid || "";
 const ENTITLEMENT_ID = extra.revenueCatEntitlementId || "pro";
 const ATHLETE_ENTITLEMENT_ID = "athlete_pro";
+const DAILY_PASS_ENTITLEMENT_ID = "daily_athlete_pass";
 
 // Check if running on web
 const isWeb = Platform.OS === "web";
@@ -54,6 +56,8 @@ const MOCK_PURCHASE_KEY = `rc_mock_purchased_${_PROJECT_SCOPE}`;
 const MOCK_NATIVE_KEY = `rc_dev_native_${_PROJECT_SCOPE}`;
 // Scoped native cache key — persists real subscription state for fast restore on bundle reload
 const NATIVE_PURCHASE_KEY = `rc_subscribed_${_PROJECT_SCOPE}`;
+// Daily pass storage key — stores expiry timestamp
+const DAILY_PASS_STORAGE_KEY = `evexia_daily_pass_${_PROJECT_SCOPE}`;
 
 interface SubscriptionContextType {
   /** Whether the user has an active Kong Pro subscription */
@@ -82,6 +86,10 @@ interface SubscriptionContextType {
   mockWebPurchase: () => void;
   /** Dev-only: simulate a purchase in Expo Go — persists across reloads via expo-secure-store */
   mockNativePurchase: () => Promise<void>;
+  /** Whether the user has an active daily athlete pass (expires at midnight) */
+  hasDailyPass: boolean;
+  /** Purchase a daily athlete pass — grants access until end of today */
+  purchaseDailyPass: () => Promise<boolean>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
@@ -101,6 +109,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [athletePackages, setAthletePackages] = useState<PurchasesPackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasDailyPass, setHasDailyPass] = useState(false);
 
     // Fetch offerings via REST API for web platform
   const fetchOfferingsViaRest = async () => {
@@ -131,6 +140,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           if (typeof window !== "undefined" && localStorage.getItem(MOCK_PURCHASE_KEY) === "true") {
             setIsSubscribed(true);
           }
+          // Check daily pass expiry
+          const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
+          if (savedPass) {
+            const expiry = parseInt(savedPass, 10);
+            if (Date.now() < expiry) setHasDailyPass(true);
+            else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
+          }
           setLoading(false);
           return;
         }
@@ -150,6 +166,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             if (mockState === "true") {
               setIsSubscribed(true);
             }
+          }
+          // Check daily pass expiry
+          const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
+          if (savedPass) {
+            const expiry = parseInt(savedPass, 10);
+            if (Date.now() < expiry) setHasDailyPass(true);
+            else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
           }
           setLoading(false);
           return;
@@ -185,6 +208,14 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           }
         }
 
+        // Check daily pass expiry
+        const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
+        if (savedPass) {
+          const expiry = parseInt(savedPass, 10);
+          if (Date.now() < expiry) setHasDailyPass(true);
+          else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
+        }
+
         await Purchases.configure({ apiKey });
 
         // Listen for real-time subscription changes (e.g., purchase from another device)
@@ -196,6 +227,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             const hasAthleteEntitlement =
               typeof customerInfo.entitlements.active[ATHLETE_ENTITLEMENT_ID] !==
               "undefined";
+            const hasDailyPassEntitlement =
+              typeof customerInfo.entitlements.active[DAILY_PASS_ENTITLEMENT_ID] !==
+              "undefined";
             // In __DEV__: don't clear subscription state — RevenueCat test store purchases are
             // in-memory only and won't be known to RC after a configure() call on reload.
             if (hasEntitlement || !__DEV__) {
@@ -203,6 +237,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             }
             if (hasAthleteEntitlement || !__DEV__) {
               setIsAthleteSubscribed(hasAthleteEntitlement);
+            }
+            if (hasDailyPassEntitlement) {
+              setHasDailyPass(true);
             }
           }
         ) as unknown as { remove: () => void } | null);
@@ -322,6 +359,33 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     }
   };
 
+  const purchaseDailyPass = async (): Promise<boolean> => {
+    if (isWeb) { console.warn("[RevenueCat] Purchases not available on web"); return false; }
+    try {
+      console.log("[RevenueCat] Purchasing daily athlete pass");
+      const fetchedOfferings = await Purchases.getOfferings();
+      const dailyOffering = fetchedOfferings.all["daily_pass"] ?? fetchedOfferings.current;
+      const pkg = dailyOffering?.availablePackages?.[0];
+      if (!pkg) { console.warn("[RevenueCat] No daily pass package found"); return false; }
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      // Check entitlement OR grant access for the day (consumable fallback)
+      const _hasEntitlement = typeof customerInfo.entitlements.active[DAILY_PASS_ENTITLEMENT_ID] !== "undefined";
+      // Grant access until end of today regardless (consumable)
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      await AsyncStorage.setItem(DAILY_PASS_STORAGE_KEY, String(endOfDay.getTime())).catch(() => {});
+      setHasDailyPass(true);
+      console.log("[RevenueCat] Daily pass activated, expires:", endOfDay.toISOString());
+      return true;
+    } catch (error: any) {
+      if (!error.userCancelled) {
+        console.error("[RevenueCat] Daily pass purchase failed:", error);
+        throw error;
+      }
+      return false;
+    }
+  };
+
   const mockWebPurchase = () => {
     if (!isWeb) return;
     if (typeof window !== "undefined") {
@@ -354,6 +418,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         checkSubscription,
         mockWebPurchase,
         mockNativePurchase,
+        hasDailyPass,
+        purchaseDailyPass,
       }}
     >
       {children}

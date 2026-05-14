@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, DIET_TYPES } from '@/constants/data';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { ProGate } from '@/components/ProGate';
 
 const GOALS = ['Bulk', 'Cut', 'Maintain'];
 const ACTIVITY_LEVELS = ['Sedentary', 'Light', 'Moderate', 'Active', 'Very Active'];
@@ -12,6 +14,7 @@ const SEX_OPTIONS = ['Male', 'Female'];
 export default function NutritionTab() {
   const insets = useSafeAreaInsets();
   const { state, updateState, showToast } = useApp();
+  const { isSubscribed } = useSubscription();
   const [weight, setWeight] = useState(String(state.profile.weight || 180));
   const [height, setHeight] = useState('70');
   const [age, setAge] = useState(String(state.profile.age || 25));
@@ -39,6 +42,8 @@ export default function NutritionTab() {
   }, [loading]);
 
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  if (!isSubscribed) return <ProGate feature="Nutrition" icon="🧮" description="TDEE calculator, macros, and grocery lists" />;
 
   const handleCalculate = async () => {
     if (!state.apiKey) {
