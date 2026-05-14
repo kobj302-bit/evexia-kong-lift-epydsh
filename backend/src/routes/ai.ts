@@ -1,44 +1,50 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { App } from '../index.js';
 
-interface AthleteGenerateRequest {
-  prompt: string;
-  level: 'beginner' | 'intermediate' | 'expert';
+interface AthleteRequest {
+  description: string;
+  level: string;
+  phase: string;
+  athleteTemplate?: string;
+  sport?: string;
   profile?: {
     age?: number;
     weight?: number;
-    height?: number;
+    sex?: string;
     goal?: string;
+    equip?: string;
+    days?: number;
     injuries?: string[];
-    equipment?: string;
-    trainingDaysPerWeek?: number;
-    stage?: string;
   };
-  programType: 'daily' | 'weekly';
-  athleteStyle?: string;
+  apiKey: string;
 }
 
-interface DietGenerateRequest {
-  prompt: string;
-  goal: 'bulk' | 'cut' | 'maintain';
-  dietStyle: 'balanced' | 'keto' | 'mediterranean' | 'carnivore' | 'vegan' | 'paleo' | 'iifym' | 'fasting';
-  profile?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
+interface DietRequest {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  meals: number;
+  goal: string;
+  restrictions?: string;
+  athleteMatch?: string;
+  sport?: string;
+  phase?: string;
+  apiKey: string;
 }
 
-interface NutritionCalculateRequest {
+interface NutritionRequest {
+  age: number;
   weight: number;
   height: number;
-  age: number;
-  sex: 'male' | 'female';
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  goal: 'lose_fat' | 'maintain' | 'build_muscle' | 'bulk' | 'cut';
-  bodyFatPercent?: number;
-  dietStyle?: string;
+  sex: string;
+  activityLevel: string;
+  goal: string;
+  athleteMatch?: string;
+  sport?: string;
+  phase?: string;
+  trainingDays?: number;
+  apiKey: string;
 }
 
 const errorResponse = {
@@ -51,18 +57,17 @@ const errorResponse = {
 async function callClaudeAPI(
   systemPrompt: string,
   userPrompt: string,
-  logger: any
+  logger: any,
+  apiKey: string
 ): Promise<string> {
   logger.debug(
     { systemPromptLength: systemPrompt.length, userPromptLength: userPrompt.length },
     'Calling Claude API'
   );
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
-  // Mock response for test environment or test keys
+  // Mock response for test environment
   if (!apiKey || apiKey === 'test-key' || apiKey.startsWith('test-')) {
-    logger.info('Using mock response for test environment');
+    logger.info('Using mock response for test key');
     return '{}';
   }
 
@@ -74,8 +79,8 @@ async function callClaudeAPI(
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 2048,
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 4096,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     }),
@@ -93,152 +98,162 @@ async function callClaudeAPI(
   const data = (await response.json()) as { content: Array<{ text: string }> };
   const text = data.content[0].text;
 
-  // Strip code fences if present
+  // Strip markdown code fences
   const stripped = text
-    .replace(/^```(?:json)?\s*/, '')
-    .replace(/\s*```$/, '')
+    .replace(/^```(?:json)?\s*\n?/, '')
+    .replace(/\n?```$/, '')
     .trim();
 
   return stripped;
 }
 
 export function registerAIRoutes(app: App, fastify: FastifyInstance) {
-  // POST /api/athlete/generate
-  fastify.post<{ Body: AthleteGenerateRequest }>(
-    '/api/athlete/generate',
+  // POST /api/ai/athlete
+  fastify.post<{ Body: AthleteRequest }>(
+    '/api/ai/athlete',
     {
       schema: {
-        description: 'Generate a detailed workout program',
-        tags: ['athlete'],
+        description: 'Generate a personalized athlete training program',
+        tags: ['ai', 'athlete'],
         body: {
           type: 'object',
-          required: ['prompt', 'level', 'programType'],
+          required: ['description', 'level', 'phase'],
           properties: {
-            prompt: { type: 'string', description: 'Athlete style or inspiration' },
-            level: {
-              type: 'string',
-              enum: ['beginner', 'intermediate', 'expert'],
-              description: 'Fitness level',
-            },
-            programType: {
-              type: 'string',
-              enum: ['daily', 'weekly'],
-              description: 'Program type',
-            },
-            athleteStyle: { type: 'string', description: 'Specific athlete style (ronaldo, arnold, military, etc.)' },
+            description: { type: 'string' },
+            level: { type: 'string' },
+            phase: { type: 'string' },
+            athleteTemplate: { type: 'string' },
+            sport: { type: 'string' },
+            apiKey: { type: 'string' },
             profile: {
               type: 'object',
               properties: {
                 age: { type: 'number' },
                 weight: { type: 'number' },
-                height: { type: 'number' },
+                sex: { type: 'string' },
                 goal: { type: 'string' },
-                equipment: { type: 'string' },
-                trainingDaysPerWeek: { type: 'number' },
-                stage: { type: 'string' },
-                injuries: {
-                  type: 'array',
-                  items: { type: 'string' },
-                },
+                equip: { type: 'string' },
+                days: { type: 'number' },
+                injuries: { type: 'array', items: { type: 'string' } },
               },
             },
           },
         },
         response: {
           200: {
-            description: 'Generated workout program',
+            description: 'Athlete training program',
             type: 'object',
             properties: {
-              program: {
-                type: 'object',
-                properties: {
-                  title: { type: 'string' },
-                  description: { type: 'string' },
-                  level: { type: 'string' },
-                  stage: { type: 'string' },
-                  type: { type: 'string' },
-                  days: { type: 'array' },
-                  weeklySchedule: { type: 'string' },
-                  nutritionTips: { type: 'string' },
-                  progressionNotes: { type: 'string' },
-                },
-              },
+              name: { type: 'string' },
+              description: { type: 'string' },
+              phase: { type: 'string' },
+              level: { type: 'string' },
+              sport: { type: 'string' },
+              athleteInspiration: { type: 'string' },
+              weeklySchedule: { type: 'string' },
+              days: { type: 'array' },
+              diet: { type: 'object' },
+              tips: { type: 'array' },
+              recoveryProtocol: { type: 'string' },
+              injuryModifications: { type: 'array' },
             },
           },
+          400: { description: 'Bad request', ...errorResponse },
           500: { description: 'Internal server error', ...errorResponse },
         },
       },
     },
-    async (request: FastifyRequest<{ Body: AthleteGenerateRequest }>, reply: FastifyReply) => {
-      const { prompt, level, profile, programType, athleteStyle } = request.body;
+    async (request: FastifyRequest<{ Body: AthleteRequest }>, reply: FastifyReply) => {
+      const { description, level, phase, athleteTemplate, sport, profile, apiKey } = request.body;
 
-      app.logger.info(
-        { level, programType, athleteStyle },
-        'Athlete program generation request'
-      );
+      app.logger.info({ level, phase, athleteTemplate }, 'Athlete program generation request');
+
+      if (!apiKey || apiKey.trim() === '') {
+        return reply.status(400).send({ error: 'apiKey is required' });
+      }
 
       try {
-        const systemPrompt =
-          'You are an elite certified personal trainer and strength coach. Generate detailed, professional workout programs. Always respond with valid JSON only, no markdown.';
+        const systemPrompt = `You are Kong, an elite strength and conditioning coach and sports nutritionist for the fitness app "Evexia: Kong Lift". You have encyclopedic knowledge of how famous athletes actually train, sport-specific conditioning science, military fitness standards, and bodybuilding periodization.
 
-        const injuriesText = profile?.injuries && profile.injuries.length > 0
-          ? `Injuries/limitations (MUST avoid or substitute exercises for these): ${profile.injuries.join(', ')}`
+Your job is to create a highly personalized, expert-level workout program. You must:
+1. Identify the training archetype from the user's request (famous athlete, sport, military/first responder, or bodybuilding phase)
+2. For famous athletes: use their REAL known training methods, philosophy, and signature exercises
+3. For sports: use sport-science-backed conditioning, periodization, and position-specific work
+4. For military/first responder: use functional fitness, rucking, calisthenics, and job-specific demands
+5. For bodybuilding phases: use phase-appropriate volume, intensity, rep ranges, and caloric context
+6. Apply all injury modifications, age adjustments, and equipment constraints provided
+7. Include a complete diet section matching the athlete/role/phase
+
+Return ONLY valid JSON (no markdown, no explanation).`;
+
+        const injuriesText = profile?.injuries?.length
+          ? `- Injuries/Limitations: ${profile.injuries.join(', ')}`
           : '';
 
-        const userPrompt = `Generate a ${programType} workout program.
-Athlete style / inspiration: ${prompt}${athleteStyle ? ` (style: ${athleteStyle})` : ''}
-Fitness level: ${level}
-${profile?.age ? `Age: ${profile.age}` : ''}
-${profile?.weight ? `Weight: ${profile.weight} kg` : ''}
-${profile?.height ? `Height: ${profile.height} cm` : ''}
-${profile?.goal ? `Goal: ${profile.goal}` : ''}
-${profile?.stage ? `Training stage: ${profile.stage}` : ''}
-${profile?.equipment ? `Available equipment: ${profile.equipment}` : ''}
-${profile?.trainingDaysPerWeek ? `Training days per week: ${profile.trainingDaysPerWeek}` : ''}
+        const userPrompt = `Create a workout program with the following details:
+- Description/Goal: ${description}
+- Training Level: ${level}
+- Phase: ${phase}
+${athleteTemplate ? `- Athlete Inspiration: ${athleteTemplate}` : ''}
+${sport ? `- Sport: ${sport}` : ''}
+${profile?.age ? `- Age: ${profile.age}` : ''}
+${profile?.weight ? `- Weight: ${profile.weight}` : ''}
+${profile?.sex ? `- Sex: ${profile.sex}` : ''}
+${profile?.goal ? `- Goal: ${profile.goal}` : ''}
+${profile?.equip ? `- Equipment: ${profile.equip}` : ''}
+${profile?.days ? `- Training Days Per Week: ${profile.days}` : ''}
 ${injuriesText}
 
-Return ONLY valid JSON with this structure:
-{"program":{"title":"string","description":"string","level":"string","stage":"string","type":"daily|weekly","days":[{"day":"string","focus":"string","exercises":[{"name":"string","sets":0,"reps":"string","rest":"string","notes":"string"}],"duration":"string","notes":"string"}],"weeklySchedule":"string","nutritionTips":"string","progressionNotes":"string"}}`;
+Generate a complete, expert-level program. If this is a famous athlete, use their REAL training methods. If this is a sport, use sport-science conditioning. If this is military/first responder, use functional fitness and job-specific demands. Apply all injury modifications and equipment constraints.`;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+
         let jsonData: any = {};
-
         try {
           jsonData = JSON.parse(responseText);
-        } catch {
-          jsonData = {};
+        } catch (parseError) {
+          app.logger.error({ parseError, raw: responseText }, 'Failed to parse athlete response');
+          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
         }
 
-        // Fill in mock structure if empty (for test keys)
-        if (!jsonData.program) {
-          const capitalizedLevel = level.charAt(0).toUpperCase() + level.slice(1);
+        // Create mock structure if empty
+        if (!jsonData.name) {
           jsonData = {
-            program: {
-              title: `${capitalizedLevel} ${programType} Workout Program`,
-              description: `A customized ${level} level workout program based on your preferences`,
-              level,
-              stage: profile?.stage || 'general',
-              type: programType,
-              days: [
-                {
-                  day: 'Day 1',
-                  focus: 'Upper Body',
-                  exercises: [
-                    { name: 'Bench Press', sets: 4, reps: '6-8', rest: '2-3 min', notes: 'Heavy compound' },
-                    { name: 'Barbell Rows', sets: 4, reps: '6-8', rest: '2-3 min', notes: 'Heavy compound' },
-                  ],
-                  duration: '60 minutes',
-                  notes: 'Focus on compound movements',
-                },
-              ],
-              weeklySchedule: 'Monday: Upper, Wednesday: Lower, Friday: Full Body',
-              nutritionTips: 'Maintain caloric surplus with adequate protein intake',
-              progressionNotes: 'Increase weight by 5% when you hit the upper rep range for all sets',
+            name: `${athleteTemplate || level} ${phase} Program`,
+            description: `A specialized training program for ${description}`,
+            phase,
+            level,
+            sport: sport || null,
+            athleteInspiration: athleteTemplate || null,
+            weeklySchedule: 'Monday-Friday training with 2 rest days',
+            days: [
+              {
+                name: 'Day 1 — Lower Body',
+                focus: 'Squat patterns and leg development',
+                exercises: [
+                  { name: 'Back Squat', sets: 4, reps: '5-6', rest: '3 min', notes: 'Heavy compound movement' },
+                  { name: 'Romanian Deadlift', sets: 3, reps: '6-8', rest: '2 min', notes: 'Hip extension' },
+                  { name: 'Leg Press', sets: 3, reps: '8-10', rest: '90 sec', notes: 'Volume work' },
+                ],
+                cardio: '10 min cool-down walk',
+                duration: '60 minutes',
+              },
+            ],
+            diet: {
+              philosophy: 'Nutrient-dense whole foods with adequate protein for recovery',
+              dailyCalories: '2500-3000',
+              macros: { protein: '180g', carbs: '300g', fat: '85g' },
+              meals: ['Oatmeal with berries', 'Chicken with brown rice', 'Salmon with sweet potato'],
+              supplements: ['Whey protein', 'Creatine monohydrate', 'Multivitamin'],
+              hydration: '3-4 liters daily',
             },
+            tips: ['Progressive overload on main lifts', 'Sleep 7-9 hours nightly', 'Track macros consistently'],
+            recoveryProtocol: 'Foam rolling, stretching, adequate sleep and nutrition',
+            injuryModifications: profile?.injuries?.length ? profile.injuries.map(i => `Modified exercises for ${i}`) : [],
           };
         }
 
-        app.logger.info({ programTitle: jsonData.program.title }, 'Workout program generated');
+        app.logger.info({ programName: jsonData.name }, 'Athlete program generated');
         return jsonData;
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to generate athlete program');
@@ -247,124 +262,156 @@ Return ONLY valid JSON with this structure:
     }
   );
 
-  // POST /api/diet/generate
-  fastify.post<{ Body: DietGenerateRequest }>(
-    '/api/diet/generate',
+  // POST /api/ai/diet
+  fastify.post<{ Body: DietRequest }>(
+    '/api/ai/diet',
     {
       schema: {
         description: 'Generate a personalized meal plan',
-        tags: ['diet'],
+        tags: ['ai', 'diet'],
         body: {
           type: 'object',
-          required: ['prompt', 'goal', 'dietStyle'],
+          required: ['calories', 'protein', 'carbs', 'fat', 'meals', 'goal'],
           properties: {
-            prompt: { type: 'string', description: 'Meal plan request or preferences' },
-            goal: {
-              type: 'string',
-              enum: ['bulk', 'cut', 'maintain'],
-              description: 'Nutrition goal',
-            },
-            dietStyle: {
-              type: 'string',
-              enum: ['balanced', 'keto', 'mediterranean', 'carnivore', 'vegan', 'paleo', 'iifym', 'fasting'],
-              description: 'Type of diet',
-            },
-            profile: {
-              type: 'object',
-              properties: {
-                calories: { type: 'number' },
-                protein: { type: 'number' },
-                carbs: { type: 'number' },
-                fat: { type: 'number' },
-              },
-            },
+            calories: { type: 'number' },
+            protein: { type: 'number' },
+            carbs: { type: 'number' },
+            fat: { type: 'number' },
+            meals: { type: 'number' },
+            goal: { type: 'string' },
+            restrictions: { type: 'string' },
+            athleteMatch: { type: 'string' },
+            sport: { type: 'string' },
+            phase: { type: 'string' },
+            apiKey: { type: 'string' },
           },
         },
         response: {
           200: {
-            description: 'Generated meal plan',
+            description: 'Personalized meal plan',
             type: 'object',
             properties: {
-              mealPlan: {
-                type: 'object',
-                properties: {
-                  title: { type: 'string' },
-                  dailyCalories: { type: 'number' },
-                  macros: { type: 'object' },
-                  meals: { type: 'array' },
-                  groceryList: { type: 'array' },
-                  tips: { type: 'string' },
-                },
-              },
+              meals: { type: 'array' },
+              totalCalories: { type: 'number' },
+              totalProtein: { type: 'number' },
+              totalCarbs: { type: 'number' },
+              totalFat: { type: 'number' },
+              athleteInspiration: { type: 'string' },
+              mealTiming: { type: 'string' },
+              supplements: { type: 'array' },
+              hydration: { type: 'string' },
+              phaseNotes: { type: 'string' },
+              tips: { type: 'array' },
             },
           },
+          400: { description: 'Bad request', ...errorResponse },
           500: { description: 'Internal server error', ...errorResponse },
         },
       },
     },
-    async (request: FastifyRequest<{ Body: DietGenerateRequest }>, reply: FastifyReply) => {
-      const { prompt, goal, dietStyle, profile } = request.body;
+    async (request: FastifyRequest<{ Body: DietRequest }>, reply: FastifyReply) => {
+      const { calories, protein, carbs, fat, meals, goal, restrictions, athleteMatch, sport, phase, apiKey } = request.body;
 
-      app.logger.info(
-        { goal, dietStyle },
-        'Diet meal plan generation request'
-      );
+      app.logger.info({ calories, meals, goal }, 'Diet meal plan request');
+
+      if (!apiKey || apiKey.trim() === '') {
+        return reply.status(400).send({ error: 'apiKey is required' });
+      }
 
       try {
-        const systemPrompt =
-          'You are a registered dietitian and nutrition expert. Generate detailed, accurate meal plans and nutrition calculations. Always respond with valid JSON only, no markdown.';
+        const systemPrompt = `You are Kong, an elite sports nutritionist for "Evexia: Kong Lift". You create detailed, practical meal plans used by elite athletes and serious fitness enthusiasts.
 
-        const userPrompt = `Generate a full-day meal plan.
-User request: ${prompt}
-Goal: ${goal}
-Diet style: ${dietStyle}
-${profile?.calories ? `Target calories: ${profile.calories} kcal` : ''}
-${profile?.protein ? `Target protein: ${profile.protein}g` : ''}
-${profile?.carbs ? `Target carbs: ${profile.carbs}g` : ''}
-${profile?.fat ? `Target fat: ${profile.fat}g` : ''}
+When an athleteMatch is provided, model the diet after that athlete's KNOWN eating habits, philosophy, timing, and signature foods. For example:
+- Ronaldo: 6 small meals/day, high protein (fish, chicken), complex carbs, avoids alcohol/junk, loves açaí
+- Arnold: high protein (300g+), red meat, eggs, milk, classic bodybuilder eating
+- Michael Phelps: 12,000 cal/day during training, massive carb loading, pasta, pizza, energy drinks
+- LeBron James: Mediterranean-style, anti-inflammatory, wine in moderation, avoids sugar
+- Navy SEAL: high calorie functional fuel, portable foods, performance over preference
+- Swimmer: carb-dominant, high calorie, easy-to-digest pre-workout foods
 
-Return ONLY valid JSON with this structure:
-{"mealPlan":{"title":"string","dailyCalories":0,"macros":{"protein":0,"carbs":0,"fat":0},"meals":[{"name":"string","time":"string","foods":[{"item":"string","amount":"string","calories":0,"protein":0,"carbs":0,"fat":0}],"totalCalories":0}],"groceryList":["string"],"tips":"string"}}`;
+When a phase is provided:
+- Bulking: caloric surplus, prioritize carbs and protein, frequent meals
+- Cutting: caloric deficit, high protein to preserve muscle, fiber-rich foods, lower carbs
+- Maintenance: balanced macros, flexible eating, sustainability focus
+- Setting the Stage: peak week nutrition, carb cycling, sodium/water manipulation context
+- Building Muscle: moderate surplus, high protein, nutrient timing around workouts
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
+Return ONLY valid JSON (no markdown).`;
+
+        const userPrompt = `Create a ${meals}-meal daily diet plan with these targets:
+- Calories: ${calories} kcal
+- Protein: ${protein}g
+- Carbs: ${carbs}g
+- Fat: ${fat}g
+- Goal: ${goal}
+${restrictions ? `- Dietary Restrictions: ${restrictions}` : ''}
+${athleteMatch ? `- Model after: ${athleteMatch}'s known eating style and philosophy` : ''}
+${sport ? `- Sport: ${sport}` : ''}
+${phase ? `- Phase: ${phase}` : ''}
+
+${athleteMatch ? `Include athleteInspiration field with the athlete name. Model meal timing, food choices, and philosophy after how ${athleteMatch} actually eats.` : ''}
+Provide practical, specific meal plans with real foods. Include meal timing strategy, supplement recommendations, hydration targets, and phase-specific notes.`;
+
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+
         let jsonData: any = {};
-
         try {
           jsonData = JSON.parse(responseText);
-        } catch {
-          jsonData = {};
+        } catch (parseError) {
+          app.logger.error({ parseError, raw: responseText }, 'Failed to parse diet response');
+          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
         }
 
-        // Fill in mock structure if empty (for test keys)
-        if (!jsonData.mealPlan) {
-          const capitalizedDiet = dietStyle.charAt(0).toUpperCase() + dietStyle.slice(1);
+        // Create mock structure if empty
+        if (!jsonData.meals) {
           jsonData = {
-            mealPlan: {
-              title: `${capitalizedDiet} Meal Plan - ${goal}`,
-              dailyCalories: profile?.calories || 2500,
-              macros: {
-                protein: profile?.protein || 150,
-                carbs: profile?.carbs || 250,
-                fat: profile?.fat || 80,
+            meals: [
+              {
+                name: 'Breakfast',
+                time: '7:00 AM',
+                foods: ['Oatmeal with berries', 'Eggs', 'Orange juice'],
+                calories: 550,
+                protein: 25,
+                carbs: 65,
+                fat: 18,
               },
-              meals: [
-                {
-                  name: 'Breakfast',
-                  time: '8:00 AM',
-                  foods: [
-                    { item: 'Eggs', amount: '3', calories: 210, protein: 18, carbs: 1, fat: 15 },
-                    { item: 'Oatmeal', amount: '50g', calories: 190, protein: 7, carbs: 27, fat: 4 },
-                  ],
-                  totalCalories: 400,
-                },
-              ],
-              groceryList: ['Eggs', 'Oatmeal', 'Chicken Breast', 'Brown Rice', 'Broccoli'],
-              tips: 'Meal prep on weekends to stay consistent with your nutrition goals',
-            },
+              {
+                name: 'Lunch',
+                time: '12:30 PM',
+                foods: ['Grilled chicken breast', 'Brown rice', 'Broccoli'],
+                calories: 650,
+                protein: 45,
+                carbs: 70,
+                fat: 15,
+              },
+              {
+                name: 'Dinner',
+                time: '7:00 PM',
+                foods: ['Salmon', 'Sweet potato', 'Asparagus'],
+                calories: 700,
+                protein: 50,
+                carbs: 60,
+                fat: 25,
+              },
+            ],
+            totalCalories: calories,
+            totalProtein: protein,
+            totalCarbs: carbs,
+            totalFat: fat,
+            athleteInspiration: athleteMatch || null,
+            mealTiming: 'Space meals 3-4 hours apart for optimal digestion and energy',
+            supplements: ['Whey protein powder', 'Creatine monohydrate', 'Multivitamin'],
+            hydration: '3-4 liters of water daily, more on training days',
+            phaseNotes: phase ? `Following ${phase} phase nutrition protocols` : 'Balanced nutrition approach',
+            tips: [
+              'Prepare meals in advance on weekends',
+              'Track macros for 2 weeks to establish baseline',
+              'Adjust portions based on progress and hunger cues',
+            ],
           };
         }
 
-        app.logger.info({ planTitle: jsonData.mealPlan.title }, 'Meal plan generated');
+        app.logger.info({ totalCalories: jsonData.totalCalories }, 'Meal plan generated');
         return jsonData;
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to generate meal plan');
@@ -373,99 +420,125 @@ Return ONLY valid JSON with this structure:
     }
   );
 
-  // POST /api/nutrition/calculate
-  fastify.post<{ Body: NutritionCalculateRequest }>(
-    '/api/nutrition/calculate',
+  // POST /api/ai/nutrition
+  fastify.post<{ Body: NutritionRequest }>(
+    '/api/ai/nutrition',
     {
       schema: {
-        description: 'Calculate TDEE and provide nutrition recommendations',
-        tags: ['nutrition'],
+        description: 'Calculate personalized nutrition targets',
+        tags: ['ai', 'nutrition'],
         body: {
           type: 'object',
-          required: ['weight', 'height', 'age', 'sex', 'activityLevel', 'goal'],
+          required: ['age', 'weight', 'height', 'sex', 'activityLevel', 'goal'],
           properties: {
-            weight: { type: 'number', description: 'Weight in kg' },
-            height: { type: 'number', description: 'Height in cm' },
-            age: { type: 'number', description: 'Age in years' },
-            sex: {
-              type: 'string',
-              enum: ['male', 'female'],
-              description: 'Biological sex',
-            },
-            activityLevel: {
-              type: 'string',
-              enum: ['sedentary', 'light', 'moderate', 'active', 'very_active'],
-              description: 'Activity level',
-            },
-            goal: {
-              type: 'string',
-              enum: ['lose_fat', 'maintain', 'build_muscle', 'bulk', 'cut'],
-              description: 'Fitness goal',
-            },
-            bodyFatPercent: { type: 'number', description: 'Body fat percentage (optional)' },
-            dietStyle: { type: 'string', description: 'Diet style preference (optional)' },
+            age: { type: 'number' },
+            weight: { type: 'number' },
+            height: { type: 'number' },
+            sex: { type: 'string' },
+            activityLevel: { type: 'string' },
+            goal: { type: 'string' },
+            athleteMatch: { type: 'string' },
+            sport: { type: 'string' },
+            phase: { type: 'string' },
+            trainingDays: { type: 'number' },
+            apiKey: { type: 'string' },
           },
         },
         response: {
           200: {
-            description: 'TDEE and nutrition calculations',
+            description: 'Nutrition targets and calculations',
             type: 'object',
             properties: {
+              bmr: { type: 'number' },
               tdee: { type: 'number' },
               targetCalories: { type: 'number' },
-              macros: { type: 'object' },
-              bmi: { type: 'number' },
-              bmr: { type: 'number' },
-              mealIdeas: { type: 'array' },
-              groceryList: { type: 'array' },
-              tips: { type: 'string' },
+              protein: { type: 'number' },
+              carbs: { type: 'number' },
+              fat: { type: 'number' },
+              fiber: { type: 'number' },
+              water: { type: 'number' },
+              athleteInspiration: { type: 'string' },
+              phaseNotes: { type: 'string' },
+              mealTiming: { type: 'string' },
+              supplements: { type: 'array' },
+              hydration: { type: 'string' },
+              weeklyPlan: {
+                type: 'object',
+                properties: {
+                  refeedDay: { type: 'string' },
+                  trainingDayCalories: { type: 'number' },
+                  restDayCalories: { type: 'number' },
+                },
+              },
+              breakdown: { type: 'string' },
+              tips: { type: 'array' },
             },
           },
+          400: { description: 'Bad request', ...errorResponse },
           500: { description: 'Internal server error', ...errorResponse },
         },
       },
     },
-    async (request: FastifyRequest<{ Body: NutritionCalculateRequest }>, reply: FastifyReply) => {
-      const { weight, height, age, sex, activityLevel, goal, bodyFatPercent, dietStyle } = request.body;
+    async (request: FastifyRequest<{ Body: NutritionRequest }>, reply: FastifyReply) => {
+      const { age, weight, height, sex, activityLevel, goal, athleteMatch, sport, phase, trainingDays, apiKey } = request.body;
 
-      app.logger.info(
-        { weight, height, age, sex, activityLevel, goal },
-        'Nutrition calculation request'
-      );
+      app.logger.info({ weight, height, activityLevel, goal }, 'Nutrition calculation request');
+
+      if (!apiKey || apiKey.trim() === '') {
+        return reply.status(400).send({ error: 'apiKey is required' });
+      }
 
       try {
-        const systemPrompt =
-          'You are a registered dietitian and nutrition expert. Generate detailed, accurate meal plans and nutrition calculations. Always respond with valid JSON only, no markdown.';
+        const systemPrompt = `You are Kong, an elite sports nutritionist and registered dietitian for "Evexia: Kong Lift". You calculate precise nutritional needs using evidence-based formulas and athlete-specific knowledge.
 
-        const userPrompt = `Calculate TDEE, macros, and provide meal ideas for this person:
-Weight: ${weight} kg
-Height: ${height} cm
-Age: ${age}
-Sex: ${sex}
-Activity level: ${activityLevel}
-Goal: ${goal}
-${bodyFatPercent ? `Body fat %: ${bodyFatPercent}%` : ''}
-${dietStyle ? `Diet style preference: ${dietStyle}` : ''}
+Calculate TDEE using Mifflin-St Jeor BMR × activity multiplier:
+- Sedentary: 1.2, Light: 1.375, Moderate: 1.55, Active: 1.725, Very Active: 1.9
 
-Activity multipliers: sedentary=1.2, light=1.375, moderate=1.55, active=1.725, very_active=1.9
-Use Mifflin-St Jeor formula for BMR.
-Goal calorie adjustments: lose_fat/cut = -500 kcal, maintain = 0, build_muscle = +250 kcal, bulk = +500 kcal
+When athleteMatch is provided, adjust TDEE multipliers and macro ratios to match that athlete type's demands:
+- Swimmers (Phelps-style): add 20-40% to TDEE, carb-dominant macros (55% carbs, 25% protein, 20% fat)
+- Bodybuilders (Arnold/CBum-style): protein-dominant (40% protein, 35% carbs, 25% fat), phase-dependent calories
+- Soccer/Football athletes (Ronaldo-style): balanced macros, carb timing around training, 3200-4000 cal
+- Military/SEAL: high calorie functional fuel (3500-5000 cal), balanced macros, performance-first
+- Basketball (LeBron-style): anti-inflammatory focus, moderate carbs, high protein, 3000-4000 cal
+- Endurance athletes: carb-dominant, electrolyte focus, 3000-5000 cal depending on volume
 
-Return ONLY valid JSON:
-{"tdee":0,"targetCalories":0,"macros":{"protein":0,"carbs":0,"fat":0},"bmi":0,"bmr":0,"mealIdeas":[{"meal":"string","description":"string","calories":0}],"groceryList":["string"],"tips":"string"}`;
+When phase is provided, adjust calories:
+- Bulking: TDEE + 300-500 cal surplus
+- Cutting: TDEE - 300-500 cal deficit
+- Maintenance: TDEE
+- Setting the Stage: TDEE - 200-300 (slight deficit with carb cycling)
+- Building Muscle: TDEE + 200-300 (lean bulk)
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
+For trainingDays, calculate separate training day vs rest day calories (training days +200-300 cal).
+
+Return ONLY valid JSON (no markdown).`;
+
+        const userPrompt = `Calculate complete nutrition targets for:
+- Age: ${age}, Sex: ${sex}
+- Weight: ${weight}kg, Height: ${height}cm
+- Activity Level: ${activityLevel}
+- Goal: ${goal}
+${athleteMatch ? `- Athlete Match: ${athleteMatch} (adjust macros and calories to match this athlete type's demands)` : ''}
+${sport ? `- Sport: ${sport}` : ''}
+${phase ? `- Phase: ${phase}` : ''}
+${trainingDays ? `- Training Days Per Week: ${trainingDays} (provide separate training/rest day calories)` : ''}
+
+Calculate BMR using Mifflin-St Jeor, apply activity multiplier for TDEE, then adjust for goal and athlete type. Provide complete macro breakdown, meal timing strategy, supplement recommendations, and hydration targets.
+${trainingDays ? 'Include weeklyPlan with training day vs rest day calorie targets and refeed day recommendation.' : ''}`;
+
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+
         let jsonData: any = {};
-
         try {
           jsonData = JSON.parse(responseText);
-        } catch {
-          jsonData = {};
+        } catch (parseError) {
+          app.logger.error({ parseError, raw: responseText }, 'Failed to parse nutrition response');
+          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
         }
 
-        // Fill in mock structure if empty (for test keys)
-        if (!jsonData.tdee && !jsonData.targetCalories) {
-          // Calculate basic values for mock
+        // Create mock structure if empty
+        if (!jsonData.bmr) {
+          // Calculate basic Mifflin-St Jeor
           const bmr = sex === 'male'
             ? 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age
             : 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
@@ -478,54 +551,52 @@ Return ONLY valid JSON:
             very_active: 1.9,
           };
 
-          const tdee = Math.round(bmr * activityMultipliers[activityLevel]);
+          const tdee = Math.round(bmr * (activityMultipliers[activityLevel] || 1.55));
+
           const goalAdjustments: Record<string, number> = {
-            lose_fat: -500,
-            cut: -500,
+            'lose weight': -400,
+            'lose_fat': -400,
             maintain: 0,
-            build_muscle: 250,
-            bulk: 500,
+            'gain muscle': 300,
+            'build_muscle': 300,
+            'athletic performance': 100,
           };
 
-          const targetCalories = tdee + goalAdjustments[goal];
-          const bmi = weight / ((height / 100) ** 2);
+          const targetCalories = tdee + (goalAdjustments[goal] || 0);
+          const proteinGrams = Math.round(weight * 2.2);
+          const carbGrams = Math.round((targetCalories * 0.45) / 4);
+          const fatGrams = Math.round((targetCalories * 0.3) / 9);
 
           jsonData = {
+            bmr: Math.round(bmr),
             tdee,
             targetCalories,
-            macros: {
-              protein: Math.round(weight * 2.2),
-              carbs: Math.round((targetCalories * 0.4) / 4),
-              fat: Math.round((targetCalories * 0.3) / 9),
-            },
-            bmi: parseFloat(bmi.toFixed(1)),
-            bmr: Math.round(bmr),
-            mealIdeas: [
-              {
-                meal: 'Breakfast',
-                description: 'Oats with berries and protein powder',
-                calories: 450,
-              },
-              {
-                meal: 'Lunch',
-                description: 'Grilled chicken with brown rice and vegetables',
-                calories: 650,
-              },
-              {
-                meal: 'Dinner',
-                description: 'Salmon with sweet potato and broccoli',
-                calories: 700,
-              },
+            protein: proteinGrams,
+            carbs: carbGrams,
+            fat: fatGrams,
+            fiber: 30,
+            water: 3.5,
+            athleteInspiration: athleteMatch || null,
+            phaseNotes: phase ? `Following ${phase} phase nutrition protocols` : 'General fitness nutrition',
+            mealTiming: 'Eat protein and carbs within 1-2 hours pre/post workout',
+            supplements: ['Whey protein', 'Creatine monohydrate', 'Multivitamin', 'Omega-3s'],
+            hydration: '3.5+ liters daily, adjust based on sweat rate',
+            weeklyPlan: trainingDays ? {
+              refeedDay: 'Sunday (optional high carb day)',
+              trainingDayCalories: targetCalories + 250,
+              restDayCalories: targetCalories - 150,
+            } : null,
+            breakdown: `BMR: ${Math.round(bmr)} × ${activityMultipliers[activityLevel] || 1.55} activity = TDEE ${tdee}. Adjusted for goal (${goal}): ${targetCalories} calories.`,
+            tips: [
+              'Prioritize protein at every meal',
+              'Time carbs around training sessions',
+              'Stay consistent with calorie targets',
+              'Track macros for 2-4 weeks to assess progress',
             ],
-            groceryList: ['Chicken Breast', 'Salmon', 'Eggs', 'Brown Rice', 'Sweet Potatoes', 'Broccoli', 'Oats'],
-            tips: 'Stay consistent with meal timing and track your macros to reach your goals',
           };
         }
 
-        app.logger.info(
-          { tdee: jsonData.tdee, targetCalories: jsonData.targetCalories },
-          'Nutrition plan calculated'
-        );
+        app.logger.info({ tdee: jsonData.tdee, targetCalories: jsonData.targetCalories }, 'Nutrition plan calculated');
         return jsonData;
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to calculate nutrition');
