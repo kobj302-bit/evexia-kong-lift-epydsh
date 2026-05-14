@@ -320,6 +320,21 @@ export default function PaywallScreen() {
         <View style={[styles.floatingOrb, styles.orb3]} />
 
         <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+          {/* X Close Button */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => {
+              console.log("[Paywall] X close button pressed");
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/home");
+              }
+            }}
+          >
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
@@ -335,7 +350,7 @@ export default function PaywallScreen() {
               <Text style={styles.subtitle}>
                 {isAthleteTier
                   ? "Copy elite athlete routines with AI — $2/month add-on (requires Kong Pro)"
-                  : "Unlock all features for just $5/month"}
+                  : "Unlock all features for just $7/month"}
               </Text>
               {isAthleteTier && (
                 <View style={styles.athletePriceRow}>
@@ -344,7 +359,7 @@ export default function PaywallScreen() {
               )}
               {isAthleteTier && !isSubscribed && (
                 <View style={styles.requiresProBanner}>
-                  <Text style={styles.requiresProBannerText}>⚠️ Requires Kong Pro ($5/month)</Text>
+                  <Text style={styles.requiresProBannerText}>⚠️ Requires Kong Pro ($7/month)</Text>
                 </View>
               )}
             </View>
@@ -459,8 +474,8 @@ export default function PaywallScreen() {
                         : selectedPackage
                           ? selectedPackage.product.priceString
                             ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe for $5/month"
-                          : "Subscribe for $5/month"}
+                            : "Subscribe for $7/month"
+                          : "Subscribe for $7/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -501,8 +516,8 @@ export default function PaywallScreen() {
                         : selectedPackage
                           ? selectedPackage.product.priceString
                             ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe for $5/month"
-                          : "Subscribe for $5/month"}
+                            : "Subscribe for $7/month"
+                          : "Subscribe for $7/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -834,6 +849,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
+    lineHeight: 16,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    zIndex: 100,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 14,
+    color: "#fff",
+    fontWeight: "600",
     lineHeight: 16,
   },
   athletePriceRow: {
