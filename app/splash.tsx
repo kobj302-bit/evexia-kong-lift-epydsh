@@ -22,7 +22,13 @@ export default function SplashScreen() {
   }, []);
 
   const handleGetStarted = () => {
-    console.log('[Splash] Get Started pressed');
+    console.log('[Splash] Get Started button pressed');
+    updateState({ view: 'survey' });
+    router.replace('/survey');
+  };
+
+  const handleKongTap = () => {
+    console.log('[Splash] Kong tapped — navigating to survey');
     updateState({ view: 'survey' });
     router.replace('/survey');
   };
@@ -30,7 +36,11 @@ export default function SplashScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 20 }]}>
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <KongMascot size={120} />
+        <AnimatedPressable onPress={handleKongTap} style={styles.kongPressable}>
+          <KongMascot size={140} />
+        </AnimatedPressable>
+
+        <Text style={styles.kongHint}>Tap Kong to begin 👆</Text>
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>EVEXIA</Text>
@@ -63,8 +73,16 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    gap: 32,
+    gap: 24,
     width: '100%',
+  },
+  kongPressable: {
+    alignItems: 'center',
+  },
+  kongHint: {
+    fontSize: 13,
+    color: COLORS.textTertiary,
+    marginTop: -12,
   },
   titleBlock: {
     alignItems: 'center',

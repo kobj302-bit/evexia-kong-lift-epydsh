@@ -9,7 +9,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS, KONG_MSGS, RANKS } from '@/constants/data';
 
 export default function HomeTab() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
   const { isSubscribed } = useSubscription();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -17,6 +17,7 @@ export default function HomeTab() {
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+    updateState({ kongIdx: (state.kongIdx + 1) % KONG_MSGS.length });
   }, []);
 
   const rank = getRank(state.xp);
@@ -28,6 +29,8 @@ export default function HomeTab() {
     : 100;
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const streakDisplay = state.streak > 0 ? `🔥 ${state.streak} streak` : '';
 
   const handleStartWorkout = () => {
     console.log('[Home] Start Workout pressed');
@@ -91,13 +94,17 @@ export default function HomeTab() {
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{state.profile.username || 'KongLifter'}</Text>
             <View style={[styles.rankBadge, { backgroundColor: `${rank.color}20`, borderColor: rank.color }]}>
-              <Text style={[styles.rankText, { color: rank.color }]}>{rank.emoji} {rank.name}</Text>
+              <Text style={[styles.rankText, { color: rank.color }]}>{rank.emoji}</Text>
+              <Text style={[styles.rankText, { color: rank.color }]}>{rank.name}</Text>
             </View>
           </View>
         </View>
         <View style={styles.profileRight}>
           <Text style={styles.xpNumber}>{state.xp.toLocaleString()}</Text>
           <Text style={styles.xpLabel}>XP ⚡</Text>
+          {state.streak > 0 && (
+            <Text style={styles.streakBadge}>{streakDisplay}</Text>
+          )}
         </View>
       </View>
 
@@ -130,7 +137,8 @@ export default function HomeTab() {
           <View style={[styles.rankBarFill, { width: `${progressPct}%`, backgroundColor: rank.color }]} />
         </View>
         <View style={styles.rankBarLabels}>
-          <Text style={[styles.rankBarLabel, { color: rank.color }]}>{rank.emoji} {rank.name}</Text>
+          <Text style={[styles.rankBarLabel, { color: rank.color }]}>{rank.emoji}</Text>
+          <Text style={[styles.rankBarLabel, { color: rank.color }]}>{rank.name}</Text>
           <Text style={styles.rankBarXP}>{state.xp.toLocaleString()} XP</Text>
           {nextRank && <Text style={styles.rankBarNext}>{nextRank.minXP.toLocaleString()} XP</Text>}
         </View>
@@ -207,11 +215,12 @@ const styles = StyleSheet.create({
   profileAvatar: { fontSize: 44 },
   profileInfo: { gap: 6 },
   profileName: { fontSize: 18, fontWeight: '800', color: COLORS.text },
-  rankBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
+  rankBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, flexDirection: 'row', gap: 4 },
   rankText: { fontSize: 12, fontWeight: '700' },
   profileRight: { alignItems: 'flex-end' },
   xpNumber: { fontSize: 28, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   xpLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  streakBadge: { fontSize: 12, color: COLORS.gold, fontWeight: '700', marginTop: 2 },
   statRow: { flexDirection: 'row', gap: 10 },
   statTile: {
     flex: 1,
@@ -239,7 +248,7 @@ const styles = StyleSheet.create({
   rankCardSub: { fontSize: 13, color: COLORS.textSecondary },
   rankBarTrack: { height: 8, backgroundColor: COLORS.surface2, borderRadius: 4, overflow: 'hidden' },
   rankBarFill: { height: 8, borderRadius: 4 },
-  rankBarLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  rankBarLabels: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
   rankBarLabel: { fontSize: 12, fontWeight: '700' },
   rankBarXP: { fontSize: 12, color: COLORS.textSecondary, fontVariant: ['tabular-nums'] },
   rankBarNext: { fontSize: 12, color: COLORS.textTertiary, fontVariant: ['tabular-nums'] },

@@ -8,18 +8,18 @@ import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 
 const MISS_TIERS = [
-  { days: 1, label: '1 Day 😄', msg: 'Still fresh, get back at it!', color: COLORS.green },
-  { days: 2, label: '2 Days 😅', msg: 'Kong is getting impatient...', color: COLORS.blue },
-  { days: 3, label: '3 Days 😤', msg: 'The gains are leaving...', color: '#F0A020' },
-  { days: 4, label: '4 Days 😰', msg: 'Your muscles are crying', color: '#E07020' },
-  { days: 5, label: '5 Days 😱', msg: 'EMERGENCY! Muscle loss detected!', color: COLORS.red },
-  { days: 7, label: '7+ Days 💀', msg: 'You have become... a Resolutioner', color: '#808080' },
+  { days: 1, label: '1 Day 😄', msg: "No big deal. Kong still believes in you.", color: COLORS.green },
+  { days: 2, label: '2 Days 😅', msg: "Kong is side-eyeing you right now...", color: COLORS.blue },
+  { days: 3, label: '3 Days 😤', msg: "The gains are packing their bags.", color: '#F0A020' },
+  { days: 4, label: '4 Days 😰', msg: "Your muscles filed a missing persons report.", color: '#E07020' },
+  { days: 5, label: '5 Days 😱', msg: "EMERGENCY. Kong has lost faith.", color: COLORS.red },
+  { days: 7, label: '7+ Days 💀', msg: "Even your pre-workout is disappointed.", color: '#808080' },
 ];
 
 export default function MissScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state, updateState, addXP, showToast } = useApp();
+  const { state, updateState, addXP, showToast, triggerPR } = useApp();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const daysMissed = (() => {
@@ -39,10 +39,15 @@ export default function MissScreen() {
   }, []);
 
   const handleImBack = () => {
-    console.log('[Miss] I\'m Back pressed — awarding comeback XP');
+    console.log('[Miss] I\'m Back pressed — awarding comeback XP and PR');
+    const now = new Date();
     addXP(50);
-    showToast('🔥 COMEBACK! +50 XP', true);
-    updateState({ streak: 1 });
+    triggerPR('Comeback');
+    updateState({
+      streak: 1,
+      prs: [...state.prs, { lift: 'Comeback', weight: 1, date: now.toISOString() }],
+    });
+    showToast('🔥 COMEBACK! +50 XP 🏆 Comeback PR!', true);
     router.replace('/(tabs)/tracker');
   };
 
@@ -82,7 +87,7 @@ export default function MissScreen() {
           <Text style={styles.backBtnText}>I'M BACK 🔥</Text>
         </AnimatedPressable>
 
-        <Text style={styles.bonusText}>+50 COMEBACK XP</Text>
+        <Text style={styles.bonusText}>+50 COMEBACK XP 🏆 Comeback PR</Text>
       </Animated.View>
     </View>
   );

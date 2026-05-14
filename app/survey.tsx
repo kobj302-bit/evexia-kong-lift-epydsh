@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, ScrollView, StyleSheet,
-  Animated, Switch, TouchableOpacity,
+  Animated, Switch, TouchableOpacity, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,6 +67,12 @@ export default function SurveyScreen() {
       duration: 300,
       useNativeDriver: false,
     }).start();
+  };
+
+  const handleExpertMode = () => {
+    console.log('[Survey] Expert Mode activated — skipping survey');
+    updateState({ view: 'app', expertMode: true });
+    router.replace('/(tabs)/home');
   };
 
   const toggleInjury = (item: string) => {
@@ -175,6 +181,15 @@ export default function SurveyScreen() {
                 ))}
               </View>
             </View>
+
+            {/* Expert Mode — Step 1 only */}
+            <AnimatedPressable onPress={handleExpertMode} style={styles.expertSkipBtn}>
+              <View style={styles.expertSkipLeft}>
+                <Text style={styles.expertSkipTitle}>Expert Mode</Text>
+                <Text style={styles.expertSkipDesc}>Skip survey (advanced users)</Text>
+              </View>
+              <Text style={styles.expertSkipArrow}>→</Text>
+            </AnimatedPressable>
           </View>
         )}
 
@@ -310,13 +325,26 @@ export default function SurveyScreen() {
             <Text style={styles.stepTitle}>🦍 Choose Your Avatar</Text>
             <Text style={styles.stepSubtitle}>Pick your Kong identity</Text>
 
-            <View style={styles.avatarGrid}>
-              {AVATARS.map((a) => (
-                <AnimatedPressable key={a} onPress={() => setAvatar(a)} style={[styles.avatarBtn, avatar === a && styles.avatarBtnActive]}>
+            <FlatList
+              data={AVATARS}
+              keyExtractor={(item) => item}
+              numColumns={5}
+              scrollEnabled={false}
+              columnWrapperStyle={styles.avatarRow}
+              contentContainerStyle={styles.avatarGrid}
+              renderItem={({ item: a }) => (
+                <AnimatedPressable
+                  key={a}
+                  onPress={() => {
+                    console.log('[Survey] Avatar selected:', a);
+                    setAvatar(a);
+                  }}
+                  style={[styles.avatarBtn, avatar === a && styles.avatarBtnActive]}
+                >
                   <Text style={styles.avatarEmoji}>{a}</Text>
                 </AnimatedPressable>
-              ))}
-            </View>
+              )}
+            />
 
             <View style={styles.disclaimerBox}>
               <TouchableOpacity style={styles.disclaimerRow} onPress={() => setDisclaimer(!disclaimer)} activeOpacity={0.7}>
@@ -336,7 +364,10 @@ export default function SurveyScreen() {
               </View>
               <Switch
                 value={expertMode}
-                onValueChange={setExpertMode}
+                onValueChange={(val) => {
+                  console.log('[Survey] Expert Mode toggle:', val);
+                  setExpertMode(val);
+                }}
                 trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
                 thumbColor={expertMode ? COLORS.goldBright : COLORS.textSecondary}
               />
@@ -471,10 +502,11 @@ const styles = StyleSheet.create({
   dayPillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   dayPillText: { fontSize: 18, fontWeight: '800', color: COLORS.textSecondary },
   dayPillTextActive: { color: COLORS.gold },
-  avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  avatarGrid: { gap: 8 },
+  avatarRow: { gap: 8, justifyContent: 'space-between' },
   avatarBtn: {
-    width: '18%',
-    aspectRatio: 1,
+    width: 56,
+    height: 56,
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     alignItems: 'center',
@@ -483,7 +515,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   avatarBtnActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold, borderWidth: 2 },
-  avatarEmoji: { fontSize: 26 },
+  avatarEmoji: { fontSize: 32 },
   disclaimerBox: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,
@@ -518,6 +550,20 @@ const styles = StyleSheet.create({
   expertInfo: { gap: 2 },
   expertLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   expertDesc: { fontSize: 12, color: COLORS.textSecondary },
+  expertSkipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  expertSkipLeft: { gap: 2 },
+  expertSkipTitle: { fontSize: 15, fontWeight: '700', color: COLORS.gold },
+  expertSkipDesc: { fontSize: 12, color: COLORS.textSecondary },
+  expertSkipArrow: { fontSize: 18, color: COLORS.gold, fontWeight: '700' },
   navButtons: {
     flexDirection: 'row',
     gap: 12,

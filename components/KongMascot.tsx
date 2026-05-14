@@ -4,11 +4,13 @@ import { Animated, Text } from 'react-native';
 interface KongMascotProps {
   size?: number;
   shake?: boolean;
+  celebrate?: boolean;
 }
 
-export function KongMascot({ size = 80, shake = false }: KongMascotProps) {
+export function KongMascot({ size = 80, shake = false, celebrate = false }: KongMascotProps) {
   const bobAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const bobLoop = Animated.loop(
@@ -37,12 +39,25 @@ export function KongMascot({ size = 80, shake = false }: KongMascotProps) {
     return () => shakeLoop.stop();
   }, [shake, shakeAnim]);
 
+  useEffect(() => {
+    if (!celebrate) return;
+    Animated.sequence([
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+    ]).start();
+  }, [celebrate, scaleAnim]);
+
   return (
     <Animated.View
       style={{
         transform: [
           { translateY: bobAnim },
           { translateX: shake ? shakeAnim : 0 },
+          { scale: scaleAnim },
         ],
       }}
     >

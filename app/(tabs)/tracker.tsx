@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
+import { KongMascot } from '@/components/KongMascot';
 import { useApp, SessionSet, WorkoutHistory, PR } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 
@@ -86,23 +87,22 @@ export default function TrackerTab() {
     }
     newBestStreak = Math.max(newBestStreak, newStreak);
 
-    // Check PRs
+    // Check PRs — fixed: capture old weight BEFORE mutating
     const newPRs: PR[] = [...state.prs];
     const prNames: string[] = [];
     session.forEach((ex) => {
       const maxWeight = Math.max(...ex.sets.map((s) => parseFloat(s.weight) || 0));
       if (maxWeight > 0) {
         const existing = newPRs.find((p) => p.lift.toLowerCase() === ex.exercise.toLowerCase());
-        if (!existing || maxWeight > existing.weight) {
-          if (existing) {
-            existing.weight = maxWeight;
-            existing.date = now.toISOString();
-          } else {
-            newPRs.push({ lift: ex.exercise, weight: maxWeight, date: now.toISOString() });
-          }
-          if (existing && maxWeight > existing.weight) {
-            prNames.push(ex.exercise);
-          }
+        if (!existing) {
+          console.log('[Tracker] New PR (first time):', ex.exercise, maxWeight);
+          newPRs.push({ lift: ex.exercise, weight: maxWeight, date: now.toISOString() });
+          prNames.push(ex.exercise);
+        } else if (maxWeight > existing.weight) {
+          console.log('[Tracker] PR broken:', ex.exercise, existing.weight, '->', maxWeight);
+          existing.weight = maxWeight;
+          existing.date = now.toISOString();
+          prNames.push(ex.exercise);
         }
       }
     });
@@ -149,6 +149,14 @@ export default function TrackerTab() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Kong Approves streak badge */}
+      {state.streak > 0 && (
+        <View style={styles.kongApproveBadge}>
+          <KongMascot size={28} />
+          <Text style={styles.kongApproveText}>Kong approves! 🔥 {state.streak}-day streak</Text>
+        </View>
+      )}
+
       {/* Active Program */}
       {state.activeProg && (
         <View style={styles.progCard}>
@@ -321,6 +329,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 8 },
+  kongApproveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  kongApproveText: { fontSize: 14, fontWeight: '700', color: COLORS.gold, flex: 1 },
   progCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
