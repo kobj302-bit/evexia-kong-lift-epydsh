@@ -90,16 +90,22 @@ export default function PaywallScreen() {
   // Handle purchase
   const handlePurchase = async () => {
     if (!selectedPackage) return;
+    console.log("[Paywall] Purchase button pressed", { packageId: selectedPackage.identifier, price: selectedPackage.product.priceString });
 
     try {
       setPurchasing(true);
+      console.log("[Paywall] Initiating purchase for package:", selectedPackage.identifier);
       const success = await purchasePackage(selectedPackage);
       if (success) {
+        console.log("[Paywall] Purchase successful");
         Alert.alert("Welcome!", "Thank you for your purchase.", [
           { text: "OK", onPress: () => router.replace("/(tabs)/home") },
         ]);
+      } else {
+        console.log("[Paywall] Purchase returned false (cancelled or failed)");
       }
     } catch (error: any) {
+      console.log("[Paywall] Purchase error:", error.message);
       Alert.alert("Purchase Failed", error.message || "Please try again.");
     } finally {
       setPurchasing(false);
@@ -108,20 +114,25 @@ export default function PaywallScreen() {
 
   // Handle restore
   const handleRestore = async () => {
+    console.log("[Paywall] Restore Purchases button pressed");
     try {
       setRestoring(true);
+      console.log("[Paywall] Initiating restore purchases");
       const restored = await restorePurchases();
       if (restored) {
+        console.log("[Paywall] Restore successful");
         Alert.alert("Restored!", "Your subscription has been restored.", [
           { text: "OK", onPress: () => router.replace("/(tabs)/home") },
         ]);
       } else {
+        console.log("[Paywall] Restore: no previous purchases found");
         Alert.alert(
           "No Purchases Found",
           "We couldn't find any previous purchases."
         );
       }
     } catch (error: any) {
+      console.log("[Paywall] Restore error:", error.message);
       Alert.alert("Restore Failed", error.message || "Please try again.");
     } finally {
       setRestoring(false);
@@ -129,6 +140,7 @@ export default function PaywallScreen() {
   };
 
   const handleClose = () => {
+    console.log("[Paywall] Close button pressed");
     router.replace("/(tabs)/home");
   };
 
@@ -137,6 +149,7 @@ export default function PaywallScreen() {
   // so we use a custom View-based dialog overlay instead.
   const handleWebMockPurchase = async () => {
     if (!selectedPackage) return;
+    console.log("[Paywall] Web mock purchase button pressed", { packageId: selectedPackage.identifier });
     setWebMockState("processing");
     await new Promise((resolve) => setTimeout(resolve, 400));
     setWebMockState("idle");
@@ -287,7 +300,7 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.title}>Upgrade to Premium</Text>
               <Text style={styles.subtitle}>
-                Unlock all features and get the most out of the app
+                Unlock all features for just $5/month
               </Text>
             </View>
 
@@ -321,7 +334,10 @@ export default function PaywallScreen() {
                         styles.packageCard,
                         isSelected && styles.packageCardSelected,
                       ]}
-                      onPress={() => setSelectedPackage(pkg)}
+                      onPress={() => {
+                        console.log("[Paywall] Package selected:", pkg.identifier);
+                        setSelectedPackage(pkg);
+                      }}
                     >
                       {isSelected && <View style={styles.selectedIndicator} />}
                       <View style={styles.packageHeader}>
@@ -396,8 +412,8 @@ export default function PaywallScreen() {
                       {selectedPackage
                         ? selectedPackage.product.priceString
                           ? `Subscribe for ${selectedPackage.product.priceString}`
-                          : "Subscribe"
-                        : "Select a plan"}
+                          : "Subscribe for $5/month"
+                        : "Subscribe for $5/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -436,8 +452,8 @@ export default function PaywallScreen() {
                       {selectedPackage
                         ? (selectedPackage.product.priceString
                             ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe")
-                        : "Select a plan"}
+                            : "Subscribe for $5/month")
+                        : "Subscribe for $5/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
