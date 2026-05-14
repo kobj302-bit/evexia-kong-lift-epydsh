@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { PurchasesPackage } from "react-native-purchases";
 
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -51,6 +51,30 @@ const FEATURES = [
   },
 ];
 
+// Athlete Pro tier features
+const ATHLETE_FEATURES = [
+  {
+    icon: "🏆",
+    title: "Copy Elite Athlete Routines",
+    description: "AI-powered routine cloning from any athlete description",
+  },
+  {
+    icon: "🤖",
+    title: "Advanced AI Coaching",
+    description: "Deeper personalization with athlete-level programming",
+  },
+  {
+    icon: "📈",
+    title: "Progressive Overload Plans",
+    description: "Auto-scaling programs that adapt to your PRs",
+  },
+  {
+    icon: "⚡",
+    title: "Priority AI Processing",
+    description: "Faster generation, longer programs",
+  },
+];
+
 // Customize: Your app's colors
 const colors = {
   primary: "#007AFF",
@@ -60,10 +84,13 @@ const colors = {
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const { tier } = useLocalSearchParams<{ tier?: string }>();
+  const isAthleteTier = tier === "athlete";
 
   // Get subscription state and methods from context
   const {
     packages,
+    athletePackages,
     loading,
     isSubscribed,
     isWeb,
@@ -73,8 +100,14 @@ export default function PaywallScreen() {
     mockNativePurchase,
   } = useSubscription();
 
+  // Use athlete packages if on athlete tier, fall back to regular packages
+  const activePackages = isAthleteTier
+    ? (athletePackages.length > 0 ? athletePackages : packages)
+    : packages;
+  const activeFeatures = isAthleteTier ? ATHLETE_FEATURES : FEATURES;
+
   const [selectedPackage, setSelectedPackage] =
-    useState<PurchasesPackage | null>(packages[0] || null);
+    useState<PurchasesPackage | null>(activePackages[0] || null);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [webMockState, setWebMockState] = useState<"idle" | "processing">("idle");
@@ -82,10 +115,10 @@ export default function PaywallScreen() {
 
   // Update selected package when packages load
   React.useEffect(() => {
-    if (packages.length > 0 && !selectedPackage) {
-      setSelectedPackage(packages[0]);
+    if (activePackages.length > 0 && !selectedPackage) {
+      setSelectedPackage(activePackages[0]);
     }
-  }, [packages, selectedPackage]);
+  }, [activePackages, selectedPackage]);
 
   // Handle purchase
   const handlePurchase = async () => {
@@ -296,18 +329,30 @@ export default function PaywallScreen() {
             <View style={styles.header}>
               {/* Premium badge */}
               <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+                <Text style={styles.premiumBadgeText}>{isAthleteTier ? "ATHLETE ADD-ON" : "PREMIUM"}</Text>
               </View>
-              <Text style={styles.title}>Upgrade to Premium</Text>
+              <Text style={styles.title}>{isAthleteTier ? "🦍 Athlete AI Pro" : "Upgrade to Premium"}</Text>
               <Text style={styles.subtitle}>
-                Unlock all features for just $5/month
+                {isAthleteTier
+                  ? "Copy elite athlete routines with AI — $2/month add-on (requires Kong Pro)"
+                  : "Unlock all features for just $5/month"}
               </Text>
+              {isAthleteTier && (
+                <View style={styles.athletePriceRow}>
+                  <Text style={styles.athletePriceText}>$7/month total</Text>
+                </View>
+              )}
+              {isAthleteTier && !isSubscribed && (
+                <View style={styles.requiresProBanner}>
+                  <Text style={styles.requiresProBannerText}>⚠️ Requires Kong Pro ($5/month)</Text>
+                </View>
+              )}
             </View>
 
             {/* Features List - Glass Card */}
             <View style={styles.featuresCard}>
               <Text style={styles.featuresCardTitle}>What You'll Get</Text>
-              {FEATURES.map((feature, index) => (
+              {activeFeatures.map((feature, index) => (
                 <View key={index} style={styles.featureRow}>
                   <View style={[styles.featureIcon, { backgroundColor: featureIconColors[index % featureIconColors.length] }]}>
                     <Text style={styles.featureIconText}>{feature.icon}</Text>
@@ -323,9 +368,9 @@ export default function PaywallScreen() {
             </View>
 
             {/* Package Selection */}
-            {packages.length > 0 && (
+            {activePackages.length > 0 && (
               <View style={styles.packagesContainer}>
-                {packages.map((pkg) => {
+                {activePackages.map((pkg) => {
                   const isSelected = selectedPackage?.identifier === pkg.identifier;
                   return (
                     <TouchableOpacity
@@ -409,11 +454,13 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPackage
-                        ? selectedPackage.product.priceString
-                          ? `Subscribe for ${selectedPackage.product.priceString}`
-                          : "Subscribe for $5/month"
-                        : "Subscribe for $5/month"}
+                      {isAthleteTier
+                        ? "Subscribe — $7/month total"
+                        : selectedPackage
+                          ? selectedPackage.product.priceString
+                            ? `Subscribe for ${selectedPackage.product.priceString}`
+                            : "Subscribe for $5/month"
+                          : "Subscribe for $5/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -449,11 +496,13 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPackage
-                        ? (selectedPackage.product.priceString
+                      {isAthleteTier
+                        ? "Subscribe — $7/month total"
+                        : selectedPackage
+                          ? selectedPackage.product.priceString
                             ? `Subscribe for ${selectedPackage.product.priceString}`
-                            : "Subscribe for $5/month")
-                        : "Subscribe for $5/month"}
+                            : "Subscribe for $5/month"
+                          : "Subscribe for $5/month"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -786,6 +835,35 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.6)",
     textAlign: "center",
     lineHeight: 16,
+  },
+  athletePriceRow: {
+    marginTop: 8,
+    backgroundColor: "rgba(255, 215, 0, 0.25)",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 215, 0, 0.5)",
+  },
+  athletePriceText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#FFD700",
+  },
+  requiresProBanner: {
+    marginTop: 8,
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.4)",
+  },
+  requiresProBannerText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#FF6B6B",
+    textAlign: "center",
   },
 
   // Web mock purchase dialog (View-based, since Alert.alert with multiple buttons fails on web)

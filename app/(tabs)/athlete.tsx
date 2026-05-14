@@ -1,16 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TextInput, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { KongMascot } from '@/components/KongMascot';
 import { useApp } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 export default function AthleteTab() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { state, updateState, showToast } = useApp();
+  const { isAthleteSubscribed, isSubscribed } = useSubscription();
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState(state.profile.exp || 'Beginner');
   const [loading, setLoading] = useState(false);
@@ -93,6 +97,36 @@ export default function AthleteTab() {
   };
 
   const result = state.athleteResult;
+
+  if (!isAthleteSubscribed) {
+    const requiresProNote = !isSubscribed;
+    const handleUnlock = () => {
+      console.log('[Athlete] Unlock Athlete AI pressed — navigating to paywall?tier=athlete');
+      router.push('/paywall?tier=athlete');
+    };
+    return (
+      <View style={styles.lockedContainer}>
+        <View style={styles.lockedCard}>
+          <KongMascot size={60} />
+          <Text style={styles.lockedTitle}>Athlete AI — Exclusive Add-On</Text>
+          <Text style={styles.lockedSubtitle}>
+            Copy workout routines from elite athletes with AI. Requires Kong Pro + Athlete upgrade.
+          </Text>
+          <View style={styles.priceBadge}>
+            <Text style={styles.priceBadgeText}>$7/month total (Kong Pro + Athlete)</Text>
+          </View>
+          {requiresProNote ? (
+            <View style={styles.requiresProNote}>
+              <Text style={styles.requiresProNoteText}>⚠️ Requires Kong Pro ($5/month) first</Text>
+            </View>
+          ) : null}
+          <AnimatedPressable onPress={handleUnlock} style={styles.unlockBtn}>
+            <Text style={styles.unlockBtnText}>Unlock Athlete AI 👑</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -313,4 +347,75 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textSecondary },
   emptySub: { fontSize: 14, color: COLORS.textTertiary, textAlign: 'center', maxWidth: 280, lineHeight: 22 },
+  lockedContainer: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  lockedCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    gap: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.gold,
+    width: '100%',
+    maxWidth: 360,
+  },
+  lockedTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: COLORS.gold,
+    textAlign: 'center',
+  },
+  lockedSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  priceBadge: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+  },
+  priceBadgeText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.gold,
+  },
+  requiresProNote: {
+    backgroundColor: `${COLORS.red}15`,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: `${COLORS.red}40`,
+    width: '100%',
+  },
+  requiresProNoteText: {
+    fontSize: 13,
+    color: COLORS.red,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  unlockBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    width: '100%',
+  },
+  unlockBtnText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0A0A0A',
+  },
 });

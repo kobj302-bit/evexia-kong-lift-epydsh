@@ -43,6 +43,7 @@ const ANDROID_API_KEY = extra.revenueCatApiKeyAndroid || "";
 const TEST_IOS_API_KEY = extra.revenueCatTestApiKeyIos || "";
 const TEST_ANDROID_API_KEY = extra.revenueCatTestApiKeyAndroid || "";
 const ENTITLEMENT_ID = extra.revenueCatEntitlementId || "pro";
+const ATHLETE_ENTITLEMENT_ID = "athlete_pro";
 
 // Check if running on web
 const isWeb = Platform.OS === "web";
@@ -55,14 +56,18 @@ const MOCK_NATIVE_KEY = `rc_dev_native_${_PROJECT_SCOPE}`;
 const NATIVE_PURCHASE_KEY = `rc_subscribed_${_PROJECT_SCOPE}`;
 
 interface SubscriptionContextType {
-  /** Whether the user has an active subscription */
+  /** Whether the user has an active Kong Pro subscription */
   isSubscribed: boolean;
+  /** Whether the user has an active Athlete Pro subscription */
+  isAthleteSubscribed: boolean;
   /** All offerings from RevenueCat */
   offerings: PurchasesOfferings | null;
   /** The current/default offering */
   currentOffering: PurchasesOffering | null;
-  /** Available packages in the current offering */
+  /** Available packages in the current (Kong Pro) offering */
   packages: PurchasesPackage[];
+  /** Available packages in the athlete offering */
+  athletePackages: PurchasesPackage[];
   /** Loading state during initialization */
   loading: boolean;
   /** Whether running on web (purchases not available) */
@@ -89,10 +94,12 @@ interface SubscriptionProviderProps {
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isAthleteSubscribed, setIsAthleteSubscribed] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [currentOffering, setCurrentOffering] =
     useState<PurchasesOffering | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const [athletePackages, setAthletePackages] = useState<PurchasesPackage[]>([]);
   const [loading, setLoading] = useState(true);
 
     // Fetch offerings via REST API for web platform
@@ -186,10 +193,16 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             const hasEntitlement =
               typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !==
               "undefined";
+            const hasAthleteEntitlement =
+              typeof customerInfo.entitlements.active[ATHLETE_ENTITLEMENT_ID] !==
+              "undefined";
             // In __DEV__: don't clear subscription state — RevenueCat test store purchases are
             // in-memory only and won't be known to RC after a configure() call on reload.
             if (hasEntitlement || !__DEV__) {
               setIsSubscribed(hasEntitlement);
+            }
+            if (hasAthleteEntitlement || !__DEV__) {
+              setIsAthleteSubscribed(hasAthleteEntitlement);
             }
           }
         ) as unknown as { remove: () => void } | null);
@@ -226,6 +239,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         setCurrentOffering(fetchedOfferings.current);
         setPackages(fetchedOfferings.current.availablePackages);
       }
+
+      // Load athlete offering packages
+      const athleteOffering = fetchedOfferings.all["athlete"];
+      setAthletePackages(athleteOffering?.availablePackages ?? []);
     } catch (error) {
       console.error("[RevenueCat] Failed to fetch offerings:", error);
     }
@@ -237,10 +254,15 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       const customerInfo = await Purchases.getCustomerInfo();
       const hasEntitlement =
         typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== "undefined";
+      const hasAthleteEntitlement =
+        typeof customerInfo.entitlements.active[ATHLETE_ENTITLEMENT_ID] !== "undefined";
       // In __DEV__: RC test store purchases don't survive configure(), so only update state
       // positively — mock/test purchase state persists across reloads via SecureStore cache.
       if (hasEntitlement || !__DEV__) {
         setIsSubscribed(hasEntitlement);
+      }
+      if (hasAthleteEntitlement || !__DEV__) {
+        setIsAthleteSubscribed(hasAthleteEntitlement);
       }
       if (hasEntitlement) {
         await SecureStore.setItemAsync(NATIVE_PURCHASE_KEY, "true").catch(() => {});
@@ -320,9 +342,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     <SubscriptionContext.Provider
       value={{
         isSubscribed,
+        isAthleteSubscribed,
         offerings,
         currentOffering,
         packages,
+        athletePackages,
         loading,
         isWeb,
         purchasePackage,
