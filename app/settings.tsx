@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
+import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
@@ -149,6 +150,34 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Legal Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>⚖️ Legal</Text>
+        <View style={styles.card}>
+          <AnimatedPressable
+            style={styles.legalRow}
+            onPress={() => {
+              console.log('[Settings] Privacy Policy link pressed');
+              Linking.openURL('https://newly.app/privacy');
+            }}
+          >
+            <Text style={styles.legalLabel}>Privacy Policy</Text>
+            <ExternalLink size={16} color={COLORS.textSecondary} />
+          </AnimatedPressable>
+          <View style={styles.legalDivider} />
+          <AnimatedPressable
+            style={styles.legalRow}
+            onPress={() => {
+              console.log('[Settings] Terms of Service link pressed');
+              Linking.openURL('https://newly.app/terms');
+            }}
+          >
+            <Text style={styles.legalLabel}>Terms of Service</Text>
+            <ExternalLink size={16} color={COLORS.textSecondary} />
+          </AnimatedPressable>
+        </View>
+      </View>
+
       {/* App Info */}
       <View style={styles.appInfo}>
         <Text style={styles.appInfoText}>🦍 Evexia: Kong Lift</Text>
@@ -240,6 +269,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.red,
   },
   dangerBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.red },
+  legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
+  legalLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  legalDivider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: -16 },
   appInfo: { alignItems: 'center', gap: 4, paddingVertical: 8 },
   appInfoText: { fontSize: 16, fontWeight: '800', color: COLORS.textSecondary },
   appInfoSub: { fontSize: 12, color: COLORS.textTertiary },
