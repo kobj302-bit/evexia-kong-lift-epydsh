@@ -2,16 +2,25 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { state, updateState, showToast } = useApp();
+  const { isSubscribed } = useSubscription();
   const [apiKey, setApiKey] = useState(state.apiKey);
   const [showKey, setShowKey] = useState(false);
+
+  const handleUpgradePro = () => {
+    console.log('[Settings] Upgrade to Kong Pro pressed');
+    router.push('/paywall' as any);
+  };
 
   const handleSaveKey = () => {
     console.log('[Settings] API key saved');
@@ -44,6 +53,33 @@ export default function SettingsScreen() {
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
       showsVerticalScrollIndicator={false}
     >
+      {/* Kong Pro Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>⚡ Kong Pro</Text>
+        {isSubscribed ? (
+          <View style={[styles.card, styles.proActiveCard]}>
+            <View style={styles.proActiveRow}>
+              <Text style={styles.proActiveCrown}>👑</Text>
+              <View style={styles.proActiveInfo}>
+                <Text style={styles.proActiveTitle}>Kong Pro Active</Text>
+                <Text style={styles.proActiveDesc}>You have full access to all premium features</Text>
+              </View>
+              <View style={styles.proActiveBadge}>
+                <Text style={styles.proActiveBadgeText}>PRO</Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.card, styles.proCard]}>
+            <Text style={styles.proCardTitle}>Unlock Your Full Potential 🦍</Text>
+            <Text style={styles.proCardDesc}>AI coaching, advanced analytics, 2x XP, and elite programs — everything a serious lifter needs.</Text>
+            <AnimatedPressable onPress={handleUpgradePro} style={styles.proUpgradeBtn}>
+              <Text style={styles.proUpgradeBtnText}>Upgrade to Kong Pro 👑</Text>
+            </AnimatedPressable>
+          </View>
+        )}
+      </View>
+
       {/* AI Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🤖 AI Configuration</Text>
@@ -275,4 +311,34 @@ const styles = StyleSheet.create({
   appInfo: { alignItems: 'center', gap: 4, paddingVertical: 8 },
   appInfoText: { fontSize: 16, fontWeight: '800', color: COLORS.textSecondary },
   appInfoSub: { fontSize: 12, color: COLORS.textTertiary },
+  proCard: {
+    borderColor: COLORS.gold,
+    borderWidth: 1.5,
+    gap: 12,
+  },
+  proCardTitle: { fontSize: 17, fontWeight: '900', color: COLORS.gold },
+  proCardDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
+  proUpgradeBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  proUpgradeBtnText: { fontSize: 15, fontWeight: '900', color: '#0A0A0A', letterSpacing: 0.5 },
+  proActiveCard: {
+    borderColor: COLORS.gold,
+    borderWidth: 1.5,
+  },
+  proActiveRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  proActiveCrown: { fontSize: 32 },
+  proActiveInfo: { flex: 1, gap: 2 },
+  proActiveTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gold },
+  proActiveDesc: { fontSize: 12, color: COLORS.textSecondary },
+  proActiveBadge: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  proActiveBadgeText: { fontSize: 11, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
 });

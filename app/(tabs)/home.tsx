@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { KongMascot } from '@/components/KongMascot';
 import { useApp, getRank, getNextRank } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS, KONG_MSGS, RANKS } from '@/constants/data';
 
 export default function HomeTab() {
   const { state } = useApp();
+  const { isSubscribed } = useSubscription();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -42,6 +44,11 @@ export default function HomeTab() {
     router.push('/(tabs)/diet');
   };
 
+  const handleUpgradePro = () => {
+    console.log('[Home] Kong Pro banner pressed — navigating to paywall');
+    router.push('/paywall' as any);
+  };
+
   return (
     <Animated.ScrollView
       style={[styles.container, { opacity: fadeAnim }]}
@@ -56,6 +63,20 @@ export default function HomeTab() {
           <Text style={styles.heroDate}>{today}</Text>
         </View>
       </View>
+
+      {/* Kong Pro Banner — only shown to non-subscribers */}
+      {!isSubscribed && (
+        <AnimatedPressable onPress={handleUpgradePro} style={styles.proBanner}>
+          <View style={styles.proBannerLeft}>
+            <Text style={styles.proBannerCrown}>👑</Text>
+            <View style={styles.proBannerText}>
+              <Text style={styles.proBannerTitle}>Kong Pro</Text>
+              <Text style={styles.proBannerSub}>AI coaching • 2x XP • Elite programs</Text>
+            </View>
+          </View>
+          <Text style={styles.proBannerArrow}>→</Text>
+        </AnimatedPressable>
+      )}
 
       {/* Kong Quote */}
       <View style={styles.quoteBox}>
@@ -257,4 +278,19 @@ const styles = StyleSheet.create({
   quickBtnEmoji: { fontSize: 20 },
   quickBtnText: { fontSize: 16, fontWeight: '800', color: '#0A0A0A' },
   quickBtnTextSecondary: { color: COLORS.text },
+  proBanner: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  proBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  proBannerCrown: { fontSize: 28 },
+  proBannerText: { gap: 2 },
+  proBannerTitle: { fontSize: 17, fontWeight: '900', color: '#0A0A0A', letterSpacing: 0.5 },
+  proBannerSub: { fontSize: 12, fontWeight: '600', color: 'rgba(10,10,10,0.65)' },
+  proBannerArrow: { fontSize: 20, fontWeight: '900', color: '#0A0A0A' },
 });
