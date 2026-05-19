@@ -1,4 +1,5 @@
 import { Alert } from 'react-native';
+// @ts-expect-error – polyfillGlobal exists at runtime but has no type declaration
 import { polyfillGlobal } from 'react-native/Libraries/Utilities/PolyfillFunctions';
 
 // Add global alert() on iOS/Android — it doesn't exist by default in React Native.
@@ -6,7 +7,3 @@ import { polyfillGlobal } from 'react-native/Libraries/Utilities/PolyfillFunctio
 polyfillGlobal('alert', () => (message?: string) => {
   Alert.alert('', String(message ?? ''));
 });
-
-declare module 'react-native/Libraries/Utilities/PolyfillFunctions' {
-  export function polyfillGlobal(name: string, getValue: () => unknown): void;
-}
