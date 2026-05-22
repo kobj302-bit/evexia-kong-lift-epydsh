@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -223,10 +224,15 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     width: '100%',
-    shadowColor: GOLD,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 10px rgba(212,160,23,0.35)' },
+      default: {
+        shadowColor: GOLD,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+      },
+    }),
     elevation: 6,
   },
   unlockBtnText: {

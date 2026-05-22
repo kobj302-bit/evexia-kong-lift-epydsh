@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Image, ImageSourcePropType } from 'react-native';
+import { Animated, Image, ImageSourcePropType, Platform } from 'react-native';
 
 export type KongMood = 'happy' | 'sad' | 'angry' | 'fat' | 'defeated';
 
@@ -18,6 +18,8 @@ interface KongMascotProps {
   mood?: KongMood;
 }
 
+const useNativeDriver = Platform.OS !== 'web';
+
 export function KongMascot({ size = 80, shake = false, celebrate = false, mood = 'happy' }: KongMascotProps) {
   const bobAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -26,8 +28,8 @@ export function KongMascot({ size = 80, shake = false, celebrate = false, mood =
   useEffect(() => {
     const bobLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(bobAnim, { toValue: -10, duration: 1000, useNativeDriver: true }),
-        Animated.timing(bobAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(bobAnim, { toValue: -10, duration: 1000, useNativeDriver }),
+        Animated.timing(bobAnim, { toValue: 0, duration: 1000, useNativeDriver }),
       ])
     );
     bobLoop.start();
@@ -38,11 +40,11 @@ export function KongMascot({ size = 80, shake = false, celebrate = false, mood =
     if (!shake) return;
     const shakeLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: -8, duration: 80, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 8, duration: 80, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 80, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 80, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -8, duration: 80, useNativeDriver }),
+        Animated.timing(shakeAnim, { toValue: 8, duration: 80, useNativeDriver }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 80, useNativeDriver }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 80, useNativeDriver }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver }),
         Animated.delay(500),
       ])
     );
@@ -53,12 +55,12 @@ export function KongMascot({ size = 80, shake = false, celebrate = false, mood =
   useEffect(() => {
     if (!celebrate) return;
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 150, useNativeDriver }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver }),
     ]).start();
   }, [celebrate, scaleAnim]);
 
@@ -76,10 +78,10 @@ export function KongMascot({ size = 80, shake = false, celebrate = false, mood =
     >
       <Image
         source={imageSource}
+        resizeMode="contain"
         style={{
           width: size * 1.2,
           height: size * 1.2,
-          resizeMode: 'contain',
           borderRadius: size * 0.15,
         }}
       />

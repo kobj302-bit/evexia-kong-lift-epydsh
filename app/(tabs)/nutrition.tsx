@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Switch, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Switch, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
@@ -640,10 +640,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 17,
     alignItems: 'center',
-    shadowColor: COLORS.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 10px rgba(212,160,23,0.3)' },
+      default: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      },
+    }),
     elevation: 6,
   },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

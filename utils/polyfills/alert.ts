@@ -1,9 +1,11 @@
-import { Alert } from 'react-native';
-// @ts-expect-error – polyfillGlobal exists at runtime but has no type declaration
-import { polyfillGlobal } from 'react-native/Libraries/Utilities/PolyfillFunctions';
+import { Alert, Platform } from 'react-native';
 
-// Add global alert() on iOS/Android — it doesn't exist by default in React Native.
-// On web, alert.web.ts is used instead (Metro picks .web.ts automatically).
-polyfillGlobal('alert', () => (message?: string) => {
-  Alert.alert('', String(message ?? ''));
-});
+// On native, expose a global `alert()` that maps to RN's Alert.alert so legacy code can call it.
+// On web, the browser already provides `window.alert`, so we leave it alone.
+if (Platform.OS !== 'web' && typeof (globalThis as any).alert !== 'function') {
+  (globalThis as any).alert = (message?: unknown) => {
+    Alert.alert('', String(message ?? ''));
+  };
+}
+
+export {};
