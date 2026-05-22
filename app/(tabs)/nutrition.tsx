@@ -108,7 +108,7 @@ export default function NutritionTab() {
       if (sport) body.sport = sport;
 
       const response = await fetch(
-        'https://zth94rfafkmg6bdjhdzxh2d4exsfcmkz.app.specular.dev/api/ai/nutrition',
+        'https://uy7h5sxvykhvkxsf7qff8276kjkjb5n7.app.specular.dev/api/ai/nutrition',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
