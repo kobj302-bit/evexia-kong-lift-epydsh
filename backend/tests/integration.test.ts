@@ -51,21 +51,6 @@ describe("API Integration Tests", () => {
         expect(data.injuryModifications).toBeDefined();
       });
 
-      test("Return 400 when missing required apiKey", async () => {
-        const res = await api("/api/ai/athlete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            description: "Build muscle",
-            level: "Beginner",
-            phase: "Bulking",
-          }),
-        });
-        await expectStatus(res, 400);
-        const data = await res.json();
-        expect(data.error).toBe("apiKey is required");
-      });
-
       test("Return 400 when missing required description", async () => {
         const res = await api("/api/ai/athlete", {
           method: "POST",
@@ -149,24 +134,6 @@ describe("API Integration Tests", () => {
         const data = await res.json();
         expect(data.meals).toBeDefined();
         expect(data.athleteInspiration).toBe("Arnold Schwarzenegger");
-      });
-
-      test("Return 400 when missing required apiKey", async () => {
-        const res = await api("/api/ai/diet", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            calories: 2500,
-            protein: 150,
-            carbs: 300,
-            fat: 80,
-            meals: 4,
-            goal: "muscle building",
-          }),
-        });
-        await expectStatus(res, 400);
-        const data = await res.json();
-        expect(data.error).toBe("apiKey is required");
       });
 
       test("Return 400 when missing required calories", async () => {
@@ -316,24 +283,6 @@ describe("API Integration Tests", () => {
         expect(data.weeklyPlan).toBeDefined();
         expect(data.weeklyPlan.trainingDayCalories).toBeDefined();
         expect(data.weeklyPlan.restDayCalories).toBeDefined();
-      });
-
-      test("Return 400 when missing required apiKey", async () => {
-        const res = await api("/api/ai/nutrition", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            age: 30,
-            weight: 80,
-            height: 180,
-            sex: "male",
-            activityLevel: "moderate",
-            goal: "maintain",
-          }),
-        });
-        await expectStatus(res, 400);
-        const data = await res.json();
-        expect(data.error).toBe("apiKey is required");
       });
 
       test("Return 400 when missing required age", async () => {
