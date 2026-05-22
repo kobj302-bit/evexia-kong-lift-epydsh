@@ -4,7 +4,7 @@
     "slug": "evexia-kong-lift",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/kong-happy.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/app-icon-tzk.png",
