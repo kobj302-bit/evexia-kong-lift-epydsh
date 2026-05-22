@@ -14,14 +14,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.evexia.konglift",
-      "icon": "./assets/images/kong-happy.png",
+      "icon": "./assets/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/kong-happy.png",
+        "foregroundImage": "./assets/images/kong-icon-foreground.png",
         "backgroundColor": "#1A2814"
       },
       "package": "com.evexia.konglift"
