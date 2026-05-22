@@ -37,7 +37,7 @@ export default function SplashScreen() {
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 20 }]}>
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <AnimatedPressable onPress={handleKongTap} style={styles.kongPressable}>
-          <KongMascot size={140} />
+          <KongMascot size={140} mood="happy" />
         </AnimatedPressable>
 
         <Text style={styles.kongHint}>Tap Kong to begin 👆</Text>

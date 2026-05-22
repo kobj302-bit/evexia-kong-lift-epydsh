@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
 import { RANKS } from '@/constants/data';
+import { scheduleMissNotifications } from '@/utils/notifications';
 
 const STORAGE_KEY = 'evexia_state_v1';
 
@@ -238,6 +239,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3500);
   }, [prFlash]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    console.log('[AppContext] lastWorkout changed, rescheduling notifications:', state.lastWorkout);
+    scheduleMissNotifications(state.lastWorkout);
+  }, [state.lastWorkout, loaded]);
 
   if (!loaded) return null;
 

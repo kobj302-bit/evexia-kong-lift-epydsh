@@ -1,13 +1,24 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text } from 'react-native';
+import { Animated, Image, ImageSourcePropType } from 'react-native';
+
+export type KongMood = 'happy' | 'sad' | 'angry' | 'fat' | 'defeated';
+
+const KONG_IMAGES: Record<KongMood, ImageSourcePropType> = {
+  happy: require('@/assets/images/kong-happy.png'),
+  sad: require('@/assets/images/kong-sad-1week.png'),
+  angry: require('@/assets/images/kong-angry-2week.png'),
+  fat: require('@/assets/images/kong-fat-postweek2.png'),
+  defeated: require('@/assets/images/kong-defeated-3week.png'),
+};
 
 interface KongMascotProps {
   size?: number;
   shake?: boolean;
   celebrate?: boolean;
+  mood?: KongMood;
 }
 
-export function KongMascot({ size = 80, shake = false, celebrate = false }: KongMascotProps) {
+export function KongMascot({ size = 80, shake = false, celebrate = false, mood = 'happy' }: KongMascotProps) {
   const bobAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -51,6 +62,8 @@ export function KongMascot({ size = 80, shake = false, celebrate = false }: Kong
     ]).start();
   }, [celebrate, scaleAnim]);
 
+  const imageSource = KONG_IMAGES[mood];
+
   return (
     <Animated.View
       style={{
@@ -61,7 +74,15 @@ export function KongMascot({ size = 80, shake = false, celebrate = false }: Kong
         ],
       }}
     >
-      <Text style={{ fontSize: size, lineHeight: size * 1.2 }}>🦍</Text>
+      <Image
+        source={imageSource}
+        style={{
+          width: size * 1.2,
+          height: size * 1.2,
+          resizeMode: 'contain',
+          borderRadius: size * 0.15,
+        }}
+      />
     </Animated.View>
   );
 }

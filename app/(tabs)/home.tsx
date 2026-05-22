@@ -65,7 +65,7 @@ export default function HomeTab() {
     >
       {/* Hero */}
       <View style={styles.hero}>
-        <KongMascot size={80} />
+        <KongMascot size={80} mood="happy" />
         <View style={styles.heroText}>
           <Text style={styles.heroTitle}>KONG LIFT</Text>
           <Text style={styles.heroDate}>{today}</Text>

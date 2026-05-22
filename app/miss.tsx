@@ -3,17 +3,27 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
-import { KongMascot } from '@/components/KongMascot';
+import { KongMascot, KongMood } from '@/components/KongMascot';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 
-const MISS_TIERS = [
-  { days: 1, label: '1 Day 😄', msg: "No big deal. Kong still believes in you.", color: COLORS.green },
-  { days: 2, label: '2 Days 😅', msg: "Kong is side-eyeing you right now...", color: COLORS.blue },
-  { days: 3, label: '3 Days 😤', msg: "The gains are packing their bags.", color: '#F0A020' },
-  { days: 4, label: '4 Days 😰', msg: "Your muscles filed a missing persons report.", color: '#E07020' },
-  { days: 5, label: '5 Days 😱', msg: "EMERGENCY. Kong has lost faith.", color: COLORS.red },
-  { days: 7, label: '7+ Days 💀', msg: "Even your pre-workout is disappointed.", color: '#808080' },
+interface MissTier {
+  days: number;
+  label: string;
+  msg: string;
+  color: string;
+  mood: KongMood;
+}
+
+const MISS_TIERS: MissTier[] = [
+  { days: 1, label: '1 Day 😄', msg: "No big deal. Kong still believes in you.", color: COLORS.green, mood: 'happy' },
+  { days: 2, label: '2 Days 😅', msg: "Kong is side-eyeing you right now...", color: COLORS.blue, mood: 'sad' },
+  { days: 3, label: '3 Days 😤', msg: "The gains are packing their bags.", color: '#F0A020', mood: 'sad' },
+  { days: 4, label: '4 Days 😰', msg: "Your muscles filed a missing persons report.", color: '#E07020', mood: 'angry' },
+  { days: 5, label: '5 Days 😱', msg: "EMERGENCY. Kong has lost faith.", color: COLORS.red, mood: 'angry' },
+  { days: 7, label: '7+ Days 💀', msg: "Even your pre-workout is disappointed.", color: '#808080', mood: 'fat' },
+  { days: 14, label: '2 Weeks 🥵', msg: "Kong put on the freshman 15. For you.", color: '#A04020', mood: 'fat' },
+  { days: 21, label: '3 Weeks 💀', msg: "The pump has left the chat.", color: '#404040', mood: 'defeated' },
 ];
 
 export default function MissScreen() {
@@ -51,13 +61,15 @@ export default function MissScreen() {
     router.replace('/(tabs)/tracker');
   };
 
+  const shouldShake = daysMissed >= 3;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 20 }]}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <Text style={styles.title}>KONG IS WAITING</Text>
         <Text style={styles.subtitle}>You missed your workout</Text>
 
-        <KongMascot size={100} shake />
+        <KongMascot size={140} mood={activeTier.mood} shake={shouldShake} />
 
         <View style={styles.tilesContainer}>
           {MISS_TIERS.map((tier) => {

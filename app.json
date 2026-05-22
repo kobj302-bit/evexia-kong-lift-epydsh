@@ -4,7 +4,7 @@
     "slug": "evexia-kong-lift",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon-tzk.png",
+    "icon": "./assets/images/kong-happy.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/app-icon-tzk.png",
@@ -14,14 +14,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.evexia.konglift",
+      "icon": "./assets/images/kong-happy.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon-tzk.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/kong-happy.png",
+        "backgroundColor": "#1A2814"
       },
       "package": "com.evexia.konglift"
     },
@@ -33,7 +34,8 @@
       "expo-font",
       "expo-router",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "scheme": "evexiakonglift",
     "experiments": {

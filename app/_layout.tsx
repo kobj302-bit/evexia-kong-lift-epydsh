@@ -8,10 +8,24 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { Platform } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/contexts/AppContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { isOnboardingComplete } from "@/utils/onboardingStorage";
+import { requestNotificationPermissions } from "@/utils/notifications";
+import * as Notifications from "expo-notifications";
+
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 const DevErrorBoundary = __DEV__
   ? ErrorBoundary
@@ -79,6 +93,11 @@ export default function RootLayout() {
       setOnboardingComplete(complete);
     });
   }, [pathname]);
+
+  useEffect(() => {
+    console.log('[Layout] Requesting notification permissions on mount');
+    requestNotificationPermissions();
+  }, []);
 
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
