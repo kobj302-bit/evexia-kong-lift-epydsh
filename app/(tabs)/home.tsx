@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -52,6 +52,11 @@ export default function HomeTab() {
     router.push('/paywall' as any);
   };
 
+  const handleGoPremiumHeader = () => {
+    console.log('[Home] Go Premium header button pressed');
+    router.push('/paywall' as any);
+  };
+
   return (
     <Animated.ScrollView
       style={[styles.container, { opacity: fadeAnim }]}
@@ -65,6 +70,11 @@ export default function HomeTab() {
           <Text style={styles.heroTitle}>KONG LIFT</Text>
           <Text style={styles.heroDate}>{today}</Text>
         </View>
+        {!isSubscribed && (
+          <TouchableOpacity style={styles.goPremiumPill} onPress={handleGoPremiumHeader}>
+            <Text style={styles.goPremiumPillText}>👑 Go Premium</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Kong Pro Banner — only shown to non-subscribers */}
@@ -186,7 +196,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 8 },
-  heroText: { gap: 4 },
+  heroText: { flex: 1, gap: 4 },
+  goPremiumPill: {
+    backgroundColor: '#FFD700',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'center',
+  },
+  goPremiumPillText: { fontSize: 12, fontWeight: '800', color: '#0A0A0A' },
   heroTitle: { fontSize: 32, fontWeight: '900', color: COLORS.gold, letterSpacing: 4 },
   heroDate: { fontSize: 13, color: COLORS.textSecondary },
   quoteBox: {

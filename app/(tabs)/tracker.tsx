@@ -4,16 +4,20 @@ import {
   Animated, LayoutAnimation,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { KongMascot } from '@/components/KongMascot';
 import { useApp, SessionSet, WorkoutHistory, PR } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function TrackerTab() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { state, updateState, addXP, showToast, triggerPR } = useApp();
+  const { isSubscribed } = useSubscription();
   const [newExercise, setNewExercise] = useState('');
   const prFlashAnim = useRef(new Animated.Value(0)).current;
 
@@ -130,6 +134,14 @@ export default function TrackerTab() {
       prNames.forEach((name) => triggerPR(name));
     } else {
       showToast(`💪 Workout done! +${xpEarned} XP`, true);
+    }
+
+    // Show interstitial ad for free users
+    if (!isSubscribed) {
+      setTimeout(() => {
+        console.log('[Tracker] Showing post-workout interstitial ad');
+        router.push('/ad-interstitial' as any);
+      }, 1500);
     }
   };
 

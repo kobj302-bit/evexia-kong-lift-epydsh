@@ -193,9 +193,9 @@ export default function PaywallScreen() {
           style={styles.subscribedGradient}
         >
           {/* Decorative floating orbs */}
-          <View style={[styles.floatingOrb, styles.orb1]} />
-          <View style={[styles.floatingOrb, styles.orb2]} />
-          <View style={[styles.floatingOrb, styles.orb3]} />
+          <View style={[styles.floatingOrb, styles.orb1]} pointerEvents="none" />
+          <View style={[styles.floatingOrb, styles.orb2]} pointerEvents="none" />
+          <View style={[styles.floatingOrb, styles.orb3]} pointerEvents="none" />
 
           <SafeAreaView edges={["top", "bottom"]} style={styles.subscribedSafeArea}>
             {/* Close button */}
@@ -266,9 +266,9 @@ export default function PaywallScreen() {
           style={styles.gradientBackground}
         >
           {/* Decorative floating orbs */}
-          <View style={[styles.floatingOrb, styles.orb1]} />
-          <View style={[styles.floatingOrb, styles.orb2]} />
-          <View style={[styles.floatingOrb, styles.orb3]} />
+          <View style={[styles.floatingOrb, styles.orb1]} pointerEvents="none" />
+          <View style={[styles.floatingOrb, styles.orb2]} pointerEvents="none" />
+          <View style={[styles.floatingOrb, styles.orb3]} pointerEvents="none" />
 
           <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
             <View style={styles.centeredContainer}>
@@ -290,9 +290,9 @@ export default function PaywallScreen() {
         style={styles.gradientBackground}
       >
         {/* Decorative floating orbs */}
-        <View style={[styles.floatingOrb, styles.orb1]} />
-        <View style={[styles.floatingOrb, styles.orb2]} />
-        <View style={[styles.floatingOrb, styles.orb3]} />
+        <View style={[styles.floatingOrb, styles.orb1]} pointerEvents="none" />
+        <View style={[styles.floatingOrb, styles.orb2]} pointerEvents="none" />
+        <View style={[styles.floatingOrb, styles.orb3]} pointerEvents="none" />
 
         <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
           {/* X Close Button */}
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 16,
     right: 16,
-    zIndex: 100,
+    zIndex: 999,
     width: 32,
     height: 32,
     borderRadius: 16,

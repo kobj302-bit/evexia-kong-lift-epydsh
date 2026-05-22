@@ -110,6 +110,7 @@ export default function RootLayout() {
                 <Stack.Screen name="splash" options={{ headerShown: false }} />
                 <Stack.Screen name="survey" options={{ headerShown: false }} />
                 <Stack.Screen name="miss" options={{ headerShown: false }} />
+                <Stack.Screen name="ad-interstitial" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="settings"
