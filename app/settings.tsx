@@ -8,14 +8,16 @@ import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetOnboarding } from '@/utils/onboardingStorage';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
-  const { isSubscribed } = useSubscription();
+  const { isSubscribed, restorePurchases } = useSubscription();
   const [apiKey, setApiKey] = useState(state.apiKey);
   const [showKey, setShowKey] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const handleUpgradePro = () => {
     console.log('[Settings] Upgrade to Kong Pro pressed');
@@ -26,6 +28,23 @@ export default function SettingsScreen() {
     console.log('[Settings] API key saved');
     updateState({ apiKey });
     showToast('✅ API Key saved!', true);
+  };
+
+  const handleRestorePurchase = async () => {
+    console.log('[Settings] Restore Purchase pressed');
+    setRestoring(true);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        showToast('✅ Purchase restored!', true);
+      } else {
+        showToast('No previous purchases found.');
+      }
+    } catch {
+      showToast('Restore failed. Try again.');
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const handleReset = () => {
@@ -40,7 +59,48 @@ export default function SettingsScreen() {
           onPress: async () => {
             console.log('[Settings] Reset all data confirmed');
             await AsyncStorage.removeItem('evexia_state_v1');
-            showToast('Data reset. Restart the app.', false);
+            await resetOnboarding();
+            // Reset in-memory state to default (view: splash triggers re-navigation)
+            updateState({
+              view: 'splash',
+              xp: 0,
+              streak: 0,
+              bestStreak: 0,
+              lastWorkout: null,
+              totalWorkouts: 0,
+              activeProg: null,
+              session: [],
+              donedays: {},
+              history: [],
+              prs: [],
+              goals: [],
+              athleteResult: null,
+              dietResult: null,
+              savedDiet: null,
+              nResult: null,
+              grocery: [],
+              myTeam: null,
+              joinedChallenges: [],
+              apiKey: '',
+              disclaimerAck: false,
+              profile: {
+                username: '',
+                avatar: '🦍',
+                age: 25,
+                weight: 180,
+                sex: 'Male',
+                bf: 15,
+                exp: 'Beginner',
+                yrs: 0,
+                goal: 'Build Muscle',
+                equip: 'Full Gym',
+                days: 4,
+                limNotes: '',
+                injuries: [],
+              },
+            });
+            showToast('🗑️ All data cleared.', false);
+            router.replace('/splash');
           },
         },
       ]
@@ -68,6 +128,9 @@ export default function SettingsScreen() {
                 <Text style={styles.proActiveBadgeText}>PRO</Text>
               </View>
             </View>
+            <AnimatedPressable onPress={handleRestorePurchase} style={styles.restoreBtn} disabled={restoring}>
+              <Text style={styles.restoreBtnText}>{restoring ? 'Restoring...' : 'Restore Purchase'}</Text>
+            </AnimatedPressable>
           </View>
         ) : (
           <View style={[styles.card, styles.proCard]}>
@@ -75,6 +138,9 @@ export default function SettingsScreen() {
             <Text style={styles.proCardDesc}>AI coaching, advanced analytics, 2x XP, and elite programs — everything a serious lifter needs.</Text>
             <AnimatedPressable onPress={handleUpgradePro} style={styles.proUpgradeBtn}>
               <Text style={styles.proUpgradeBtnText}>Upgrade to Kong Pro 👑</Text>
+            </AnimatedPressable>
+            <AnimatedPressable onPress={handleRestorePurchase} style={styles.restoreBtn} disabled={restoring}>
+              <Text style={styles.restoreBtnText}>{restoring ? 'Restoring...' : 'Restore Purchase'}</Text>
             </AnimatedPressable>
           </View>
         )}
@@ -98,7 +164,10 @@ export default function SettingsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <AnimatedPressable onPress={() => setShowKey(!showKey)} style={styles.eyeBtn}>
+            <AnimatedPressable onPress={() => {
+              console.log('[Settings] Toggle API key visibility');
+              setShowKey(!showKey);
+            }} style={styles.eyeBtn}>
               <Text style={styles.eyeText}>{showKey ? '🙈' : '👁️'}</Text>
             </AnimatedPressable>
           </View>
@@ -178,10 +247,10 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
         <View style={[styles.card, styles.dangerCard]}>
-          <Text style={styles.dangerTitle}>Reset All Data</Text>
-          <Text style={styles.dangerDesc}>Permanently delete all progress, workouts, and settings</Text>
+          <Text style={styles.dangerTitle}>Clear All Data</Text>
+          <Text style={styles.dangerDesc}>Permanently delete all progress, workouts, and settings. Resets the app to first launch. This supports your right to delete your data.</Text>
           <AnimatedPressable onPress={handleReset} style={styles.dangerBtn}>
-            <Text style={styles.dangerBtnText}>Reset Everything</Text>
+            <Text style={styles.dangerBtnText}>Clear All Data</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -295,7 +364,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
   dangerCard: { borderColor: `${COLORS.red}40` },
   dangerTitle: { fontSize: 15, fontWeight: '700', color: COLORS.red },
-  dangerDesc: { fontSize: 13, color: COLORS.textSecondary },
+  dangerDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
   dangerBtn: {
     backgroundColor: `${COLORS.red}20`,
     borderRadius: 10,
@@ -305,6 +374,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.red,
   },
   dangerBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.red },
+  restoreBtn: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  restoreBtnText: { fontSize: 13, color: COLORS.textSecondary },
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   legalLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   legalDivider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: -16 },

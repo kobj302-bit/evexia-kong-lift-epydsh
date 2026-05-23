@@ -1,146 +1,224 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
-import { KongMascot, KongMood } from '@/components/KongMascot';
+import { KongMascot } from '@/components/KongMascot';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
+import { scheduleMissNotifications } from '@/utils/notifications';
 
-interface MissTier {
-  days: number;
-  label: string;
-  msg: string;
-  color: string;
-  mood: KongMood;
+function getDaysMissed(lastWorkout: string | null): number {
+  if (!lastWorkout) return 0;
+  const last = new Date(lastWorkout);
+  const now = new Date();
+  const diffMs = now.getTime() - last.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
-const MISS_TIERS: MissTier[] = [
-  { days: 1, label: '1 Day 😄', msg: "No big deal. Kong still believes in you.", color: COLORS.green, mood: 'happy' },
-  { days: 2, label: '2 Days 😅', msg: "Kong is side-eyeing you right now...", color: COLORS.blue, mood: 'sad' },
-  { days: 3, label: '3 Days 😤', msg: "The gains are packing their bags.", color: '#F0A020', mood: 'sad' },
-  { days: 4, label: '4 Days 😰', msg: "Your muscles filed a missing persons report.", color: '#E07020', mood: 'angry' },
-  { days: 5, label: '5 Days 😱', msg: "EMERGENCY. Kong has lost faith.", color: COLORS.red, mood: 'angry' },
-  { days: 7, label: '7+ Days 💀', msg: "Even your pre-workout is disappointed.", color: '#808080', mood: 'fat' },
-  { days: 14, label: '2 Weeks 🥵', msg: "Kong put on the freshman 15. For you.", color: '#A04020', mood: 'fat' },
-  { days: 21, label: '3 Weeks 💀', msg: "The pump has left the chat.", color: '#404040', mood: 'defeated' },
-];
+function getMoodData(days: number): { emoji: string; title: string; subtitle: string; color: string } {
+  if (days <= 1) return {
+    emoji: '😏',
+    title: 'Kong is watching...',
+    subtitle: "One day off. No biggie. Don't make it two.",
+    color: COLORS.gold,
+  };
+  if (days <= 2) return {
+    emoji: '😅',
+    title: "Kong's side-eye intensifies",
+    subtitle: "2 days. Your gains are texting their lawyer.",
+    color: COLORS.gold,
+  };
+  if (days <= 3) return {
+    emoji: '😤',
+    title: 'The gains are packing',
+    subtitle: '3 days. Time to come back. Kong believes in you.',
+    color: '#FF9500',
+  };
+  if (days <= 5) return {
+    emoji: '😱',
+    title: 'EMERGENCY',
+    subtitle: '5 days. Your muscles filed a missing persons report.',
+    color: '#FF6B00',
+  };
+  if (days <= 7) return {
+    emoji: '💀',
+    title: 'Pre-workout disappointed',
+    subtitle: 'A whole week. Even your shaker bottle is sad.',
+    color: COLORS.red,
+  };
+  if (days <= 10) return {
+    emoji: '🥵',
+    title: 'Freshman 15 incoming',
+    subtitle: '10 days off. Kong put on weight FOR you.',
+    color: COLORS.red,
+  };
+  if (days <= 14) return {
+    emoji: '😭',
+    title: 'Kong is begging',
+    subtitle: "2 weeks. One workout. That's all he's asking.",
+    color: COLORS.red,
+  };
+  return {
+    emoji: '☠️',
+    title: 'The pump has left the chat',
+    subtitle: `${days} days. Kong is in mourning. Bring him back.`,
+    color: COLORS.red,
+  };
+}
 
 export default function MissScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state, updateState, addXP, showToast, triggerPR } = useApp();
+  const router = useRouter();
+  const { state, updateState, addXP, showToast } = useApp();
+
+  const days = getDaysMissed(state.lastWorkout);
+  const mood = getMoodData(days);
+
+  const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const daysMissed = (() => {
-    if (!state.lastWorkout) return 7;
-    const last = new Date(state.lastWorkout);
-    const now = new Date();
-    return Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-  })();
-
-  const activeTier = MISS_TIERS.reduce((acc, tier) => {
-    if (daysMissed >= tier.days) return tier;
-    return acc;
-  }, MISS_TIERS[0]);
-
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    console.log('[Miss] Screen shown — days missed:', days);
+    // Fade in
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+
+    // Shake animation for Kong
+    const shake = Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]);
+
+    const timer = setTimeout(() => shake.start(), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleImBack = () => {
-    console.log('[Miss] I\'m Back pressed — awarding comeback XP and PR');
+    console.log('[Miss] "I\'m Back!" pressed — days missed:', days);
     const now = new Date();
-    addXP(50);
-    triggerPR('Comeback');
+    const xpBonus = Math.max(50, 200 - days * 10);
+    addXP(xpBonus);
+
+    // Add comeback PR
+    const newPR = { lift: 'Comeback', weight: days, date: now.toISOString() };
+    const updatedPRs = [...state.prs, newPR];
+
     updateState({
-      streak: 1,
-      prs: [...state.prs, { lift: 'Comeback', weight: 1, date: now.toISOString() }],
+      lastWorkout: now.toISOString(),
+      prs: updatedPRs,
     });
-    showToast('🔥 COMEBACK! +50 XP 🏆 Comeback PR!', true);
+
+    // Reschedule miss notifications from today
+    scheduleMissNotifications(now.toISOString());
+
+    showToast(`💪 Welcome back! +${xpBonus} XP`, true);
+    console.log('[Miss] Navigating to tracker');
     router.replace('/(tabs)/tracker');
   };
 
-  const shouldShake = daysMissed >= 3;
+  const handleSkip = () => {
+    console.log('[Miss] Skip pressed — navigating to home');
+    router.replace('/(tabs)/home');
+  };
+
+  const daysText = days === 1 ? '1 day' : `${days} days`;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom + 20 }]}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <Text style={styles.title}>KONG IS WAITING</Text>
-        <Text style={styles.subtitle}>You missed your workout</Text>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <View style={[styles.content, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }]}>
+        {/* Kong Mascot */}
+        <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+          <KongMascot size={120} />
+        </Animated.View>
 
-        <KongMascot size={140} mood={activeTier.mood} shake={shouldShake} />
+        {/* Mood Emoji */}
+        <Text style={styles.moodEmoji}>{mood.emoji}</Text>
 
-        <View style={styles.tilesContainer}>
-          {MISS_TIERS.map((tier) => {
-            const isActive = tier.days === activeTier.days;
-            return (
-              <View
-                key={tier.days}
-                style={[
-                  styles.tile,
-                  isActive && { borderColor: tier.color, backgroundColor: `${tier.color}20` },
-                ]}
-              >
-                <Text style={[styles.tileLabel, isActive && { color: tier.color }]}>{tier.label}</Text>
-                {isActive && <Text style={styles.tileMsg}>{tier.msg}</Text>}
-              </View>
-            );
-          })}
+        {/* Days Badge */}
+        <View style={[styles.daysBadge, { backgroundColor: `${mood.color}20`, borderColor: mood.color }]}>
+          <Text style={[styles.daysText, { color: mood.color }]}>{daysText} missed</Text>
         </View>
 
-        <View style={[styles.activeBox, { borderColor: activeTier.color, backgroundColor: `${activeTier.color}15` }]}>
-          <Text style={[styles.activeLabel, { color: activeTier.color }]}>{activeTier.label}</Text>
-          <Text style={styles.activeMsg}>{activeTier.msg}</Text>
-          <Text style={styles.daysText}>{daysMissed} day{daysMissed !== 1 ? 's' : ''} missed</Text>
+        {/* Title */}
+        <Text style={styles.title}>{mood.title}</Text>
+        <Text style={styles.subtitle}>{mood.subtitle}</Text>
+
+        {/* Motivational Quote */}
+        <View style={styles.quoteBox}>
+          <Text style={styles.quoteText}>
+            "The iron never lies to you. You can walk outside and listen to all kinds of talk, get told that you're a god or a total bastard. The iron will always kick you the real deal."
+          </Text>
+          <Text style={styles.quoteAuthor}>— Henry Rollins</Text>
         </View>
 
-        <AnimatedPressable onPress={handleImBack} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>I'M BACK 🔥</Text>
-        </AnimatedPressable>
-
-        <Text style={styles.bonusText}>+50 COMEBACK XP 🏆 Comeback PR</Text>
-      </Animated.View>
-    </View>
+        {/* Buttons */}
+        <View style={styles.buttons}>
+          <AnimatedPressable onPress={handleImBack} style={[styles.backBtn, { backgroundColor: mood.color }]}>
+            <Text style={styles.backBtnText}>💪 I'm Back! Let's Go!</Text>
+          </AnimatedPressable>
+          <AnimatedPressable onPress={handleSkip} style={styles.skipBtn}>
+            <Text style={styles.skipBtnText}>Maybe later...</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' },
-  content: { alignItems: 'center', paddingHorizontal: 24, gap: 20, width: '100%' },
-  title: { fontSize: 28, fontWeight: '900', color: COLORS.gold, letterSpacing: 3 },
-  subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: -12 },
-  tilesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' },
-  tile: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  moodEmoji: { fontSize: 64 },
+  daysBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1.5,
+  },
+  daysText: { fontSize: 14, fontWeight: '800', letterSpacing: 0.5 },
+  title: { fontSize: 26, fontWeight: '900', color: COLORS.text, textAlign: 'center', letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22 },
+  quoteBox: {
     backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
-    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
   },
-  tileLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
-  tileMsg: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
-  activeBox: {
-    width: '100%',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    alignItems: 'center',
-    gap: 6,
-  },
-  activeLabel: { fontSize: 24, fontWeight: '900' },
-  activeMsg: { fontSize: 16, color: COLORS.text, fontWeight: '600', textAlign: 'center' },
-  daysText: { fontSize: 13, color: COLORS.textSecondary },
+  quoteText: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20, fontStyle: 'italic', textAlign: 'center' },
+  quoteAuthor: { fontSize: 12, color: COLORS.textTertiary, textAlign: 'right', fontWeight: '700' },
+  buttons: { width: '100%', gap: 12, marginTop: 8 },
   backBtn: {
-    backgroundColor: COLORS.gold,
     borderRadius: 14,
-    paddingVertical: 18,
-    paddingHorizontal: 48,
-    width: '100%',
+    paddingVertical: 17,
     alignItems: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0 4px 10px rgba(0,0,0,0.3)' },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      },
+    }),
+    elevation: 6,
   },
-  backBtnText: { fontSize: 20, fontWeight: '900', color: '#0A0A0A', letterSpacing: 2 },
-  bonusText: { fontSize: 13, color: COLORS.gold, fontWeight: '700', letterSpacing: 1 },
+  backBtnText: { fontSize: 17, fontWeight: '900', color: '#0A0A0A' },
+  skipBtn: { paddingVertical: 12, alignItems: 'center' },
+  skipBtnText: { fontSize: 14, color: COLORS.textTertiary },
 });

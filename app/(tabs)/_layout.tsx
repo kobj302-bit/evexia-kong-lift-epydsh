@@ -2,11 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import FloatingTabBar from '@/components/FloatingTabBar';
-import { useApp, getRank } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import { Toast } from '@/components/Toast';
 import { COLORS } from '@/constants/data';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
-import { useSubscriptionGuard } from "@/hooks/useSubscriptionGuard";
 
 const TABS = [
   { name: 'home', route: '/(tabs)/home' as const, icon: 'home' as const, label: 'Home' },
@@ -58,8 +57,6 @@ function AppHeader() {
 }
 
 export default function TabLayout() {
-  useSubscriptionGuard();
-
   const { toast } = useApp();
 
   const screenWidth = 420;
