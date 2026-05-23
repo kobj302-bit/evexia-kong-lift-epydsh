@@ -53,10 +53,27 @@ export function ProGate({ feature, icon, description, showDailyPass, onDailyPass
     onDailyPass?.();
   };
 
+  const handleClose = () => {
+    console.log('[ProGate] Close X pressed — feature:', feature);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/home');
+    }
+  };
+
   const titleText = `${feature} is Kong Pro`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {/* X Close Button */}
+      <TouchableOpacity
+        style={[styles.closeButton, { top: insets.top + 12 }]}
+        onPress={handleClose}
+      >
+        <Text style={styles.closeButtonText}>✕</Text>
+      </TouchableOpacity>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -247,5 +264,22 @@ const styles = StyleSheet.create({
   restoreBtnText: {
     fontSize: 14,
     color: '#888888',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 999,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+    lineHeight: 16,
   },
 });
