@@ -140,7 +140,7 @@ export default function AthleteTab() {
         };
       }
       const response = await fetch(
-        'https://8q5rrdants8vpcez6kmwchyqxq4wgfc5.app.specular.dev/api/ai/athlete',
+        'https://tc9zmyamhv4vudbhz49epzeyr82j76wn.app.specular.dev/api/ai/athlete',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
