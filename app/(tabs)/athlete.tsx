@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TextInput,
   Animated,
+  Alert,
   Platform,
   Switch,
   Modal,
@@ -20,6 +21,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ProGate } from '@/components/ProGate';
 import { COLORS } from '@/constants/data';
+import { resetOnboarding } from '@/utils/onboardingStorage';
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const PHASES = ['Bulking', 'Cutting', 'Maintenance', 'Setting the Stage', 'Building Muscle'];
@@ -118,6 +120,26 @@ export default function AthleteTab() {
   }, [loading]);
 
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  const handleRetakeSurvey = () => {
+    console.log('[Athlete] Update my survey pressed');
+    Alert.alert(
+      'Retake Survey?',
+      'Your workout history, PRs, and saved routines will be kept. Only your profile answers will be reset.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Retake',
+          style: 'default',
+          onPress: async () => {
+            console.log('[Athlete] Retake Survey confirmed — navigating to /survey');
+            await resetOnboarding();
+            router.replace('/survey');
+          },
+        },
+      ]
+    );
+  };
 
   const handleTemplatePress = (t: Template) => {
     console.log('[Athlete] Template selected:', t.label);
@@ -424,6 +446,9 @@ export default function AthleteTab() {
         <Text style={styles.surveyToggleHint}>
           Kong will adjust exercises to avoid your injuries, equipment, and experience level. Turn off only if you know what you're doing.
         </Text>
+        <AnimatedPressable onPress={handleRetakeSurvey} style={styles.updateSurveyBtn}>
+          <Text style={styles.updateSurveyText}>Update my survey →</Text>
+        </AnimatedPressable>
       </View>
 
       {/* Error */}
@@ -927,6 +952,8 @@ const styles = StyleSheet.create({
   surveyToggleInfo: { flex: 1, marginRight: 12 },
   surveyToggleLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
   surveyToggleHint: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
+  updateSurveyBtn: { alignSelf: 'flex-start' },
+  updateSurveyText: { fontSize: 13, fontWeight: '700', color: COLORS.gold },
 
   errorBox: {
     backgroundColor: `${COLORS.red}15`,

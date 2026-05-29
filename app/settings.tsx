@@ -50,6 +50,26 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleRetakeSurvey = () => {
+    console.log('[Settings] Retake Survey pressed');
+    Alert.alert(
+      'Retake Survey?',
+      'Your workout history, PRs, and saved routines will be kept. Only your profile answers will be reset.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Retake',
+          style: 'default',
+          onPress: async () => {
+            console.log('[Settings] Retake Survey confirmed — navigating to /survey');
+            await resetOnboarding();
+            router.replace('/survey');
+          },
+        },
+      ]
+    );
+  };
+
   const handleReset = () => {
     Alert.alert(
       '⚠️ Reset All Data',
@@ -249,6 +269,14 @@ export default function SettingsScreen() {
       {/* Danger Zone */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
+        <View style={styles.card}>
+          <Text style={styles.retakeSurveyTitle}>📝 Retake Survey</Text>
+          <Text style={styles.retakeSurveyDesc}>Update your goals, equipment, and injuries</Text>
+          <AnimatedPressable onPress={handleRetakeSurvey} style={styles.retakeSurveyBtn}>
+            <Text style={styles.retakeSurveyBtnText}>Retake Survey</Text>
+          </AnimatedPressable>
+        </View>
+        <View style={styles.dangerDivider} />
         <View style={[styles.card, styles.dangerCard]}>
           <Text style={styles.dangerTitle}>Clear All Data</Text>
           <Text style={styles.dangerDesc}>Permanently delete all progress, workouts, and settings. Resets the app to first launch. This supports your right to delete your data.</Text>
@@ -365,6 +393,18 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 24, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  retakeSurveyTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  retakeSurveyDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
+  retakeSurveyBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  retakeSurveyBtnText: { fontSize: 14, fontWeight: '800', color: COLORS.gold },
+  dangerDivider: { height: 1, backgroundColor: COLORS.border },
   dangerCard: { borderColor: `${COLORS.red}40` },
   dangerTitle: { fontSize: 15, fontWeight: '700', color: COLORS.red },
   dangerDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },

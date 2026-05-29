@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView, StyleSheet,
   Animated, Switch, TouchableOpacity, useWindowDimensions,
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, AVATARS } from '@/constants/data';
+import { isOnboardingComplete } from '@/utils/onboardingStorage';
 
 const TOTAL_STEPS = 7;
 
@@ -27,24 +28,35 @@ const SEX_OPTIONS = ['Male', 'Female', 'Other'];
 export default function SurveyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { updateState } = useApp();
+  const { state, updateState } = useApp();
   const { width } = useWindowDimensions();
 
+  const [isEditing, setIsEditing] = useState(false);
   const [step, setStep] = useState(1);
-  const [age, setAge] = useState('25');
-  const [weight, setWeight] = useState('180');
-  const [sex, setSex] = useState('Male');
-  const [exp, setExp] = useState('Beginner');
-  const [yrs, setYrs] = useState('0');
-  const [goal, setGoal] = useState('Build Muscle');
-  const [injuries, setInjuries] = useState<string[]>(['None']);
-  const [limNotes, setLimNotes] = useState('');
-  const [equip, setEquip] = useState('Full Gym');
-  const [days, setDays] = useState(4);
-  const [username, setUsername] = useState('');
-  const [avatar, setAvatar] = useState('🦍');
+  const [age, setAge] = useState(state.profile?.age ? String(state.profile.age) : '25');
+  const [weight, setWeight] = useState(state.profile?.weight ? String(state.profile.weight) : '180');
+  const [sex, setSex] = useState(state.profile?.sex || 'Male');
+  const [exp, setExp] = useState(state.profile?.exp || 'Beginner');
+  const [yrs, setYrs] = useState(state.profile?.yrs != null ? String(state.profile.yrs) : '0');
+  const [goal, setGoal] = useState(state.profile?.goal || 'Build Muscle');
+  const [injuries, setInjuries] = useState<string[]>(state.profile?.injuries?.length ? state.profile.injuries : ['None']);
+  const [limNotes, setLimNotes] = useState(state.profile?.limNotes || '');
+  const [equip, setEquip] = useState(state.profile?.equip || 'Full Gym');
+  const [days, setDays] = useState(state.profile?.days || 4);
+  const [username, setUsername] = useState(state.profile?.username || '');
+  const [avatar, setAvatar] = useState(state.profile?.avatar || '🦍');
   const [disclaimer, setDisclaimer] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
+
+  useEffect(() => {
+    if (state.profile?.age) {
+      setIsEditing(true);
+      return;
+    }
+    isOnboardingComplete().then((complete) => {
+      if (complete) setIsEditing(true);
+    });
+  }, []);
 
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
 
@@ -150,6 +162,26 @@ export default function SurveyScreen() {
       <View style={styles.progressTrack}>
         <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
       </View>
+
+      {/* Editing Banner */}
+      {isEditing && (
+        <View style={styles.editingBanner}>
+          <Text style={styles.editingBannerText}>Editing your profile — your previous answers are pre-filled</Text>
+          <TouchableOpacity
+            onPress={() => {
+              console.log('[Survey] Cancel editing pressed');
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/home');
+              }
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.editingBannerCancel}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -614,6 +646,19 @@ const styles = StyleSheet.create({
   expertSkipTitle: { fontSize: 15, fontWeight: '700', color: COLORS.gold },
   expertSkipDesc: { fontSize: 12, color: COLORS.textSecondary },
   expertSkipArrow: { fontSize: 18, color: COLORS.gold, fontWeight: '700' },
+  editingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: `${COLORS.gold}18`,
+    borderBottomWidth: 1,
+    borderBottomColor: `${COLORS.gold}30`,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    gap: 12,
+  },
+  editingBannerText: { flex: 1, fontSize: 12, color: COLORS.gold, lineHeight: 18, fontWeight: '600' },
+  editingBannerCancel: { fontSize: 13, fontWeight: '700', color: COLORS.gold, textDecorationLine: 'underline' },
   navButtons: {
     flexDirection: 'row',
     gap: 12,
