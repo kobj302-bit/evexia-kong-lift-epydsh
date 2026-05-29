@@ -51,6 +51,24 @@ describe("API Integration Tests", () => {
         expect(data.injuryModifications).toBeDefined();
       });
 
+      test("Generate athlete program with training goal option", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Build muscle mass",
+            level: "Beginner",
+            phase: "Bulking",
+            trainingGoal: "Muscle Building",
+            apiKey: "test-key",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.phase).toBeDefined();
+      });
+
       test("Return 400 when missing required description", async () => {
         const res = await api("/api/ai/athlete", {
           method: "POST",
