@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions } from 'react-native';
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,8 +16,6 @@ export default function SettingsScreen() {
   const { state, updateState, showToast } = useApp();
   const { isSubscribed, restorePurchases } = useSubscription();
   const { width } = useWindowDimensions();
-  const [apiKey, setApiKey] = useState(state.apiKey);
-  const [showKey, setShowKey] = useState(false);
   const [restoring, setRestoring] = useState(false);
   // On narrow screens, stat cards go 1-column
   const statMinWidth = width < 360 ? '100%' : '45%';
@@ -25,12 +23,6 @@ export default function SettingsScreen() {
   const handleUpgradePro = () => {
     console.log('[Settings] Upgrade to Kong Pro pressed');
     router.push('/paywall' as any);
-  };
-
-  const handleSaveKey = () => {
-    console.log('[Settings] API key saved');
-    updateState({ apiKey });
-    showToast('✅ API Key saved!', true);
   };
 
   const handleRestorePurchase = async () => {
@@ -104,7 +96,6 @@ export default function SettingsScreen() {
               grocery: [],
               myTeam: null,
               joinedChallenges: [],
-              apiKey: '',
               disclaimerAck: false,
               profile: {
                 username: '',
@@ -167,48 +158,6 @@ export default function SettingsScreen() {
             </AnimatedPressable>
           </View>
         )}
-      </View>
-
-      {/* AI Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🤖 AI Configuration</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>Anthropic API Key</Text>
-          <Text style={styles.hint}>Required for AI-powered routines, meal plans, and nutrition</Text>
-          <View style={styles.keyRow}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              value={apiKey}
-              onChangeText={setApiKey}
-              secureTextEntry={!showKey}
-              placeholderTextColor={COLORS.textTertiary}
-              placeholder="sk-ant-..."
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <AnimatedPressable onPress={() => {
-              console.log('[Settings] Toggle API key visibility');
-              setShowKey(!showKey);
-            }} style={styles.eyeBtn}>
-              <Text style={styles.eyeText}>{showKey ? '🙈' : '👁️'}</Text>
-            </AnimatedPressable>
-          </View>
-          <AnimatedPressable onPress={handleSaveKey} style={styles.saveBtn}>
-            <Text style={styles.saveBtnText}>Save API Key</Text>
-          </AnimatedPressable>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>Model</Text>
-          <View style={styles.modelRow}>
-            <Text style={styles.modelName}>claude-sonnet-4-20250514</Text>
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>ACTIVE</Text>
-            </View>
-          </View>
-          <Text style={styles.hint}>Anthropic's latest Claude Sonnet model</Text>
-        </View>
       </View>
 
       {/* Profile Section */}
@@ -338,40 +287,6 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   hint: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
-  keyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: {
-    backgroundColor: COLORS.surface2,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    fontFamily: 'SpaceMono',
-  },
-  eyeBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface2,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  eyeText: { fontSize: 18 },
-  saveBtn: {
-    backgroundColor: COLORS.gold,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  saveBtnText: { fontSize: 14, fontWeight: '800', color: '#0A0A0A' },
-  modelRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  modelName: { fontSize: 14, color: COLORS.text, fontFamily: 'SpaceMono', flex: 1 },
-  activeBadge: { backgroundColor: `${COLORS.green}20`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: COLORS.green },
-  activeBadgeText: { fontSize: 10, fontWeight: '800', color: COLORS.green, letterSpacing: 1 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   profileAvatar: { fontSize: 40 },
   profileInfo: { gap: 2 },

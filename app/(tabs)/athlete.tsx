@@ -150,10 +150,6 @@ export default function AthleteTab() {
   };
 
   const handleGenerate = async () => {
-    if (!state.apiKey) {
-      setError('No API key set. Go to Settings ⚙️ to add your Anthropic API key.');
-      return;
-    }
     if (!description.trim()) {
       showToast('Describe your ideal routine first!');
       return;
@@ -169,7 +165,6 @@ export default function AthleteTab() {
         phase,
         trainingGoal,
         useSurveyData,
-        apiKey: state.apiKey,
       };
       if (athleteTemplate) body.athleteTemplate = athleteTemplate;
       if (sport) body.sport = sport;
@@ -202,7 +197,7 @@ export default function AthleteTab() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to generate routine.';
       console.error('[Athlete] Error:', msg);
-      setError(msg || 'Failed to generate routine. Check your API key.');
+      setError(msg || 'Failed to generate routine. Please try again.');
     } finally {
       setLoading(false);
     }

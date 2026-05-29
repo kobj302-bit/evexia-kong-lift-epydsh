@@ -42,10 +42,6 @@ export default function DietTab() {
   if (!isSubscribed) return <ProGate feature="Diet" icon="🥗" description="AI-powered meal plans tailored to your goals" />;
 
   const handleGenerate = async () => {
-    if (!state.apiKey) {
-      setError('No API key set. Go to Settings ⚙️ to add your Anthropic API key.');
-      return;
-    }
     console.log('[Diet] Generate meal plan — goal:', goal, 'dietType:', dietType);
     setLoading(true);
     setError('');
@@ -54,7 +50,6 @@ export default function DietTab() {
         description: description || `${goal} diet, ${dietType} style`,
         goal,
         dietType,
-        apiKey: state.apiKey,
       };
       if (!state.expertMode) {
         body.profile = {
@@ -81,7 +76,7 @@ export default function DietTab() {
       updateState({ dietResult: data });
     } catch (e: any) {
       console.error('[Diet] Error:', e.message);
-      setError(e.message || 'Failed to generate meal plan. Check your API key.');
+      setError(e.message || 'Failed to generate meal plan. Please try again.');
     } finally {
       setLoading(false);
     }

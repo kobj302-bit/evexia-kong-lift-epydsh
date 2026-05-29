@@ -99,7 +99,6 @@ export interface AppState {
   teams: Team[];
   joinedChallenges: string[];
   battles: Battle[];
-  apiKey: string;
   disclaimerAck: boolean;
   kongIdx: number;
 }
@@ -151,7 +150,6 @@ const DEFAULT_STATE: AppState = {
     { id: 'b2', team1: 'Silent Grind', team2: 'Cardio Club', score1: 2100, score2: 2900 },
     { id: 'b3', team1: 'Iron Brotherhood', team2: 'Silent Grind', score1: 5100, score2: 1800 },
   ],
-  apiKey: '',
   disclaimerAck: false,
   kongIdx: 0,
 };

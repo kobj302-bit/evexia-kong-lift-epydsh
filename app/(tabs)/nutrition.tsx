@@ -83,10 +83,6 @@ export default function NutritionTab() {
   };
 
   const handleCalculate = async () => {
-    if (!state.apiKey) {
-      setError('No API key set. Go to Settings ⚙️ to add your Anthropic API key.');
-      return;
-    }
     console.log('[Nutrition] Calculate pressed — weight:', weight, 'height:', height, 'goal:', goal, 'activity:', activity, 'phase:', phase, 'athleteMatch:', athleteMatch, 'sport:', sport);
     setLoading(true);
     setError('');
@@ -102,7 +98,6 @@ export default function NutritionTab() {
         dietType,
         includeGrocery,
         phase,
-        apiKey: state.apiKey,
       };
       if (athleteMatch) body.athleteMatch = athleteMatch;
       if (sport) body.sport = sport;
@@ -126,7 +121,7 @@ export default function NutritionTab() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to calculate.';
       console.error('[Nutrition] Error:', msg);
-      setError(msg || 'Failed to calculate. Check your API key.');
+      setError(msg || 'Failed to calculate. Please try again.');
     } finally {
       setLoading(false);
     }
