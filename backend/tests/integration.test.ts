@@ -12,7 +12,6 @@ describe("API Integration Tests", () => {
             description: "Train like a professional soccer player",
             level: "Intermediate",
             phase: "Building Muscle",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
@@ -41,7 +40,6 @@ describe("API Integration Tests", () => {
               days: 5,
               injuries: ["knee soreness"],
             },
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
@@ -60,13 +58,28 @@ describe("API Integration Tests", () => {
             level: "Beginner",
             phase: "Bulking",
             trainingGoal: "Muscle Building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
         const data = await res.json();
         expect(data.name).toBeDefined();
         expect(data.phase).toBeDefined();
+      });
+
+      test("Generate athlete program with useSurveyData option", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Strength training program",
+            level: "Intermediate",
+            phase: "Cutting",
+            useSurveyData: false,
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
       });
 
       test("Return 400 when missing required description", async () => {
@@ -76,7 +89,6 @@ describe("API Integration Tests", () => {
           body: JSON.stringify({
             level: "Beginner",
             phase: "Bulking",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -89,7 +101,6 @@ describe("API Integration Tests", () => {
           body: JSON.stringify({
             description: "Build muscle",
             phase: "Bulking",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -102,7 +113,6 @@ describe("API Integration Tests", () => {
           body: JSON.stringify({
             description: "Build muscle",
             level: "Beginner",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -121,7 +131,6 @@ describe("API Integration Tests", () => {
             fat: 80,
             meals: 4,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
@@ -145,13 +154,31 @@ describe("API Integration Tests", () => {
             athleteMatch: "Arnold Schwarzenegger",
             phase: "Bulking",
             sport: "Bodybuilding",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
         const data = await res.json();
         expect(data.meals).toBeDefined();
         expect(data.athleteInspiration).toBe("Arnold Schwarzenegger");
+      });
+
+      test("Generate meal plan with restrictions", async () => {
+        const res = await api("/api/ai/diet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            calories: 2000,
+            protein: 120,
+            carbs: 250,
+            fat: 65,
+            meals: 3,
+            goal: "weight loss",
+            restrictions: "gluten-free",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.meals).toBeDefined();
       });
 
       test("Return 400 when missing required calories", async () => {
@@ -164,7 +191,6 @@ describe("API Integration Tests", () => {
             fat: 80,
             meals: 4,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -180,7 +206,6 @@ describe("API Integration Tests", () => {
             fat: 80,
             meals: 4,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -196,7 +221,6 @@ describe("API Integration Tests", () => {
             fat: 80,
             meals: 4,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -212,7 +236,6 @@ describe("API Integration Tests", () => {
             carbs: 300,
             meals: 4,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -228,7 +251,6 @@ describe("API Integration Tests", () => {
             carbs: 300,
             fat: 80,
             goal: "muscle building",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -244,7 +266,6 @@ describe("API Integration Tests", () => {
             carbs: 300,
             fat: 80,
             meals: 4,
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -263,7 +284,6 @@ describe("API Integration Tests", () => {
             sex: "male",
             activityLevel: "moderate",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
@@ -291,7 +311,6 @@ describe("API Integration Tests", () => {
             sport: "Swimming",
             phase: "Building Muscle",
             trainingDays: 6,
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 200);
@@ -301,6 +320,27 @@ describe("API Integration Tests", () => {
         expect(data.weeklyPlan).toBeDefined();
         expect(data.weeklyPlan.trainingDayCalories).toBeDefined();
         expect(data.weeklyPlan.restDayCalories).toBeDefined();
+      });
+
+      test("Calculate nutrition with optional parameters", async () => {
+        const res = await api("/api/ai/nutrition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            age: 28,
+            weight: 82,
+            height: 178,
+            sex: "male",
+            activityLevel: "very_active",
+            goal: "cut",
+            phase: "Cutting",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.bmr).toBeDefined();
+        expect(data.fiber).toBeDefined();
+        expect(data.water).toBeDefined();
       });
 
       test("Return 400 when missing required age", async () => {
@@ -313,7 +353,6 @@ describe("API Integration Tests", () => {
             sex: "male",
             activityLevel: "moderate",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -329,7 +368,6 @@ describe("API Integration Tests", () => {
             sex: "male",
             activityLevel: "moderate",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -345,7 +383,6 @@ describe("API Integration Tests", () => {
             sex: "male",
             activityLevel: "moderate",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -361,7 +398,6 @@ describe("API Integration Tests", () => {
             height: 180,
             activityLevel: "moderate",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -377,7 +413,6 @@ describe("API Integration Tests", () => {
             height: 180,
             sex: "male",
             goal: "maintain",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);
@@ -393,7 +428,6 @@ describe("API Integration Tests", () => {
             height: 180,
             sex: "male",
             activityLevel: "moderate",
-            apiKey: "test-key",
           }),
         });
         await expectStatus(res, 400);

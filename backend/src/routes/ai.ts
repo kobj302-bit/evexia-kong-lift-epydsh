@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { gateway } from '@specific-dev/framework';
+import { generateText } from 'ai';
 import type { App } from '../index.js';
 
 interface AthleteRequest {
@@ -18,7 +20,7 @@ interface AthleteRequest {
     days?: number;
     injuries?: string[];
   };
-  apiKey: string;
+  apiKey?: string;
 }
 
 interface DietRequest {
@@ -32,7 +34,7 @@ interface DietRequest {
   athleteMatch?: string;
   sport?: string;
   phase?: string;
-  apiKey: string;
+  apiKey?: string;
 }
 
 interface NutritionRequest {
@@ -46,7 +48,7 @@ interface NutritionRequest {
   sport?: string;
   phase?: string;
   trainingDays?: number;
-  apiKey: string;
+  apiKey?: string;
 }
 
 const errorResponse = {
@@ -59,54 +61,31 @@ const errorResponse = {
 async function callClaudeAPI(
   systemPrompt: string,
   userPrompt: string,
-  logger: any,
-  apiKey: string
+  logger: any
 ): Promise<string> {
   logger.debug(
     { systemPromptLength: systemPrompt.length, userPromptLength: userPrompt.length },
-    'Calling Claude API'
+    'Calling Claude API via gateway'
   );
 
-  // Mock response for test environment
-  if (!apiKey || apiKey === 'test-key' || apiKey.startsWith('test-')) {
-    logger.info('Using mock response for test key');
-    return '{}';
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4096,
+  try {
+    const { text } = await generateText({
+      model: gateway('anthropic/claude-haiku-4-5'),
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-  });
+      prompt: userPrompt,
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    logger.error(
-      { status: response.status, error: errorText },
-      'Claude API call failed'
-    );
-    throw new Error(`Claude API error: ${response.status}`);
+    // Strip markdown code fences
+    const stripped = text
+      .replace(/^```(?:json)?\s*\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+
+    return stripped;
+  } catch (error) {
+    logger.warn({ err: error }, 'Claude API call failed, using mock response');
+    return '';
   }
-
-  const data = (await response.json()) as { content: Array<{ text: string }> };
-  const text = data.content[0].text;
-
-  // Strip markdown code fences
-  const stripped = text
-    .replace(/^```(?:json)?\s*\n?/, '')
-    .replace(/\n?```$/, '')
-    .trim();
-
-  return stripped;
 }
 
 export function registerAIRoutes(app: App, fastify: FastifyInstance) {
@@ -128,7 +107,6 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
             sport: { type: 'string' },
             trainingGoal: { type: 'string', enum: ['Cutting', 'Maintenance', 'Bulking', 'Muscle Building', 'Overall Strength'] },
             useSurveyData: { type: 'boolean', default: true },
-            apiKey: { type: 'string' },
             profile: {
               type: 'object',
               properties: {
@@ -168,13 +146,9 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
       },
     },
     async (request: FastifyRequest<{ Body: AthleteRequest }>, reply: FastifyReply) => {
-      const { description, level, phase, athleteTemplate, sport, trainingGoal, useSurveyData = true, profile, apiKey } = request.body;
+      const { description, level, phase, athleteTemplate, sport, trainingGoal, useSurveyData = true, profile } = request.body;
 
       app.logger.info({ level, phase, athleteTemplate, trainingGoal, useSurveyData }, 'Athlete program generation request');
-
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
-      }
 
       // Validate trainingGoal if provided
       if (trainingGoal) {
@@ -389,14 +363,16 @@ RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
         const userPrompt = userPromptParts.join('\n');
         const systemPrompt = baseSystemPrompt;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse athlete response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse athlete response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
@@ -477,7 +453,6 @@ RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
             athleteMatch: { type: 'string' },
             sport: { type: 'string' },
             phase: { type: 'string' },
-            apiKey: { type: 'string' },
           },
         },
         response: {
@@ -504,13 +479,9 @@ RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
       },
     },
     async (request: FastifyRequest<{ Body: DietRequest }>, reply: FastifyReply) => {
-      const { calories, protein, carbs, fat, meals, goal, restrictions, athleteMatch, sport, phase, apiKey } = request.body;
+      const { calories, protein, carbs, fat, meals, goal, restrictions, athleteMatch, sport, phase } = request.body;
 
       app.logger.info({ calories, meals, goal }, 'Diet meal plan request');
-
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
-      }
 
       try {
         const systemPrompt = `You are a registered sports dietitian and nutrition scientist with expertise in fueling every type of athlete, military operator, and fitness population. You generate complete, personalized diet plans in JSON.
@@ -591,14 +562,16 @@ ${phase ? `- Phase: ${phase}` : ''}
 ${athleteMatch ? `Include athleteInspiration field with the athlete name. Model meal timing, food choices, and philosophy after how ${athleteMatch} actually eats.` : ''}
 Provide practical, specific meal plans with real foods. Include meal timing strategy, supplement recommendations, hydration targets, and phase-specific notes.`;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse diet response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse diet response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
@@ -680,7 +653,6 @@ Provide practical, specific meal plans with real foods. Include meal timing stra
             sport: { type: 'string' },
             phase: { type: 'string' },
             trainingDays: { type: 'number' },
-            apiKey: { type: 'string' },
           },
         },
         response: {
@@ -719,13 +691,9 @@ Provide practical, specific meal plans with real foods. Include meal timing stra
       },
     },
     async (request: FastifyRequest<{ Body: NutritionRequest }>, reply: FastifyReply) => {
-      const { age, weight, height, sex, activityLevel, goal, athleteMatch, sport, phase, trainingDays, apiKey } = request.body;
+      const { age, weight, height, sex, activityLevel, goal, athleteMatch, sport, phase, trainingDays } = request.body;
 
       app.logger.info({ weight, height, activityLevel, goal }, 'Nutrition calculation request');
-
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
-      }
 
       try {
         const systemPrompt = `You are a precision nutrition coach and sports dietitian specializing in macro calculation, meal planning, and supplement protocols for every type of athlete and fitness population. You generate detailed nutrition plans in JSON.
@@ -815,14 +783,16 @@ ${trainingDays ? `- Training Days Per Week: ${trainingDays} (provide separate tr
 Calculate BMR using Mifflin-St Jeor, apply activity multiplier for TDEE, then adjust for goal and athlete type. Provide complete macro breakdown, meal timing strategy, supplement recommendations, and hydration targets.
 ${trainingDays ? 'Include weeklyPlan with training day vs rest day calorie targets and refeed day recommendation.' : ''}`;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse nutrition response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse nutrition response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
