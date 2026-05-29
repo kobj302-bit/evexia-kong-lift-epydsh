@@ -87,6 +87,7 @@ export interface AppState {
   prs: PR[];
   goals: Goal[];
   athleteResult: any | null;
+  savedRoutines: any[];
   dietResult: any | null;
   savedDiet: any | null;
   nResult: any | null;
@@ -134,6 +135,7 @@ const DEFAULT_STATE: AppState = {
   prs: [],
   goals: [],
   athleteResult: null,
+  savedRoutines: [],
   dietResult: null,
   savedDiet: null,
   nResult: null,

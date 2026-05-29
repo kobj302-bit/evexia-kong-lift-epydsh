@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, ScrollView, StyleSheet,
-  Animated, Switch, TouchableOpacity, FlatList,
+  Animated, Switch, TouchableOpacity, useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ export default function SurveyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { updateState } = useApp();
+  const { width } = useWindowDimensions();
 
   const [step, setStep] = useState(1);
   const [age, setAge] = useState('25');
@@ -46,6 +47,20 @@ export default function SurveyScreen() {
   const [expertMode, setExpertMode] = useState(false);
 
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;
+
+  // Responsive grid: 1 col < 360, 2 col 360-600, 3 col >= 600
+  const numCols = width < 360 ? 1 : width < 600 ? 2 : 3;
+  const cardGap = 10;
+  const cardWidth = (width - 40 - cardGap * (numCols - 1)) / numCols;
+
+  // Avatar grid: auto-compute columns
+  const avatarGap = 8;
+  const avatarNumCols = Math.max(4, Math.floor((width - 40) / 64));
+  const avatarSize = Math.floor((width - 40 - avatarGap * (avatarNumCols - 1)) / avatarNumCols);
+
+  // EXP cards: always 3 equal columns
+  const expCardWidth = (width - 40 - cardGap * 2) / 3;
+  const isNarrow = width < 360;
 
   const goNext = () => {
     console.log('[Survey] Step', step, 'completed');
@@ -176,7 +191,7 @@ export default function SurveyScreen() {
               <View style={styles.pillRow}>
                 {SEX_OPTIONS.map((s) => (
                   <AnimatedPressable key={s} onPress={() => setSex(s)} style={[styles.pill, sex === s && styles.pillActive]}>
-                    <Text style={[styles.pillText, sex === s && styles.pillTextActive]}>{s}</Text>
+                    <Text numberOfLines={1} style={[styles.pillText, sex === s && styles.pillTextActive]}>{s}</Text>
                   </AnimatedPressable>
                 ))}
               </View>
@@ -200,11 +215,26 @@ export default function SurveyScreen() {
 
             <View style={styles.field}>
               <Text style={styles.label}>Level</Text>
-              <View style={styles.cardGrid}>
+              {/* Always 3 equal columns for EXP cards */}
+              <View style={styles.expRow}>
                 {EXP_OPTIONS.map((e) => (
-                  <AnimatedPressable key={e} onPress={() => setExp(e)} style={[styles.expCard, exp === e && styles.expCardActive]}>
+                  <AnimatedPressable
+                    key={e}
+                    onPress={() => setExp(e)}
+                    style={[
+                      styles.expCard,
+                      { width: expCardWidth, padding: isNarrow ? 10 : 16 },
+                      exp === e && styles.expCardActive,
+                    ]}
+                  >
                     <Text style={styles.expEmoji}>{e === 'Beginner' ? '🌱' : e === 'Intermediate' ? '💪' : '👑'}</Text>
-                    <Text style={[styles.expLabel, exp === e && styles.expLabelActive]}>{e}</Text>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      style={[styles.expLabel, exp === e && styles.expLabelActive]}
+                    >
+                      {e}
+                    </Text>
                   </AnimatedPressable>
                 ))}
               </View>
@@ -229,11 +259,19 @@ export default function SurveyScreen() {
             <Text style={styles.stepTitle}>🎯 Your Goal</Text>
             <Text style={styles.stepSubtitle}>What are you training for?</Text>
 
-            <View style={styles.goalGrid}>
+            <View style={styles.responsiveGrid}>
               {GOALS.map((g) => (
-                <AnimatedPressable key={g.label} onPress={() => setGoal(g.label)} style={[styles.goalCard, goal === g.label && styles.goalCardActive]}>
+                <AnimatedPressable
+                  key={g.label}
+                  onPress={() => setGoal(g.label)}
+                  style={[
+                    styles.goalCard,
+                    { width: cardWidth },
+                    goal === g.label && styles.goalCardActive,
+                  ]}
+                >
                   <Text style={styles.goalEmoji}>{g.emoji}</Text>
-                  <Text style={[styles.goalLabel, goal === g.label && styles.goalLabelActive]}>{g.label}</Text>
+                  <Text numberOfLines={2} style={[styles.goalLabel, goal === g.label && styles.goalLabelActive]}>{g.label}</Text>
                 </AnimatedPressable>
               ))}
             </View>
@@ -250,7 +288,7 @@ export default function SurveyScreen() {
               <View style={styles.chipGrid}>
                 {INJURY_OPTIONS.map((item) => (
                   <AnimatedPressable key={item} onPress={() => toggleInjury(item)} style={[styles.chip, injuries.includes(item) && styles.chipActive]}>
-                    <Text style={[styles.chipText, injuries.includes(item) && styles.chipTextActive]}>{item}</Text>
+                    <Text numberOfLines={1} style={[styles.chipText, injuries.includes(item) && styles.chipTextActive]}>{item}</Text>
                   </AnimatedPressable>
                 ))}
               </View>
@@ -278,10 +316,18 @@ export default function SurveyScreen() {
 
             <View style={styles.field}>
               <Text style={styles.label}>Equipment</Text>
-              <View style={styles.cardGrid}>
+              <View style={styles.responsiveGrid}>
                 {EQUIP_OPTIONS.map((e) => (
-                  <AnimatedPressable key={e} onPress={() => setEquip(e)} style={[styles.equipCard, equip === e && styles.equipCardActive]}>
-                    <Text style={[styles.equipLabel, equip === e && styles.equipLabelActive]}>{e}</Text>
+                  <AnimatedPressable
+                    key={e}
+                    onPress={() => setEquip(e)}
+                    style={[
+                      styles.equipCard,
+                      { width: cardWidth },
+                      equip === e && styles.equipCardActive,
+                    ]}
+                  >
+                    <Text numberOfLines={2} style={[styles.equipLabel, equip === e && styles.equipLabelActive]}>{e}</Text>
                   </AnimatedPressable>
                 ))}
               </View>
@@ -325,26 +371,25 @@ export default function SurveyScreen() {
             <Text style={styles.stepTitle}>🦍 Choose Your Avatar</Text>
             <Text style={styles.stepSubtitle}>Pick your Kong identity</Text>
 
-            <FlatList
-              data={AVATARS}
-              keyExtractor={(item) => item}
-              numColumns={5}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.avatarRow}
-              contentContainerStyle={styles.avatarGrid}
-              renderItem={({ item: a }) => (
+            {/* Responsive avatar grid — plain View+map, no FlatList nested in ScrollView */}
+            <View style={styles.avatarGridWrap}>
+              {AVATARS.map((a) => (
                 <AnimatedPressable
                   key={a}
                   onPress={() => {
                     console.log('[Survey] Avatar selected:', a);
                     setAvatar(a);
                   }}
-                  style={[styles.avatarBtn, avatar === a && styles.avatarBtnActive]}
+                  style={[
+                    styles.avatarBtn,
+                    { width: avatarSize, height: avatarSize, borderRadius: Math.floor(avatarSize * 0.2) },
+                    avatar === a && styles.avatarBtnActive,
+                  ]}
                 >
-                  <Text style={styles.avatarEmoji}>{a}</Text>
+                  <Text style={[styles.avatarEmoji, { fontSize: Math.floor(avatarSize * 0.5) }]}>{a}</Text>
                 </AnimatedPressable>
-              )}
-            />
+              ))}
+            </View>
 
             <View style={styles.disclaimerBox}>
               <TouchableOpacity style={styles.disclaimerRow} onPress={() => setDisclaimer(!disclaimer)} activeOpacity={0.7}>
@@ -431,17 +476,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
+    paddingHorizontal: 4,
   },
   pillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
-  pillText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
+  pillText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, flexShrink: 1 },
   pillTextActive: { color: COLORS.gold },
-  cardGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+
+  // Responsive grid for goals/equip
+  responsiveGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+
+  // EXP cards — always 3 equal columns
+  expRow: { flexDirection: 'row', gap: 10 },
   expCard: {
-    flex: 1,
-    minWidth: 90,
     backgroundColor: COLORS.surface,
     borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
@@ -449,11 +497,11 @@ const styles = StyleSheet.create({
   },
   expCardActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   expEmoji: { fontSize: 28 },
-  expLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  expLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
   expLabelActive: { color: COLORS.gold },
-  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+
+  // Goal cards — responsive width
   goalCard: {
-    width: '47%',
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
@@ -464,8 +512,9 @@ const styles = StyleSheet.create({
   },
   goalCardActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   goalEmoji: { fontSize: 32 },
-  goalLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
+  goalLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center', flexShrink: 1 },
   goalLabelActive: { color: COLORS.gold },
+
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 14,
@@ -476,10 +525,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   chipActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
-  chipText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  chipText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, flexShrink: 1 },
   chipTextActive: { color: COLORS.gold },
+
+  // Equip cards — responsive width
   equipCard: {
-    width: '47%',
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 14,
@@ -488,8 +538,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   equipCardActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
-  equipLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
+  equipLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center', flexShrink: 1 },
   equipLabelActive: { color: COLORS.gold },
+
   dayPill: {
     flex: 1,
     paddingVertical: 14,
@@ -502,13 +553,11 @@ const styles = StyleSheet.create({
   dayPillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   dayPillText: { fontSize: 18, fontWeight: '800', color: COLORS.textSecondary },
   dayPillTextActive: { color: COLORS.gold },
-  avatarGrid: { gap: 8 },
-  avatarRow: { gap: 8, justifyContent: 'space-between' },
+
+  // Avatar grid — responsive, plain View+map
+  avatarGridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   avatarBtn: {
-    width: 56,
-    height: 56,
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -516,6 +565,7 @@ const styles = StyleSheet.create({
   },
   avatarBtnActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold, borderWidth: 2 },
   avatarEmoji: { fontSize: 32 },
+
   disclaimerBox: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,
@@ -547,7 +597,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  expertInfo: { gap: 2 },
+  expertInfo: { gap: 2, flex: 1, marginRight: 12 },
   expertLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   expertDesc: { fontSize: 12, color: COLORS.textSecondary },
   expertSkipBtn: {
@@ -560,7 +610,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border2,
   },
-  expertSkipLeft: { gap: 2 },
+  expertSkipLeft: { gap: 2, flex: 1, marginRight: 12 },
   expertSkipTitle: { fontSize: 15, fontWeight: '700', color: COLORS.gold },
   expertSkipDesc: { fontSize: 12, color: COLORS.textSecondary },
   expertSkipArrow: { fontSize: 18, color: COLORS.gold, fontWeight: '700' },

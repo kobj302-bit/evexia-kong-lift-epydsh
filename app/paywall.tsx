@@ -54,6 +54,31 @@ const FEATURES = [
     title: "Athlete AI Routines",
     description: "Generate routines from any athlete description — train like the pros",
   },
+  {
+    icon: "📊",
+    title: "Advanced Analytics & 1RM Tracking",
+    description: "Volume trends, estimated 1RM (Epley), and total tonnage per lift",
+  },
+  {
+    icon: "📤",
+    title: "CSV Export",
+    description: "Export your full workout history as a CSV for any spreadsheet",
+  },
+  {
+    icon: "🏋️",
+    title: "Plate Calculator",
+    description: "Instantly see which plates to load for any target weight",
+  },
+  {
+    icon: "📚",
+    title: "Unlimited Saved Routines",
+    description: "Save and reload as many AI-generated routines as you want",
+  },
+  {
+    icon: "🔄",
+    title: "Deload Week Mode",
+    description: "Auto-reduce sets and weight for a recovery deload week",
+  },
 ];
 
 // Customize: Your app's colors

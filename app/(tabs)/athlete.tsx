@@ -7,6 +7,10 @@ import {
   TextInput,
   Animated,
   Platform,
+  Switch,
+  Modal,
+  TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,6 +24,14 @@ import { COLORS } from '@/constants/data';
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const PHASES = ['Bulking', 'Cutting', 'Maintenance', 'Setting the Stage', 'Building Muscle'];
 
+const TRAINING_GOALS = [
+  { label: 'Cutting', desc: 'Calorie deficit, retain muscle, more conditioning' },
+  { label: 'Maintenance', desc: 'Sustain current physique and performance' },
+  { label: 'Bulking', desc: 'Calorie surplus, maximize muscle and strength gains' },
+  { label: 'Muscle Building', desc: 'Hypertrophy focus — volume, progressive overload' },
+  { label: 'Overall Strength', desc: 'CrossFit-style — compound lifts + cardio + endurance + bodyweight strength' },
+];
+
 interface Template {
   label: string;
   emoji: string;
@@ -30,14 +42,12 @@ interface Template {
 }
 
 const TEMPLATES: Template[] = [
-  // Famous Athletes
   { label: 'Ronaldo', emoji: '🦵', description: 'Train like Cristiano Ronaldo', athleteTemplate: 'Cristiano Ronaldo', sport: 'Soccer' },
   { label: 'Arnold', emoji: '💪', description: 'Arnold Schwarzenegger Golden Era bodybuilding', athleteTemplate: 'Arnold Schwarzenegger' },
   { label: 'LeBron', emoji: '🏀', description: 'LeBron James NBA performance training', athleteTemplate: 'LeBron James', sport: 'Basketball' },
   { label: 'Phelps', emoji: '🏊', description: 'Michael Phelps swimming performance', athleteTemplate: 'Michael Phelps', sport: 'Swimming' },
   { label: 'Fury', emoji: '🥊', description: 'Tyson Fury boxing conditioning', athleteTemplate: 'Tyson Fury', sport: 'Boxing' },
   { label: 'CBum', emoji: '🏋️', description: 'Chris Bumstead Classic Physique bodybuilding', athleteTemplate: 'Chris Bumstead' },
-  // Sports
   { label: 'Soccer', emoji: '⚽', description: 'Soccer player conditioning and speed training', sport: 'Soccer' },
   { label: 'Wrestling', emoji: '🤼', description: 'Wrestling strength and conditioning program', sport: 'Wrestling' },
   { label: 'Swimming', emoji: '🏊', description: 'Competitive swimming performance training', sport: 'Swimming' },
@@ -46,12 +56,10 @@ const TEMPLATES: Template[] = [
   { label: 'Boxing', emoji: '🥊', description: 'Boxing conditioning and fight preparation', sport: 'Boxing' },
   { label: 'MMA', emoji: '🥋', description: 'MMA fighter strength and conditioning', sport: 'MMA' },
   { label: 'Basketball', emoji: '🏀', description: 'Basketball athleticism and performance training', sport: 'Basketball' },
-  // Military
   { label: 'Navy SEAL', emoji: '🔱', description: 'Navy SEAL BUD/S preparation and operational fitness' },
   { label: 'Army Ranger', emoji: '🪖', description: 'Army Ranger physical fitness and combat readiness' },
   { label: 'Firefighter', emoji: '🚒', description: 'Firefighter functional fitness and job readiness' },
   { label: 'Police Academy', emoji: '👮', description: 'Police academy physical fitness preparation' },
-  // Phases
   { label: 'Bulk Phase', emoji: '📈', description: 'Aggressive muscle building bulk phase program', phase: 'Bulking' },
   { label: 'Cut Phase', emoji: '✂️', description: 'Fat loss cutting phase with muscle retention', phase: 'Cutting' },
   { label: 'Maintenance', emoji: '🎯', description: 'Maintenance phase to sustain current physique', phase: 'Maintenance' },
@@ -65,21 +73,34 @@ function goalToPhase(goal: string): string {
   return 'Maintenance';
 }
 
+function surveyGoalToTrainingGoal(goal: string): string {
+  if (goal === 'Lose Fat') return 'Cutting';
+  if (goal === 'Build Muscle') return 'Muscle Building';
+  if (goal === 'Get Strong') return 'Overall Strength';
+  if (goal === 'Endurance') return 'Overall Strength';
+  return 'Maintenance';
+}
+
 export default function AthleteTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
   const { isSubscribed, hasDailyPass, purchaseDailyPass } = useSubscription();
+  const { width } = useWindowDimensions();
 
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState(state.profile.exp || 'Beginner');
   const [phase, setPhase] = useState(goalToPhase(state.profile.goal));
+  const [trainingGoal, setTrainingGoal] = useState(surveyGoalToTrainingGoal(state.profile.goal));
+  const [useSurveyData, setUseSurveyData] = useState(true);
   const [athleteTemplate, setAthleteTemplate] = useState('');
   const [sport, setSport] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [dietExpanded, setDietExpanded] = useState(false);
+  const [deloadMode, setDeloadMode] = useState(false);
+  const [routinesModalVisible, setRoutinesModalVisible] = useState(false);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -115,7 +136,7 @@ export default function AthleteTab() {
       showToast('Describe your ideal routine first!');
       return;
     }
-    console.log('[Athlete] Generate routine — level:', level, 'phase:', phase, 'description:', description, 'template:', athleteTemplate, 'sport:', sport);
+    console.log('[Athlete] Generate routine — level:', level, 'phase:', phase, 'trainingGoal:', trainingGoal, 'useSurveyData:', useSurveyData, 'description:', description);
     setLoading(true);
     setError('');
     setExpandedDay(null);
@@ -124,11 +145,13 @@ export default function AthleteTab() {
         description,
         level,
         phase,
+        trainingGoal,
+        useSurveyData,
         apiKey: state.apiKey,
       };
       if (athleteTemplate) body.athleteTemplate = athleteTemplate;
       if (sport) body.sport = sport;
-      if (!state.expertMode) {
+      if (useSurveyData) {
         body.profile = {
           age: state.profile.age,
           weight: state.profile.weight,
@@ -174,13 +197,43 @@ export default function AthleteTab() {
   const handleSaveRoutine = () => {
     if (!state.athleteResult) return;
     console.log('[Athlete] Save Routine pressed — program:', state.athleteResult.name);
-    updateState({ athleteResult: state.athleteResult });
-    showToast('✅ Routine saved!', true);
+    const existing = state.savedRoutines || [];
+    const isFree = !isSubscribed;
+    if (isFree && existing.length >= 1) {
+      console.log('[Athlete] Save blocked — free user limit reached');
+      router.push('/paywall');
+      return;
+    }
+    const alreadySaved = existing.some((r: any) => r.name === state.athleteResult.name);
+    if (alreadySaved) {
+      showToast('Already saved!');
+      return;
+    }
+    updateState({ savedRoutines: [state.athleteResult, ...existing] });
+    showToast('✅ Routine saved to library!', true);
+  };
+
+  const handleLoadRoutine = (routine: any) => {
+    console.log('[Athlete] Load routine from library:', routine.name);
+    updateState({ athleteResult: routine });
+    setRoutinesModalVisible(false);
+    showToast(`📚 Loaded: ${routine.name}`, true);
   };
 
   const result = state.athleteResult;
-  const hasInjuries = state.profile.injuries && state.profile.injuries.length > 0;
-  const injuryList = hasInjuries ? state.profile.injuries.join(', ') : '';
+  const hasInjuries = useSurveyData && state.profile.injuries && state.profile.injuries.filter((i) => i !== 'None').length > 0;
+  const injuryList = hasInjuries ? state.profile.injuries.filter((i) => i !== 'None').join(', ') : '';
+  const surveyDataOffWithInjuries = !useSurveyData && state.profile.injuries && state.profile.injuries.filter((i) => i !== 'None').length > 0;
+
+  const selectedGoalObj = TRAINING_GOALS.find((g) => g.label === trainingGoal);
+  const selectedGoalDesc = selectedGoalObj ? selectedGoalObj.desc : '';
+
+  // Responsive: 2-up on wide, 1-up on narrow
+  const goalCols = width < 360 ? 1 : 2;
+  const goalGap = 8;
+  const goalCardWidth = (width - 32 - 32 - goalGap * (goalCols - 1)) / goalCols;
+
+  const savedRoutines = state.savedRoutines || [];
 
   if (!isSubscribed && !hasDailyPass) {
     const handleDailyPass = async () => {
@@ -212,17 +265,37 @@ export default function AthleteTab() {
     >
       {/* Header */}
       <View style={styles.headerRow}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.pageTitle}>🦍 AI Routine Generator</Text>
           <Text style={styles.pageSubtitle}>Describe your ideal program and Kong will build it</Text>
         </View>
+        {savedRoutines.length > 0 && (
+          <AnimatedPressable
+            onPress={() => {
+              console.log('[Athlete] My Routines pressed');
+              setRoutinesModalVisible(true);
+            }}
+            style={styles.libraryPill}
+          >
+            <Text style={styles.libraryPillText}>📚 My Routines ({savedRoutines.length})</Text>
+          </AnimatedPressable>
+        )}
       </View>
 
-      {/* Injury Warning */}
+      {/* Injury Warning — only when useSurveyData ON and injuries exist */}
       {hasInjuries && (
         <View style={styles.injuryBanner}>
           <Text style={styles.injuryBannerText}>
             ⚠️ Kong will modify exercises for your {injuryList} injuries
+          </Text>
+        </View>
+      )}
+
+      {/* Survey data OFF + injuries warning */}
+      {surveyDataOffWithInjuries && (
+        <View style={styles.surveyOffWarning}>
+          <Text style={styles.surveyOffWarningText}>
+            Heads up — survey data is OFF, so Kong won't avoid your injuries. Train carefully.
           </Text>
         </View>
       )}
@@ -241,7 +314,10 @@ export default function AthleteTab() {
               ]}
             >
               <Text style={styles.templateEmoji}>{t.emoji}</Text>
-              <Text style={[styles.templateLabel, description === t.description && styles.templateLabelActive]}>
+              <Text
+                numberOfLines={1}
+                style={[styles.templateLabel, description === t.description && styles.templateLabelActive]}
+              >
                 {t.label}
               </Text>
             </AnimatedPressable>
@@ -279,12 +355,12 @@ export default function AthleteTab() {
               }}
               style={[styles.pill, level === l && styles.pillActive]}
             >
-              <Text style={[styles.pillText, level === l && styles.pillTextActive]}>{l}</Text>
+              <Text numberOfLines={1} style={[styles.pillText, level === l && styles.pillTextActive]}>{l}</Text>
             </AnimatedPressable>
           ))}
         </View>
 
-        <Text style={[styles.label, { marginTop: 4 }]}>TRAINING PHASE</Text>
+        <Text style={[styles.label, { marginTop: 4 }]}>TRAINING PHASE (macrocycle)</Text>
         <View style={styles.phaseGrid}>
           {PHASES.map((p) => (
             <AnimatedPressable
@@ -295,10 +371,59 @@ export default function AthleteTab() {
               }}
               style={[styles.phasePill, phase === p && styles.phasePillActive]}
             >
-              <Text style={[styles.phaseText, phase === p && styles.phaseTextActive]}>{p}</Text>
+              <Text numberOfLines={1} style={[styles.phaseText, phase === p && styles.phaseTextActive]}>{p}</Text>
             </AnimatedPressable>
           ))}
         </View>
+      </View>
+
+      {/* Training Goal Selector */}
+      <View style={styles.card}>
+        <Text style={styles.label}>TRAINING GOAL</Text>
+        <View style={styles.goalGrid}>
+          {TRAINING_GOALS.map((g) => (
+            <AnimatedPressable
+              key={g.label}
+              onPress={() => {
+                console.log('[Athlete] Training goal selected:', g.label);
+                setTrainingGoal(g.label);
+              }}
+              style={[
+                styles.goalPill,
+                { width: goalCardWidth },
+                trainingGoal === g.label && styles.goalPillActive,
+              ]}
+            >
+              <Text numberOfLines={1} style={[styles.goalPillText, trainingGoal === g.label && styles.goalPillTextActive]}>
+                {g.label}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </View>
+        {selectedGoalDesc ? (
+          <Text style={styles.goalDesc}>{selectedGoalDesc}</Text>
+        ) : null}
+      </View>
+
+      {/* Survey Data Toggle */}
+      <View style={styles.card}>
+        <View style={styles.surveyToggleRow}>
+          <View style={styles.surveyToggleInfo}>
+            <Text style={styles.surveyToggleLabel}>Use my survey data for safety</Text>
+          </View>
+          <Switch
+            value={useSurveyData}
+            onValueChange={(val) => {
+              console.log('[Athlete] Use survey data toggled:', val);
+              setUseSurveyData(val);
+            }}
+            trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
+            thumbColor={useSurveyData ? COLORS.goldBright : COLORS.textSecondary}
+          />
+        </View>
+        <Text style={styles.surveyToggleHint}>
+          Kong will adjust exercises to avoid your injuries, equipment, and experience level. Turn off only if you know what you're doing.
+        </Text>
       </View>
 
       {/* Error */}
@@ -356,6 +481,35 @@ export default function AthleteTab() {
             </View>
           )}
 
+          {/* Deload Toggle — Pro only */}
+          <View style={styles.deloadRow}>
+            <View style={styles.deloadInfo}>
+              <Text style={styles.deloadLabel}>Deload this week</Text>
+              <Text style={styles.deloadHint}>Sets –1, weights at 60–65% of last week</Text>
+            </View>
+            {isSubscribed ? (
+              <Switch
+                value={deloadMode}
+                onValueChange={(val) => {
+                  console.log('[Athlete] Deload mode toggled:', val);
+                  setDeloadMode(val);
+                }}
+                trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
+                thumbColor={deloadMode ? COLORS.goldBright : COLORS.textSecondary}
+              />
+            ) : (
+              <AnimatedPressable
+                onPress={() => {
+                  console.log('[Athlete] Deload Pro lock pressed');
+                  router.push('/paywall');
+                }}
+                style={styles.proLockPill}
+              >
+                <Text style={styles.proLockText}>🔒 Pro</Text>
+              </AnimatedPressable>
+            )}
+          </View>
+
           {/* Days */}
           {result.days && result.days.length > 0 && (
             <View style={styles.daysSection}>
@@ -402,19 +556,51 @@ export default function AthleteTab() {
                         </View>
                         {(day.exercises || []).map((ex: any, i: number) => {
                           const exName = typeof ex === 'string' ? ex : (ex.name || '');
-                          const exSets = typeof ex === 'object' ? String(ex.sets || '—') : '—';
-                          const exReps = typeof ex === 'object' ? String(ex.reps || '—') : '—';
+                          const rawSets = typeof ex === 'object' ? (ex.sets || '—') : '—';
+                          const rawReps = typeof ex === 'object' ? (ex.reps || '—') : '—';
                           const exRest = typeof ex === 'object' ? String(ex.rest || '—') : '—';
                           const exNotes = typeof ex === 'object' ? (ex.notes || '') : '';
+                          // Deload: reduce sets by 1
+                          const exSets = deloadMode && typeof rawSets === 'number' && rawSets > 1
+                            ? String(rawSets - 1)
+                            : String(rawSets);
+                          const exReps = String(rawReps);
                           return (
                             <View key={i} style={[styles.tableRow, i % 2 === 0 && styles.tableRowAlt]}>
                               <View style={{ flex: 3 }}>
                                 <Text style={styles.exName}>{exName}</Text>
                                 {exNotes ? <Text style={styles.exNotes}>{exNotes}</Text> : null}
+                                {deloadMode && (
+                                  <Text style={styles.deloadNote}>60–65% of last week</Text>
+                                )}
                               </View>
                               <Text style={[styles.exCell, { flex: 1 }]}>{exSets}</Text>
                               <Text style={[styles.exCell, { flex: 1 }]}>{exReps}</Text>
                               <Text style={[styles.exCell, { flex: 1 }]}>{exRest}</Text>
+                              {/* AI Form Tips — Pro only */}
+                              <View style={{ flex: 0 }}>
+                                {isSubscribed ? (
+                                  <AnimatedPressable
+                                    onPress={() => {
+                                      console.log('[Athlete] AI Form Tips pressed for:', exName);
+                                      showToast('💪 Coming soon');
+                                    }}
+                                    style={styles.formTipChip}
+                                  >
+                                    <Text style={styles.formTipText}>💡</Text>
+                                  </AnimatedPressable>
+                                ) : (
+                                  <AnimatedPressable
+                                    onPress={() => {
+                                      console.log('[Athlete] AI Form Tips Pro lock pressed');
+                                      router.push('/paywall');
+                                    }}
+                                    style={styles.formTipLock}
+                                  >
+                                    <Text style={styles.formTipLockText}>🔒</Text>
+                                  </AnimatedPressable>
+                                )}
+                              </View>
                             </View>
                           );
                         })}
@@ -550,7 +736,9 @@ export default function AthleteTab() {
               <Text style={styles.trackerBtnText}>Add to Tracker 💪</Text>
             </AnimatedPressable>
             <AnimatedPressable onPress={handleSaveRoutine} style={styles.saveBtn}>
-              <Text style={styles.saveBtnText}>Save Routine</Text>
+              <Text style={styles.saveBtnText}>
+                {isSubscribed ? 'Save to Library 📚' : `Save to Library 📚 ${savedRoutines.length >= 1 ? '🔒' : ''}`}
+              </Text>
             </AnimatedPressable>
           </View>
         </View>
@@ -566,6 +754,48 @@ export default function AthleteTab() {
           </Text>
         </View>
       )}
+
+      {/* My Routines Modal */}
+      <Modal
+        visible={routinesModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setRoutinesModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>📚 My Routines</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[Athlete] Close routines modal');
+                setRoutinesModalVisible(false);
+              }}
+              style={styles.modalClose}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {savedRoutines.length === 0 ? (
+              <Text style={styles.modalEmpty}>No saved routines yet.</Text>
+            ) : (
+              savedRoutines.map((r: any, i: number) => (
+                <AnimatedPressable
+                  key={i}
+                  onPress={() => handleLoadRoutine(r)}
+                  style={styles.routineRow}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.routineName}>{r.name || 'Unnamed Routine'}</Text>
+                    {r.phase ? <Text style={styles.routineMeta}>{r.phase}</Text> : null}
+                  </View>
+                  <Text style={styles.routineLoad}>Load →</Text>
+                </AnimatedPressable>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -574,9 +804,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
 
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  pageTitle: { fontSize: 26, fontWeight: '900', color: COLORS.text, letterSpacing: -0.5 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  pageTitle: { fontSize: 24, fontWeight: '900', color: COLORS.text, letterSpacing: -0.5, flexShrink: 1 },
   pageSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
+
+  libraryPill: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  libraryPillText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
 
   injuryBanner: {
     backgroundColor: `${COLORS.red}18`,
@@ -586,6 +828,15 @@ const styles = StyleSheet.create({
     borderColor: `${COLORS.red}50`,
   },
   injuryBannerText: { fontSize: 13, color: COLORS.red, lineHeight: 20, fontWeight: '600' },
+
+  surveyOffWarning: {
+    backgroundColor: `${COLORS.red}12`,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: `${COLORS.red}40`,
+  },
+  surveyOffWarningText: { fontSize: 13, color: COLORS.red, lineHeight: 20 },
 
   section: { gap: 10 },
   sectionLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
@@ -603,7 +854,7 @@ const styles = StyleSheet.create({
   },
   templateChipActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   templateEmoji: { fontSize: 15 },
-  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, maxWidth: 80 },
   templateLabelActive: { color: COLORS.gold },
 
   card: {
@@ -636,14 +887,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
+    paddingHorizontal: 4,
   },
   pillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
-  pillText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  pillText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1 },
   pillTextActive: { color: COLORS.gold },
 
   phaseGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   phasePill: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: COLORS.surface2,
@@ -651,8 +903,30 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   phasePillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
-  phaseText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  phaseText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1 },
   phaseTextActive: { color: COLORS.gold },
+
+  // Training Goal
+  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  goalPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  goalPillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
+  goalPillText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1, textAlign: 'center' },
+  goalPillTextActive: { color: COLORS.gold },
+  goalDesc: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18, fontStyle: 'italic' },
+
+  // Survey data toggle
+  surveyToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  surveyToggleInfo: { flex: 1, marginRight: 12 },
+  surveyToggleLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  surveyToggleHint: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
 
   errorBox: {
     backgroundColor: `${COLORS.red}15`,
@@ -737,6 +1011,31 @@ const styles = StyleSheet.create({
   weeklyLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
   weeklyText: { fontSize: 13, color: COLORS.text, lineHeight: 20 },
 
+  // Deload toggle
+  deloadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  deloadInfo: { flex: 1, marginRight: 12 },
+  deloadLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  deloadHint: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
+  deloadNote: { fontSize: 10, color: COLORS.gold, marginTop: 2, fontStyle: 'italic' },
+  proLockPill: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  proLockText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
+
   sectionHeader: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
 
   daysSection: { gap: 8 },
@@ -787,6 +1086,30 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   cardioNoteText: { fontSize: 12, color: COLORS.green, fontWeight: '600' },
+
+  // Form tip chips
+  formTipChip: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 6,
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  formTipText: { fontSize: 12 },
+  formTipLock: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 6,
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  formTipLockText: { fontSize: 11 },
 
   // Diet
   dietSection: {
@@ -906,4 +1229,39 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 14 },
   emptyTitle: { fontSize: 17, fontWeight: '800', color: COLORS.textSecondary, textAlign: 'center', maxWidth: 260 },
   emptySub: { fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', maxWidth: 280, lineHeight: 20 },
+
+  // Routines Modal
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  modalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '700' },
+  modalContent: { padding: 16, gap: 10 },
+  modalEmpty: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center', marginTop: 40 },
+  routineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  routineName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  routineMeta: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  routineLoad: { fontSize: 14, fontWeight: '700', color: COLORS.gold },
 });

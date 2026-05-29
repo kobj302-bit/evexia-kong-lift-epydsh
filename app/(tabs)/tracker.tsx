@@ -1,25 +1,109 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
-  Animated, LayoutAnimation,
+  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { KongMascot } from '@/components/KongMascot';
 import { useApp, SessionSet, WorkoutHistory, PR } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Epley 1RM formula
+function epley1RM(weight: number, reps: number): number {
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30));
+}
+
+// Find last workout entry for a given exercise name (case-insensitive), from a previous day
+function findLastWorkoutEntry(
+  history: WorkoutHistory[],
+  exerciseName: string,
+  todayStr: string
+): { entry: WorkoutHistory; exData: SessionSet } | null {
+  const lower = exerciseName.toLowerCase();
+  for (const h of history) {
+    const hDay = h.date.split('T')[0];
+    if (hDay === todayStr) continue;
+    const found = h.exercises.find((e) => e.exercise.toLowerCase() === lower);
+    if (found) return { entry: h, exData: found };
+  }
+  return null;
+}
+
+// Format date as "Mon, Nov 18"
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// Get heaviest set from a SessionSet
+function getHeaviestSet(sets: { reps: string; weight: string }[]): { reps: string; weight: string } | null {
+  let best: { reps: string; weight: string } | null = null;
+  let bestW = 0;
+  for (const s of sets) {
+    const w = parseFloat(s.weight) || 0;
+    if (w > bestW) { bestW = w; best = s; }
+  }
+  return best;
+}
+
+// Plate calculator
+function calcPlates(targetWeight: number, barWeight: number): string {
+  const PLATES = [45, 35, 25, 10, 5, 2.5];
+  let remaining = (targetWeight - barWeight) / 2;
+  if (remaining <= 0) return 'Just the bar';
+  const result: string[] = [];
+  for (const p of PLATES) {
+    const count = Math.floor(remaining / p);
+    if (count > 0) {
+      result.push(`${count}× ${p}`);
+      remaining -= count * p;
+    }
+  }
+  if (remaining > 0.1) result.push(`(+${remaining.toFixed(1)} remaining)`);
+  return result.length > 0 ? result.join(', ') : 'Just the bar';
+}
+
+// Volume trend bar chart (last 4 weeks)
+function getWeeklyVolume(history: WorkoutHistory[], exerciseName: string): number[] {
+  const lower = exerciseName.toLowerCase();
+  const now = new Date();
+  const weeks: number[] = [0, 0, 0, 0];
+  for (const h of history) {
+    const d = new Date(h.date);
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    const weekIdx = Math.floor(diffDays / 7);
+    if (weekIdx >= 0 && weekIdx < 4) {
+      const ex = h.exercises.find((e) => e.exercise.toLowerCase() === lower);
+      if (ex) {
+        const vol = ex.sets.reduce((sum, s) => sum + (parseFloat(s.reps) || 0) * (parseFloat(s.weight) || 0), 0);
+        weeks[weekIdx] += vol;
+      }
+    }
+  }
+  return weeks.reverse(); // oldest first
+}
 
 export default function TrackerTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, addXP, showToast, triggerPR } = useApp();
+  const { isSubscribed } = useSubscription();
   const [newExercise, setNewExercise] = useState('');
   const prFlashAnim = useRef(new Animated.Value(0)).current;
 
+  // Plate calculator state
+  const [plateModalVisible, setPlateModalVisible] = useState(false);
+  const [plateTarget, setPlateTarget] = useState('135');
+  const [plateBar, setPlateBar] = useState('45');
+
   const session = state.session;
+  const todayStr = new Date().toISOString().split('T')[0];
 
   const addExercise = () => {
     if (!newExercise.trim()) return;
@@ -68,9 +152,8 @@ export default function TrackerTab() {
 
     const xpEarned = 50 + session.length * 10;
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayIso = now.toISOString().split('T')[0];
 
-    // Check streak
     let newStreak = state.streak;
     let newBestStreak = state.bestStreak;
     if (state.lastWorkout) {
@@ -79,8 +162,8 @@ export default function TrackerTab() {
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
-      if (lastStr === yesterdayStr || lastStr === todayStr) {
-        newStreak = lastStr === todayStr ? state.streak : state.streak + 1;
+      if (lastStr === yesterdayStr || lastStr === todayIso) {
+        newStreak = lastStr === todayIso ? state.streak : state.streak + 1;
       } else {
         newStreak = 1;
       }
@@ -89,7 +172,6 @@ export default function TrackerTab() {
     }
     newBestStreak = Math.max(newBestStreak, newStreak);
 
-    // Check PRs — fixed: capture old weight BEFORE mutating
     const newPRs: PR[] = [...state.prs];
     const prNames: string[] = [];
     session.forEach((ex) => {
@@ -133,7 +215,6 @@ export default function TrackerTab() {
     } else {
       showToast(`💪 Workout done! +${xpEarned} XP`, true);
     }
-
   };
 
   const toggleDoneDay = (dayIdx: number) => {
@@ -143,7 +224,47 @@ export default function TrackerTab() {
     updateState({ donedays: { ...state.donedays, [key]: !state.donedays[key] } });
   };
 
+  const handleExportCSV = async () => {
+    console.log('[Tracker] Export workout history pressed');
+    if (!isSubscribed) {
+      console.log('[Tracker] Export blocked — not subscribed');
+      router.push('/paywall');
+      return;
+    }
+    try {
+      const FileSystem = await import('expo-file-system/legacy');
+      const Sharing = await import('expo-sharing');
+      const rows = ['date,exercise,set,reps,weight'];
+      for (const h of state.history) {
+        const dateStr = h.date.split('T')[0];
+        for (const ex of h.exercises) {
+          ex.sets.forEach((s, idx) => {
+            rows.push(`${dateStr},${ex.exercise},${idx + 1},${s.reps},${s.weight}`);
+          });
+        }
+      }
+      const csv = rows.join('\n');
+      const fileUri = (FileSystem.documentDirectory || '') + 'kong_workout_history.csv';
+      await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Export Workout History' });
+        console.log('[Tracker] CSV shared successfully');
+      } else {
+        showToast('Sharing not available on this device.');
+      }
+    } catch (e) {
+      console.error('[Tracker] Export error:', e);
+      showToast('Export failed. Try again.');
+    }
+  };
+
   const recentHistory = state.history.slice(0, 5);
+
+  // Plate calculator result
+  const plateTarget_n = parseFloat(plateTarget) || 0;
+  const plateBar_n = parseFloat(plateBar) || 45;
+  const plateResult = plateTarget_n > 0 ? calcPlates(plateTarget_n, plateBar_n) : '';
 
   return (
     <ScrollView
@@ -209,7 +330,7 @@ export default function TrackerTab() {
       <View style={styles.weekCard}>
         <Text style={styles.sectionTitle}>📅 This Week</Text>
         <View style={styles.weekRow}>
-          {DAYS.map((day, idx) => {
+          {DAYS.map((day) => {
             const key = `week-${day}`;
             const isDone = state.donedays[key];
             return (
@@ -229,7 +350,23 @@ export default function TrackerTab() {
 
       {/* Session Logger */}
       <View style={styles.sessionCard}>
-        <Text style={styles.sectionTitle}>🏋️ Session Logger</Text>
+        <View style={styles.sessionTitleRow}>
+          <Text style={styles.sectionTitle}>🏋️ Session Logger</Text>
+          {/* Plate Calculator button */}
+          <AnimatedPressable
+            onPress={() => {
+              console.log('[Tracker] Plate Calculator button pressed');
+              if (!isSubscribed) {
+                router.push('/paywall');
+                return;
+              }
+              setPlateModalVisible(true);
+            }}
+            style={styles.plateBtn}
+          >
+            <Text style={styles.plateBtnText}>🏋️ Plates{!isSubscribed ? ' 🔒' : ''}</Text>
+          </AnimatedPressable>
+        </View>
 
         <View style={styles.addExRow}>
           <TextInput
@@ -254,53 +391,174 @@ export default function TrackerTab() {
           </View>
         )}
 
-        {session.map((ex, exIdx) => (
-          <View key={exIdx} style={styles.exerciseBlock}>
-            <View style={styles.exerciseHeader}>
-              <Text style={styles.exerciseName}>{ex.exercise}</Text>
-              <AnimatedPressable onPress={() => removeExercise(exIdx)} style={styles.removeBtn}>
-                <Text style={styles.removeBtnText}>✕</Text>
+        {session.map((ex, exIdx) => {
+          const lastEntry = findLastWorkoutEntry(state.history, ex.exercise, todayStr);
+          const lastSets = lastEntry?.exData.sets || null;
+          const lastDateStr = lastEntry ? formatShortDate(lastEntry.entry.date) : null;
+          const heaviest = lastSets ? getHeaviestSet(lastSets) : null;
+          const hasLastData = lastSets && lastSets.length > 0;
+          const summaryReps = heaviest ? heaviest.reps : '';
+          const summaryWeight = heaviest ? heaviest.weight : '';
+          const summaryText = hasLastData
+            ? `↑ Last week: ${lastSets!.length} × ${summaryReps} @ ${summaryWeight} lb`
+            : 'First time — set the bar 🦍';
+
+          return (
+            <View key={exIdx} style={styles.exerciseBlock}>
+              <View style={styles.exerciseHeader}>
+                <Text style={styles.exerciseName}>{ex.exercise}</Text>
+                <AnimatedPressable onPress={() => removeExercise(exIdx)} style={styles.removeBtn}>
+                  <Text style={styles.removeBtnText}>✕</Text>
+                </AnimatedPressable>
+              </View>
+
+              {/* Last week summary chip */}
+              <View style={[styles.lastWeekChip, !hasLastData && styles.lastWeekChipFirst]}>
+                <Text style={[styles.lastWeekChipText, !hasLastData && styles.lastWeekChipTextFirst]}>
+                  {summaryText}
+                </Text>
+                {lastDateStr && hasLastData ? (
+                  <Text style={styles.lastWeekDate}>({lastDateStr})</Text>
+                ) : null}
+              </View>
+
+              <View style={styles.setHeader}>
+                <Text style={styles.setHeaderText}>Set</Text>
+                <Text style={styles.setHeaderText}>Reps</Text>
+                <Text style={styles.setHeaderText}>Weight (lbs)</Text>
+              </View>
+
+              {ex.sets.map((set, setIdx) => {
+                // Per-set last week hint
+                const lastSet = lastSets
+                  ? (lastSets[setIdx] || heaviest)
+                  : null;
+                const lastHint = lastSet && (lastSet.reps || lastSet.weight)
+                  ? `Last: ${lastSet.reps} × ${lastSet.weight} lb`
+                  : null;
+
+                return (
+                  <View key={setIdx}>
+                    <View style={styles.setRow}>
+                      <Text style={styles.setNum}>{setIdx + 1}</Text>
+                      <TextInput
+                        style={styles.setInput}
+                        value={set.reps}
+                        onChangeText={(v) => updateSet(exIdx, setIdx, 'reps', v)}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={COLORS.textTertiary}
+                      />
+                      <TextInput
+                        style={styles.setInput}
+                        value={set.weight}
+                        onChangeText={(v) => updateSet(exIdx, setIdx, 'weight', v)}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={COLORS.textTertiary}
+                      />
+                    </View>
+                    {lastHint ? (
+                      <Text style={styles.setLastHint}>{lastHint}</Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+
+              <AnimatedPressable onPress={() => addSet(exIdx)} style={styles.addSetBtn}>
+                <Text style={styles.addSetBtnText}>+ Add Set</Text>
               </AnimatedPressable>
             </View>
-
-            <View style={styles.setHeader}>
-              <Text style={styles.setHeaderText}>Set</Text>
-              <Text style={styles.setHeaderText}>Reps</Text>
-              <Text style={styles.setHeaderText}>Weight (lbs)</Text>
-            </View>
-
-            {ex.sets.map((set, setIdx) => (
-              <View key={setIdx} style={styles.setRow}>
-                <Text style={styles.setNum}>{setIdx + 1}</Text>
-                <TextInput
-                  style={styles.setInput}
-                  value={set.reps}
-                  onChangeText={(v) => updateSet(exIdx, setIdx, 'reps', v)}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={COLORS.textTertiary}
-                />
-                <TextInput
-                  style={styles.setInput}
-                  value={set.weight}
-                  onChangeText={(v) => updateSet(exIdx, setIdx, 'weight', v)}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={COLORS.textTertiary}
-                />
-              </View>
-            ))}
-
-            <AnimatedPressable onPress={() => addSet(exIdx)} style={styles.addSetBtn}>
-              <Text style={styles.addSetBtnText}>+ Add Set</Text>
-            </AnimatedPressable>
-          </View>
-        ))}
+          );
+        })}
 
         {session.length > 0 && (
           <AnimatedPressable onPress={finishWorkout} style={styles.finishBtn}>
             <Text style={styles.finishBtnText}>🏁 Finish Workout</Text>
           </AnimatedPressable>
+        )}
+      </View>
+
+      {/* Pro Analytics Card */}
+      <View style={styles.analyticsCard}>
+        <View style={styles.analyticsHeader}>
+          <Text style={styles.sectionTitle}>📈 Pro Analytics</Text>
+          {!isSubscribed && (
+            <AnimatedPressable
+              onPress={() => {
+                console.log('[Tracker] Pro Analytics lock pressed');
+                router.push('/paywall');
+              }}
+              style={styles.proLockPill}
+            >
+              <Text style={styles.proLockText}>🔒 Unlock Pro</Text>
+            </AnimatedPressable>
+          )}
+        </View>
+
+        {isSubscribed ? (
+          <View style={styles.analyticsContent}>
+            {state.prs.length === 0 ? (
+              <Text style={styles.analyticsEmpty}>Complete workouts to see analytics</Text>
+            ) : (
+              state.prs.slice(0, 5).map((pr, i) => {
+                const est1RM = epley1RM(pr.weight, 1);
+                const weeklyVols = getWeeklyVolume(state.history, pr.lift);
+                const maxVol = Math.max(...weeklyVols, 1);
+                const prDateStr = formatShortDate(pr.date);
+                return (
+                  <View key={i} style={styles.analyticsRow}>
+                    <View style={styles.analyticsLiftInfo}>
+                      <Text style={styles.analyticsLiftName}>{pr.lift}</Text>
+                      <Text style={styles.analyticsLiftSub}>PR: {pr.weight} lb • Est 1RM: {est1RM} lb</Text>
+                      <Text style={styles.analyticsLiftDate}>{prDateStr}</Text>
+                    </View>
+                    {/* Volume trend bars */}
+                    <View style={styles.volBars}>
+                      {weeklyVols.map((v, wi) => {
+                        const barH = maxVol > 0 ? Math.max(4, Math.round((v / maxVol) * 40)) : 4;
+                        return (
+                          <View key={wi} style={styles.volBarWrap}>
+                            <View style={[styles.volBar, { height: barH }]} />
+                            <Text style={styles.volBarLabel}>W{wi + 1}</Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })
+            )}
+            {state.prs.length > 0 && (
+              <View style={styles.tonnageRow}>
+                <Text style={styles.tonnageLabel}>Total Tonnage (all time)</Text>
+                <Text style={styles.tonnageValue}>
+                  {state.history.reduce((sum, h) =>
+                    sum + h.exercises.reduce((s2, ex) =>
+                      s2 + ex.sets.reduce((s3, set) =>
+                        s3 + (parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0), 0), 0), 0
+                  ).toLocaleString()} lb
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.analyticsBlur}>
+            <View style={styles.analyticsBlurOverlay}>
+              <Text style={styles.analyticsBlurIcon}>📊</Text>
+              <Text style={styles.analyticsBlurTitle}>Advanced Analytics</Text>
+              <Text style={styles.analyticsBlurSub}>Volume trends, 1RM estimates, total tonnage</Text>
+              <AnimatedPressable
+                onPress={() => {
+                  console.log('[Tracker] Unlock Pro Analytics pressed');
+                  router.push('/paywall');
+                }}
+                style={styles.analyticsUnlockBtn}
+              >
+                <Text style={styles.analyticsUnlockText}>Unlock Pro Analytics</Text>
+              </AnimatedPressable>
+            </View>
+          </View>
         )}
       </View>
 
@@ -322,8 +580,71 @@ export default function TrackerTab() {
               </View>
             );
           })}
+
+          {/* Export button */}
+          <AnimatedPressable
+            onPress={handleExportCSV}
+            style={styles.exportBtn}
+          >
+            <Text style={styles.exportBtnText}>
+              {isSubscribed ? '📤 Export Workout History (CSV)' : '📤 Export Workout History 🔒 Pro'}
+            </Text>
+          </AnimatedPressable>
         </View>
       )}
+
+      {/* Plate Calculator Modal */}
+      <Modal
+        visible={plateModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setPlateModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>🏋️ Plate Calculator</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[Tracker] Close plate calculator');
+                setPlateModalVisible(false);
+              }}
+              style={styles.modalClose}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalContent}>
+            <View style={styles.plateField}>
+              <Text style={styles.plateLabel}>Target Weight (lbs)</Text>
+              <TextInput
+                style={styles.plateInput}
+                value={plateTarget}
+                onChangeText={setPlateTarget}
+                keyboardType="numeric"
+                placeholderTextColor={COLORS.textTertiary}
+                placeholder="135"
+              />
+            </View>
+            <View style={styles.plateField}>
+              <Text style={styles.plateLabel}>Bar Weight (lbs)</Text>
+              <TextInput
+                style={styles.plateInput}
+                value={plateBar}
+                onChangeText={setPlateBar}
+                keyboardType="numeric"
+                placeholderTextColor={COLORS.textTertiary}
+                placeholder="45"
+              />
+            </View>
+            {plateResult ? (
+              <View style={styles.plateResult}>
+                <Text style={styles.plateResultLabel}>PLATES PER SIDE</Text>
+                <Text style={styles.plateResultValue}>{plateResult}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -409,6 +730,17 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 12,
   },
+  sessionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  plateBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 8,
+  },
+  plateBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
   addExRow: { flexDirection: 'row', gap: 8 },
   exInput: {
     flex: 1,
@@ -446,6 +778,28 @@ const styles = StyleSheet.create({
   exerciseName: { fontSize: 15, fontWeight: '800', color: COLORS.text, flex: 1 },
   removeBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   removeBtnText: { fontSize: 16, color: COLORS.red, fontWeight: '700' },
+
+  // Last week chip
+  lastWeekChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    flexWrap: 'wrap',
+  },
+  lastWeekChipFirst: {
+    backgroundColor: `${COLORS.green}15`,
+    borderColor: `${COLORS.green}40`,
+  },
+  lastWeekChipText: { fontSize: 12, fontWeight: '600', color: COLORS.gold, flexShrink: 1 },
+  lastWeekChipTextFirst: { color: COLORS.green },
+  lastWeekDate: { fontSize: 11, color: COLORS.textTertiary },
+
   setHeader: { flexDirection: 'row', gap: 8 },
   setHeaderText: { flex: 1, fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
   setRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
@@ -462,6 +816,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
+  },
+  setLastHint: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    textAlign: 'right',
+    marginTop: -4,
+    marginBottom: 2,
+    paddingRight: 4,
   },
   addSetBtn: {
     backgroundColor: COLORS.surface,
@@ -480,6 +842,83 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   finishBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+
+  // Analytics
+  analyticsCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 12,
+  },
+  analyticsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  proLockPill: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  proLockText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
+  analyticsContent: { gap: 12 },
+  analyticsEmpty: { fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', paddingVertical: 12 },
+  analyticsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  analyticsLiftInfo: { flex: 1, gap: 2 },
+  analyticsLiftName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  analyticsLiftSub: { fontSize: 12, color: COLORS.gold },
+  analyticsLiftDate: { fontSize: 11, color: COLORS.textTertiary },
+  volBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 48 },
+  volBarWrap: { alignItems: 'center', gap: 2 },
+  volBar: { width: 12, backgroundColor: COLORS.gold, borderRadius: 3, minHeight: 4 },
+  volBarLabel: { fontSize: 9, color: COLORS.textTertiary },
+  tonnageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  tonnageLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
+  tonnageValue: { fontSize: 16, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
+  analyticsBlur: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    minHeight: 120,
+  },
+  analyticsBlurOverlay: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  analyticsBlurIcon: { fontSize: 32 },
+  analyticsBlurTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  analyticsBlurSub: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
+  analyticsUnlockBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  analyticsUnlockText: { fontSize: 14, fontWeight: '800', color: '#0A0A0A' },
+
+  // History
   historyCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -501,4 +940,60 @@ const styles = StyleSheet.create({
   historyExercises: { fontSize: 12, color: COLORS.textSecondary },
   historyRight: {},
   historyXP: { fontSize: 13, fontWeight: '700', color: COLORS.gold },
+  exportBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 4,
+  },
+  exportBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+
+  // Plate Calculator Modal
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  modalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '700' },
+  modalContent: { padding: 20, gap: 16 },
+  plateField: { gap: 8 },
+  plateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
+  plateInput: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 20,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontVariant: ['tabular-nums'],
+  },
+  plateResult: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    gap: 6,
+    alignItems: 'center',
+  },
+  plateResultLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  plateResultValue: { fontSize: 18, fontWeight: '900', color: COLORS.gold, textAlign: 'center' },
 });

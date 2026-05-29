@@ -27,6 +27,11 @@ const INCLUDED_FEATURES = [
   { icon: '🧮', label: 'Nutrition Calculator' },
   { icon: '👥', label: 'Community & Teams' },
   { icon: '🤖', label: 'Athlete AI Routines' },
+  { icon: '📊', label: 'Advanced Analytics & 1RM Tracking' },
+  { icon: '📤', label: 'CSV Export' },
+  { icon: '🏋️', label: 'Plate Calculator' },
+  { icon: '📚', label: 'Unlimited Saved Routines' },
+  { icon: '🔄', label: 'Deload Week Mode' },
 ];
 
 export function ProGate({ feature, icon, description, showDailyPass, onDailyPass }: ProGateProps) {

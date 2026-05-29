@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, Linking } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions } from 'react-native';
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,9 +15,12 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
   const { isSubscribed, restorePurchases } = useSubscription();
+  const { width } = useWindowDimensions();
   const [apiKey, setApiKey] = useState(state.apiKey);
   const [showKey, setShowKey] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  // On narrow screens, stat cards go 1-column
+  const statMinWidth = width < 360 ? '100%' : '45%';
 
   const handleUpgradePro = () => {
     console.log('[Settings] Upgrade to Kong Pro pressed');
@@ -224,19 +227,19 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📊 Your Stats</Text>
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
             <Text style={styles.statValue}>{state.xp.toLocaleString()}</Text>
             <Text style={styles.statLabel}>Total XP ⚡</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
             <Text style={styles.statValue}>{state.totalWorkouts}</Text>
             <Text style={styles.statLabel}>Workouts 🏋️</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
             <Text style={styles.statValue}>{state.streak}</Text>
             <Text style={styles.statLabel}>Streak 🔥</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
             <Text style={styles.statValue}>{state.prs.length}</Text>
             <Text style={styles.statLabel}>PRs 🏆</Text>
           </View>
