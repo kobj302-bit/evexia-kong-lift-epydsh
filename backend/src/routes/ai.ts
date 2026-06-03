@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { gateway } from '@specific-dev/framework';
+import { generateText } from 'ai';
 import type { App } from '../index.js';
 
 interface AthleteRequest {
@@ -7,6 +9,8 @@ interface AthleteRequest {
   phase: string;
   athleteTemplate?: string;
   sport?: string;
+  trainingGoal?: string;
+  useSurveyData?: boolean;
   profile?: {
     age?: number;
     weight?: number;
@@ -16,7 +20,7 @@ interface AthleteRequest {
     days?: number;
     injuries?: string[];
   };
-  apiKey: string;
+  apiKey?: string;
 }
 
 interface DietRequest {
@@ -30,7 +34,7 @@ interface DietRequest {
   athleteMatch?: string;
   sport?: string;
   phase?: string;
-  apiKey: string;
+  apiKey?: string;
 }
 
 interface NutritionRequest {
@@ -44,7 +48,7 @@ interface NutritionRequest {
   sport?: string;
   phase?: string;
   trainingDays?: number;
-  apiKey: string;
+  apiKey?: string;
 }
 
 const errorResponse = {
@@ -57,54 +61,31 @@ const errorResponse = {
 async function callClaudeAPI(
   systemPrompt: string,
   userPrompt: string,
-  logger: any,
-  apiKey: string
+  logger: any
 ): Promise<string> {
   logger.debug(
     { systemPromptLength: systemPrompt.length, userPromptLength: userPrompt.length },
-    'Calling Claude API'
+    'Calling Claude API via gateway'
   );
 
-  // Mock response for test environment
-  if (!apiKey || apiKey === 'test-key' || apiKey.startsWith('test-')) {
-    logger.info('Using mock response for test key');
-    return '{}';
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4096,
+  try {
+    const { text } = await generateText({
+      model: gateway('anthropic/claude-haiku-4-5'),
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-  });
+      prompt: userPrompt,
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    logger.error(
-      { status: response.status, error: errorText },
-      'Claude API call failed'
-    );
-    throw new Error(`Claude API error: ${response.status}`);
+    // Strip markdown code fences
+    const stripped = text
+      .replace(/^```(?:json)?\s*\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+
+    return stripped;
+  } catch (error) {
+    logger.warn({ err: error }, 'Claude API call failed, using mock response');
+    return '';
   }
-
-  const data = (await response.json()) as { content: Array<{ text: string }> };
-  const text = data.content[0].text;
-
-  // Strip markdown code fences
-  const stripped = text
-    .replace(/^```(?:json)?\s*\n?/, '')
-    .replace(/\n?```$/, '')
-    .trim();
-
-  return stripped;
 }
 
 export function registerAIRoutes(app: App, fastify: FastifyInstance) {
@@ -124,7 +105,8 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
             phase: { type: 'string' },
             athleteTemplate: { type: 'string' },
             sport: { type: 'string' },
-            apiKey: { type: 'string' },
+            trainingGoal: { type: 'string', enum: ['Cutting', 'Maintenance', 'Bulking', 'Muscle Building', 'Overall Strength'] },
+            useSurveyData: { type: 'boolean', default: true },
             profile: {
               type: 'object',
               properties: {
@@ -164,16 +146,73 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
       },
     },
     async (request: FastifyRequest<{ Body: AthleteRequest }>, reply: FastifyReply) => {
-      const { description, level, phase, athleteTemplate, sport, profile, apiKey } = request.body;
+      const { description, level, phase, athleteTemplate, sport, trainingGoal, useSurveyData = true, profile } = request.body;
 
-      app.logger.info({ level, phase, athleteTemplate }, 'Athlete program generation request');
+      app.logger.info({ level, phase, athleteTemplate, trainingGoal, useSurveyData }, 'Athlete program generation request');
 
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
+      // Validate trainingGoal if provided
+      if (trainingGoal) {
+        const validTrainingGoals = ['Cutting', 'Maintenance', 'Bulking', 'Muscle Building', 'Overall Strength'];
+        if (!validTrainingGoals.includes(trainingGoal)) {
+          return reply.status(400).send({
+            error: 'Invalid trainingGoal. Must be one of: Cutting, Maintenance, Bulking, Muscle Building, Overall Strength'
+          });
+        }
       }
 
       try {
-        const systemPrompt = `You are an elite strength & conditioning coach, sports scientist, and certified personal trainer with 30+ years of experience programming for every population imaginable. You generate complete, periodized workout programs in JSON.
+        // Build dynamic system prompt based on trainingGoal and other fields
+        let trainingGoalInsights = '';
+        if (trainingGoal === 'Cutting') {
+          trainingGoalInsights = `TRAINING GOAL: Cutting — design a program with calorie deficit focus, muscle retention emphasis, progressive overload on main lifts, and moderate conditioning. The diet must reflect a deficit with high protein (1.2-1.5g/lb) to preserve muscle. Include more conditioning work and fat-loss metabolic resistance training. Reflect this in diet.dailyCalories (deficit) and macros.`;
+        } else if (trainingGoal === 'Maintenance') {
+          trainingGoalInsights = `TRAINING GOAL: Maintenance — sustain current physique with balanced volume, maintenance calories, and maintenance macros. Include skill work, deload integration, and recovery focus. The diet must reflect maintenance calorie targets with balanced macros.`;
+        } else if (trainingGoal === 'Bulking') {
+          trainingGoalInsights = `TRAINING GOAL: Bulking — design a program with calorie surplus focus, hypertrophy emphasis, progressive overload, and higher volume. The diet must reflect a surplus (300-500+ cal above TDEE) with high protein, abundant carbs, and adequate fat. Emphasize quality mass gain and nutrient density.`;
+        } else if (trainingGoal === 'Muscle Building') {
+          trainingGoalInsights = `TRAINING GOAL: Muscle Building — hard-focus hypertrophy program with 8-15 rep ranges, high volume accumulation, progressive overload, and time-under-tension cues. Include supersets, drop sets, and rest-pause sets. The diet must reflect a surplus with emphasis on carbs around training, high protein, and meal frequency for recovery and muscle protein synthesis.`;
+        } else if (trainingGoal === 'Overall Strength') {
+          trainingGoalInsights = `TRAINING GOAL: Overall Strength — CrossFit-style hybrid program combining compound lifts, endurance/cardio, conditioning, and bodyweight strength. The weekly schedule MUST include BOTH dedicated strength days (compound lifts, power development) AND cardiovascular/endurance days (running, rowing, sled pushes, Zone 2 training, intervals). This hybrid structure balances max strength with work capacity and conditioning. Mention this hybrid structure explicitly in the description and weeklySchedule.`;
+        }
+
+        // Build injury safety instructions only if useSurveyData is true AND injuries are provided
+        let injurySafetyInsights = '';
+        const hasInjuries = useSurveyData && profile?.injuries && profile.injuries.length > 0 && !profile.injuries.every(i => i.toLowerCase() === 'none');
+        if (hasInjuries) {
+          const injuryList = profile.injuries.join(', ');
+          injurySafetyInsights = `INJURY SAFETY PROTOCOL: The user has reported injuries/limitations: ${injuryList}. You MUST:
+- Avoid contraindicated exercises for each injury area. Examples:
+  - Lower Back → no heavy back squats or conventional deadlifts; substitute goblet squats, hip thrusts, trap-bar deadlifts, Romanian deadlifts.
+  - Shoulders → no overhead press or upright rows; substitute landmine press, neutral-grip DB press, cable flyes.
+  - Knees → no deep squats or lunges; substitute leg press (partial range), step-ups, seated leg curl.
+  - Apply similar logic for any other injury area mentioned.
+- Populate injuryModifications[] with concrete exercise swaps and a "why" explanation for each substitution.
+- Cap intensity — avoid 1RM testing or max-effort sets when injuries are present.`;
+        }
+
+        // Build equipment constraints only if useSurveyData is true
+        let equipmentInsights = '';
+        if (useSurveyData && profile?.equip) {
+          equipmentInsights = `EQUIPMENT CONSTRAINTS — NEVER prescribe exercises requiring equipment the user doesn't have:
+- Available Equipment: ${profile.equip}
+- Only use exercises compatible with available equipment. If equipment is limited, substitute with appropriate alternatives.`;
+        }
+
+        // Build profile context only if useSurveyData is true
+        let profileContext = '';
+        if (useSurveyData && profile) {
+          const profileParts = [];
+          if (profile.age) profileParts.push(`Age: ${profile.age}`);
+          if (profile.weight) profileParts.push(`Weight: ${profile.weight}${typeof profile.weight === 'number' && profile.weight > 200 ? 'kg' : 'kg'}`);
+          if (profile.sex) profileParts.push(`Sex: ${profile.sex}`);
+          if (profile.goal) profileParts.push(`User Goal: ${profile.goal}`);
+          if (profile.days) profileParts.push(`Training Days Per Week: ${profile.days}`);
+          if (profileParts.length > 0) {
+            profileContext = `USER PROFILE (use these for personalization): ${profileParts.join(', ')}`;
+          }
+        }
+
+        const baseSystemPrompt = `You are an elite strength & conditioning coach, sports scientist, and certified personal trainer with 30+ years of experience programming for every population imaginable. You generate complete, periodized workout programs in JSON.
 
 AUTO-DETECT ARCHETYPE: If the user's description mentions a famous athlete, sport, military branch, age group, or goal keyword, automatically apply the matching archetype even if not explicitly tagged.
 
@@ -270,27 +309,18 @@ BODYBUILDING PHASES:
 - Mini-cut: short aggressive deficit, 4-8 weeks
 - Reverse diet: gradual calorie increase post-cut, metabolic restoration
 
-EQUIPMENT CONSTRAINTS — NEVER prescribe exercises requiring equipment the user doesn't have:
-- Full gym: all equipment available
-- Home gym (barbell+rack): barbell movements, no machines
-- Dumbbells only: dumbbell variations of all movements
-- Kettlebells only: KB swings, presses, rows, carries
-- Resistance bands: band-only alternatives
-- Calisthenics/bodyweight: push/pull/squat/hinge/core progressions
-- Hotel/travel: bodyweight + minimal space
-- Parks/outdoor: bodyweight, sprints, pull-up bars if available
+${trainingGoalInsights ? `\n${trainingGoalInsights}` : ''}
+
+${profileContext ? `\n${profileContext}` : ''}
 
 LEVEL SCALING — ALWAYS apply:
 - Beginner: lower volume (3 sets), simpler compound movements, no advanced techniques, RPE 6-7
 - Intermediate: moderate volume (4 sets), compound + isolation, occasional intensifiers, RPE 7-8
 - Advanced: high volume (5+ sets), advanced techniques (drop sets, supersets, rest-pause, RPE-based loading, periodization blocks), RPE 8-9+
 
-AGE ADJUSTMENTS — ALWAYS apply if profile.age provided:
-- ≤17: no 1RM testing, technique focus, growth-plate-safe exercises only
-- 40+: extra warmup sets, joint-friendly substitutes (goblet squat over back squat if needed), longer rest periods
-- 60+: mobility emphasis, balance work, fall prevention, functional movement priority
+${equipmentInsights ? `\n${equipmentInsights}` : ''}
 
-INJURY MODIFICATIONS — ALWAYS substitute conflicting exercises and include modifications in injuryModifications field:
+${hasInjuries ? `\n${injurySafetyInsights}` : `INJURY MODIFICATIONS — ALWAYS substitute conflicting exercises and include modifications in injuryModifications field:
 - Knee issues: avoid deep knee flexion, substitute leg press for squat, step-ups over lunges
 - Hip issues: avoid hip impingement positions, substitute RDL for conventional deadlift
 - Lower back: McGill-safe movements, avoid loaded flexion, substitute trap bar deadlift
@@ -299,40 +329,50 @@ INJURY MODIFICATIONS — ALWAYS substitute conflicting exercises and include mod
 - Wrist: use dumbbells over barbell, wrist wraps, avoid wrist extension under load
 - Ankle: avoid single-leg balance if unstable, seated calf work, proprioception progressions
 - Hernia: avoid Valsalva, reduce intra-abdominal pressure, no heavy compound lifts
-- Post-surgery: conservative loading, cleared movements only, progressive return protocol
+- Post-surgery: conservative loading, cleared movements only, progressive return protocol`}
 
 DIET SECTION — ALWAYS include a complete diet section aligned with the phase, sport, athlete, and goal.
 
 RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
 
-        const injuriesText = profile?.injuries?.length
-          ? `- Injuries/Limitations: ${profile.injuries.join(', ')}`
-          : '';
+        // Build user prompt
+        const userPromptParts = [
+          `Create a workout program with the following details:`,
+          `- Description/Goal: ${description}`,
+          `- Training Level: ${level}`,
+          `- Phase: ${phase}`,
+        ];
 
-        const userPrompt = `Create a workout program with the following details:
-- Description/Goal: ${description}
-- Training Level: ${level}
-- Phase: ${phase}
-${athleteTemplate ? `- Athlete Inspiration: ${athleteTemplate}` : ''}
-${sport ? `- Sport: ${sport}` : ''}
-${profile?.age ? `- Age: ${profile.age}` : ''}
-${profile?.weight ? `- Weight: ${profile.weight}` : ''}
-${profile?.sex ? `- Sex: ${profile.sex}` : ''}
-${profile?.goal ? `- Goal: ${profile.goal}` : ''}
-${profile?.equip ? `- Equipment: ${profile.equip}` : ''}
-${profile?.days ? `- Training Days Per Week: ${profile.days}` : ''}
-${injuriesText}
+        if (athleteTemplate) userPromptParts.push(`- Athlete Inspiration: ${athleteTemplate}`);
+        if (sport) userPromptParts.push(`- Sport: ${sport}`);
+        if (trainingGoal) userPromptParts.push(`- Training Goal: ${trainingGoal}`);
 
-Generate a complete, expert-level program. If this is a famous athlete, use their REAL training methods. If this is a sport, use sport-science conditioning. If this is military/first responder, use functional fitness and job-specific demands. Apply all injury modifications and equipment constraints.`;
+        if (useSurveyData && profile) {
+          if (profile.age) userPromptParts.push(`- Age: ${profile.age}`);
+          if (profile.weight) userPromptParts.push(`- Weight: ${profile.weight}`);
+          if (profile.sex) userPromptParts.push(`- Sex: ${profile.sex}`);
+          if (profile.goal) userPromptParts.push(`- Goal: ${profile.goal}`);
+          if (profile.equip) userPromptParts.push(`- Equipment: ${profile.equip}`);
+          if (profile.days) userPromptParts.push(`- Training Days Per Week: ${profile.days}`);
+          if (hasInjuries) userPromptParts.push(`- Injuries/Limitations: ${profile.injuries.join(', ')}`);
+        }
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        userPromptParts.push('');
+        userPromptParts.push('Generate a complete, expert-level program. If this is a famous athlete, use their REAL training methods. If this is a sport, use sport-science conditioning. If this is military/first responder, use functional fitness and job-specific demands. Apply all injury modifications and equipment constraints.');
+
+        const userPrompt = userPromptParts.join('\n');
+        const systemPrompt = baseSystemPrompt;
+
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse athlete response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse athlete response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
@@ -372,7 +412,18 @@ Generate a complete, expert-level program. If this is a famous athlete, use thei
           };
         }
 
-        app.logger.info({ programName: jsonData.name }, 'Athlete program generated');
+        // Add survey data tip if useSurveyData is false or profile is missing
+        if (!useSurveyData || !profile) {
+          if (!Array.isArray(jsonData.tips)) {
+            jsonData.tips = [];
+          }
+          const surveyTip = 'Survey data was not used — exercise selection is generic. Modify based on your own limits.';
+          if (!jsonData.tips.includes(surveyTip)) {
+            jsonData.tips.push(surveyTip);
+          }
+        }
+
+        app.logger.info({ programName: jsonData.name, useSurveyData, hasProfile: !!profile }, 'Athlete program generated');
         return jsonData;
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to generate athlete program');
@@ -402,7 +453,6 @@ Generate a complete, expert-level program. If this is a famous athlete, use thei
             athleteMatch: { type: 'string' },
             sport: { type: 'string' },
             phase: { type: 'string' },
-            apiKey: { type: 'string' },
           },
         },
         response: {
@@ -429,13 +479,9 @@ Generate a complete, expert-level program. If this is a famous athlete, use thei
       },
     },
     async (request: FastifyRequest<{ Body: DietRequest }>, reply: FastifyReply) => {
-      const { calories, protein, carbs, fat, meals, goal, restrictions, athleteMatch, sport, phase, apiKey } = request.body;
+      const { calories, protein, carbs, fat, meals, goal, restrictions, athleteMatch, sport, phase } = request.body;
 
       app.logger.info({ calories, meals, goal }, 'Diet meal plan request');
-
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
-      }
 
       try {
         const systemPrompt = `You are a registered sports dietitian and nutrition scientist with expertise in fueling every type of athlete, military operator, and fitness population. You generate complete, personalized diet plans in JSON.
@@ -516,14 +562,16 @@ ${phase ? `- Phase: ${phase}` : ''}
 ${athleteMatch ? `Include athleteInspiration field with the athlete name. Model meal timing, food choices, and philosophy after how ${athleteMatch} actually eats.` : ''}
 Provide practical, specific meal plans with real foods. Include meal timing strategy, supplement recommendations, hydration targets, and phase-specific notes.`;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse diet response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse diet response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
@@ -605,7 +653,6 @@ Provide practical, specific meal plans with real foods. Include meal timing stra
             sport: { type: 'string' },
             phase: { type: 'string' },
             trainingDays: { type: 'number' },
-            apiKey: { type: 'string' },
           },
         },
         response: {
@@ -644,13 +691,9 @@ Provide practical, specific meal plans with real foods. Include meal timing stra
       },
     },
     async (request: FastifyRequest<{ Body: NutritionRequest }>, reply: FastifyReply) => {
-      const { age, weight, height, sex, activityLevel, goal, athleteMatch, sport, phase, trainingDays, apiKey } = request.body;
+      const { age, weight, height, sex, activityLevel, goal, athleteMatch, sport, phase, trainingDays } = request.body;
 
       app.logger.info({ weight, height, activityLevel, goal }, 'Nutrition calculation request');
-
-      if (!apiKey || apiKey.trim() === '') {
-        return reply.status(400).send({ error: 'apiKey is required' });
-      }
 
       try {
         const systemPrompt = `You are a precision nutrition coach and sports dietitian specializing in macro calculation, meal planning, and supplement protocols for every type of athlete and fitness population. You generate detailed nutrition plans in JSON.
@@ -740,14 +783,16 @@ ${trainingDays ? `- Training Days Per Week: ${trainingDays} (provide separate tr
 Calculate BMR using Mifflin-St Jeor, apply activity multiplier for TDEE, then adjust for goal and athlete type. Provide complete macro breakdown, meal timing strategy, supplement recommendations, and hydration targets.
 ${trainingDays ? 'Include weeklyPlan with training day vs rest day calorie targets and refeed day recommendation.' : ''}`;
 
-        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger, apiKey);
+        const responseText = await callClaudeAPI(systemPrompt, userPrompt, app.logger);
 
         let jsonData: any = {};
-        try {
-          jsonData = JSON.parse(responseText);
-        } catch (parseError) {
-          app.logger.error({ parseError, raw: responseText }, 'Failed to parse nutrition response');
-          return reply.status(500).send({ error: 'Failed to parse AI response', raw: responseText });
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn({ parseError, raw: responseText }, 'Failed to parse nutrition response, using mock');
+            jsonData = {};
+          }
         }
 
         // Create mock structure if empty
