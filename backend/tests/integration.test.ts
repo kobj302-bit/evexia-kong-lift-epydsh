@@ -82,6 +82,125 @@ describe("API Integration Tests", () => {
         expect(data.name).toBeDefined();
       });
 
+      test("Generate athlete program with planType and ageBracket", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Powerlifting focused program",
+            level: "Intermediate",
+            phase: "Strength",
+            planType: "powerlifting",
+            ageBracket: "30s",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.phase).toBeDefined();
+      });
+
+      test("Generate athlete program with focusAreas and daysPerWeek", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Speed and power development",
+            level: "Intermediate",
+            phase: "Power",
+            focusAreas: ["Speed", "Power", "Strength"],
+            daysPerWeek: 4,
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.days).toBeDefined();
+      });
+
+      test("Generate athlete program with holistic and custom coach", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Holistic wellness program",
+            level: "Advanced",
+            phase: "Maintenance",
+            holistic: true,
+            customCoach: "Custom training methodology",
+            sessionMinutes: 60,
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+      });
+
+      test("Generate athlete program with lifeStage and equipmentOverride", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Beginner friendly program",
+            level: "Beginner",
+            phase: "Building Muscle",
+            lifeStage: "young adult",
+            equipmentOverride: ["dumbbells", "barbell", "bench"],
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+      });
+
+      test("Generate athlete program with different training goals", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Cut body fat",
+            level: "Intermediate",
+            phase: "Cutting Phase",
+            trainingGoal: "Cutting",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+      });
+
+      test("Generate athlete program with military tactical plan type", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Military fitness preparation",
+            level: "Advanced",
+            phase: "Tactical",
+            planType: "military_tactical",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+      });
+
+      test("Generate athlete program with endurance cardio plan type", async () => {
+        const res = await api("/api/ai/athlete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: "Marathon training",
+            level: "Intermediate",
+            phase: "Building Endurance",
+            planType: "endurance_cardio",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+      });
+
       test("Return 400 when missing required description", async () => {
         const res = await api("/api/ai/athlete", {
           method: "POST",
@@ -174,6 +293,43 @@ describe("API Integration Tests", () => {
             meals: 3,
             goal: "weight loss",
             restrictions: "gluten-free",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.meals).toBeDefined();
+      });
+
+      test("Generate meal plan with multiple meals and high protein", async () => {
+        const res = await api("/api/ai/diet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            calories: 3000,
+            protein: 225,
+            carbs: 300,
+            fat: 100,
+            meals: 6,
+            goal: "bulking",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.meals).toBeDefined();
+        expect(data.totalProtein).toBeDefined();
+      });
+
+      test("Generate meal plan with cutting goal", async () => {
+        const res = await api("/api/ai/diet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            calories: 1800,
+            protein: 140,
+            carbs: 200,
+            fat: 50,
+            meals: 4,
+            goal: "cutting",
           }),
         });
         await expectStatus(res, 200);
@@ -341,6 +497,62 @@ describe("API Integration Tests", () => {
         expect(data.bmr).toBeDefined();
         expect(data.fiber).toBeDefined();
         expect(data.water).toBeDefined();
+      });
+
+      test("Calculate nutrition for younger athlete", async () => {
+        const res = await api("/api/ai/nutrition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            age: 20,
+            weight: 70,
+            height: 175,
+            sex: "male",
+            activityLevel: "very_active",
+            goal: "build_muscle",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.bmr).toBeDefined();
+        expect(data.tdee).toBeDefined();
+      });
+
+      test("Calculate nutrition for sedentary individual", async () => {
+        const res = await api("/api/ai/nutrition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            age: 45,
+            weight: 90,
+            height: 182,
+            sex: "male",
+            activityLevel: "sedentary",
+            goal: "maintain",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.bmr).toBeDefined();
+        expect(data.tdee).toBeDefined();
+      });
+
+      test("Calculate nutrition with weight loss goal", async () => {
+        const res = await api("/api/ai/nutrition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            age: 35,
+            weight: 95,
+            height: 180,
+            sex: "female",
+            activityLevel: "lightly_active",
+            goal: "weight_loss",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.targetCalories).toBeDefined();
       });
 
       test("Return 400 when missing required age", async () => {

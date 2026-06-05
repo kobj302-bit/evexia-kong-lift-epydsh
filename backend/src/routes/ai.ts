@@ -20,6 +20,16 @@ interface AthleteRequest {
     days?: number;
     injuries?: string[];
   };
+  // New optional customization fields
+  planType?: string;
+  ageBracket?: string;
+  lifeStage?: string;
+  focusAreas?: string[];
+  holistic?: boolean;
+  customCoach?: string;
+  daysPerWeek?: number;
+  sessionMinutes?: number;
+  equipmentOverride?: string[];
   apiKey?: string;
 }
 
@@ -119,6 +129,27 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
                 injuries: { type: 'array', items: { type: 'string' } },
               },
             },
+            planType: {
+              type: 'string',
+              enum: ['strength_hypertrophy', 'military_tactical', 'athletic_sport', 'holistic_wellness', 'mobility_recovery', 'endurance_cardio', 'powerlifting', 'calisthenics', 'combat_sports', 'longevity', 'custom'],
+            },
+            ageBracket: {
+              type: 'string',
+              enum: ['under_30', '30s', '40s', '50s', '60_plus'],
+            },
+            lifeStage: { type: 'string' },
+            focusAreas: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['Strength', 'Hypertrophy', 'Speed', 'Power', 'Mobility', 'Recovery', 'Mental', 'Conditioning', 'Skill', 'Flexibility', 'Balance', 'Endurance'],
+              },
+            },
+            holistic: { type: 'boolean', default: false },
+            customCoach: { type: 'string' },
+            daysPerWeek: { type: 'number', minimum: 2, maximum: 7 },
+            sessionMinutes: { type: 'number' },
+            equipmentOverride: { type: 'array', items: { type: 'string' } },
           },
         },
         response: {
@@ -146,9 +177,42 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
       },
     },
     async (request: FastifyRequest<{ Body: AthleteRequest }>, reply: FastifyReply) => {
-      const { description, level, phase, athleteTemplate, sport, trainingGoal, useSurveyData = true, profile } = request.body;
+      const {
+        description,
+        level,
+        phase,
+        athleteTemplate,
+        sport,
+        trainingGoal,
+        useSurveyData = true,
+        profile,
+        planType,
+        ageBracket,
+        lifeStage,
+        focusAreas,
+        holistic,
+        customCoach,
+        daysPerWeek,
+        sessionMinutes,
+        equipmentOverride,
+      } = request.body;
 
-      app.logger.info({ level, phase, athleteTemplate, trainingGoal, useSurveyData }, 'Athlete program generation request');
+      app.logger.info(
+        {
+          level,
+          phase,
+          athleteTemplate,
+          trainingGoal,
+          useSurveyData,
+          planType,
+          ageBracket,
+          holistic,
+          customCoach,
+          daysPerWeek,
+          sessionMinutes,
+        },
+        'Athlete program generation request'
+      );
 
       // Validate trainingGoal if provided
       if (trainingGoal) {
@@ -161,18 +225,120 @@ export function registerAIRoutes(app: App, fastify: FastifyInstance) {
       }
 
       try {
-        // Build dynamic system prompt based on trainingGoal and other fields
+        // Build dynamic system prompt based on all provided fields
+
+        // 1. Plan Type Insights
+        let planTypeInsights = '';
+        if (planType) {
+          const planTypeMap: Record<string, string> = {
+            strength_hypertrophy:
+              'PLAN TYPE: Strength & Hypertrophy — classic progressive overload, compound lifts (squat, bench, deadlift), hypertrophy rep ranges (6–12), periodization blocks, volume emphasis.',
+            military_tactical:
+              'PLAN TYPE: Military Tactical — ruck marches, calisthenics circuits, combat conditioning, functional fitness, PT tests (push-ups, pull-ups, runs), mental toughness blocks, movement under load.',
+            athletic_sport:
+              'PLAN TYPE: Athletic Sport — sport-specific conditioning, explosive power, agility, speed work, sport skill integration, deceleration training, injury prevention for the sport.',
+            holistic_wellness:
+              'PLAN TYPE: Holistic Wellness — blend lifting + yoga + breathwork + walking + sleep guidance, balance all pillars of health, focus on movement quality and recovery.',
+            mobility_recovery:
+              'PLAN TYPE: Mobility & Recovery — primarily mobility flows, soft-tissue work, stretching, low-intensity movement, fascia release, breathwork, restoration.',
+            endurance_cardio:
+              'PLAN TYPE: Endurance & Cardio — zone-2 base building, tempo runs, long slow distance, VO2max intervals, aerobic periodization, cardiac adaptation.',
+            powerlifting:
+              'PLAN TYPE: Powerlifting — squat/bench/deadlift focus, heavy triples/singles, RPE-based loading, competition prep structure, peak-week peaking.',
+            calisthenics:
+              'PLAN TYPE: Calisthenics — bodyweight progressions (planche, front lever, handstand, muscle-up), skill work, ring training, leverage gains.',
+            combat_sports:
+              'PLAN TYPE: Combat Sports — striking + grappling conditioning, bag work, sparring prep, explosive circuits, fight camp structure, sport-specific conditioning.',
+            longevity:
+              'PLAN TYPE: Longevity — Bryan-Johnson/Peter-Attia style: zone-2 cardio, strength minimums, mobility, bone density, VO2max, sleep optimization, biomarker awareness.',
+            custom: 'PLAN TYPE: Custom — use description and other contextual fields to determine the optimal structure.',
+          };
+          planTypeInsights = `\n${planTypeMap[planType] || ''}`;
+        }
+
+        // 2. Age Bracket Tailoring
+        let ageBracketInsights = '';
+        if (ageBracket) {
+          const ageBracketMap: Record<string, string> = {
+            'under_30':
+              'AGE BRACKET: Under 30 — high intensity tolerated, fast progression acceptable, minimal extra warm-up emphasis, peak performance years.',
+            '30s': 'AGE BRACKET: 30s — solid training intensity, beginning joint awareness, standard warm-ups, balanced recovery.',
+            '40s': 'AGE BRACKET: 40s — moderate intensity emphasized, joint-friendly variants encouraged (trap bar over conventional deadlift, neutral-grip presses), warm-up/cool-down blocks, deload every 4th week.',
+            '50s': 'AGE BRACKET: 50s — more mobility work integral to sessions, joint-sparing variants mandatory (trap bar deadlifts, neutral-grip presses, goblet squats), longer warm-ups, deload every 3rd week, explicit recovery days.',
+            '60_plus':
+              'AGE BRACKET: 60+ — balance work, fall prevention priority, bone-density-focused lifts (weighted carries, step-ups, hip hinge), easier conditioning, chair-assisted options, very explicit warm-up/cool-down, deload every 2nd–3rd week.',
+          };
+          ageBracketInsights = `\n${ageBracketMap[ageBracket] || ''}`;
+        }
+
+        // 3. Life Stage Context
+        let lifeStageInsights = '';
+        if (lifeStage) {
+          lifeStageInsights = `\nLIFE STAGE: ${lifeStage} — tailor programming intensity, volume, and recovery expectations to this life phase.`;
+        }
+
+        // 4. Focus Areas Emphasis
+        let focusAreasInsights = '';
+        if (focusAreas && focusAreas.length > 0) {
+          focusAreasInsights = `\nFOCUS AREAS (prioritize these): ${focusAreas.join(', ')} — weight weekly day allocation toward these areas. If mobility/recovery heavy, more yoga/mobility days, fewer pure strength days. If strength/power heavy, more compound lift days.`;
+        }
+
+        // 5. Holistic Mode Rules
+        let holisticInsights = '';
+        if (holistic) {
+          holisticInsights = `\nHOLISTIC MODE ENABLED — MANDATORY REQUIREMENTS:
+- MUST include at least one dedicated yoga/mobility day in the weekly schedule.
+- MUST include at least one active-recovery / breathwork block (can be a day or a session block).
+- tips MUST include sleep-and-stress guidance (e.g., 7–9 hours sleep, HRV tracking, stress management).
+- recoveryProtocol MUST be a detailed paragraph (not just a sentence).
+- exercises on holistic days can be yoga poses, breathwork drills, mobility flows — use the name/sets/reps/rest/notes format creatively (e.g., { name: "Box breathing 4-4-4-4", sets: 1, reps: "5 min", rest: "—", notes: "Inhale 4, hold 4, exhale 4, hold 4" }).`;
+        }
+
+        // 6. Custom Coach / Coach Philosophy
+        let coachInsights = '';
+        if (customCoach) {
+          coachInsights = `\nCUSTOM COACH: ${customCoach} — surface this coach's name and philosophy in the athleteInspiration field. Let their known methodology shape exercise selection and program structure. Examples:
+- David Goggins → ultra-endurance, mental toughness, high-volume running + calisthenics.
+- Jocko Willink → disciplined compound lifts, work capacity, minimal fluff.
+- Andrew Huberman → sleep/stress optimization, science-backed periodization, neuroplasticity focus.
+- Jeff Cavaliere (AthleanX) → anatomically-sound exercise selection, injury prevention, technical mastery.
+- Chris Heria → calisthenics skill progressions, street workout style, functional fitness.
+- Bryan Johnson Blueprint → longevity focus, biomarkers, zone-2 cardio, strength minimums.
+- Peter Attia → VO2max, strength, longevity, precision cardiovascular training.`;
+        }
+
+        // 7. Days Per Week Override
+        let daysPerWeekInsights = '';
+        if (daysPerWeek) {
+          daysPerWeekInsights = `\nDAYS PER WEEK OVERRIDE: ${daysPerWeek} training days — build the weekly schedule with exactly ${daysPerWeek} training days.`;
+        }
+
+        // 8. Session Minutes / Duration
+        let sessionMinutesInsights = '';
+        if (sessionMinutes) {
+          sessionMinutesInsights = `\nSESSION DURATION TARGET: ${sessionMinutes} minutes per session — design each day's exercises and rep schemes to fit within approximately ${sessionMinutes} minutes. Include duration field on each day reflecting this target.`;
+        }
+
+        // 9. Equipment Override
+        let equipmentOverrideInsights = '';
+        if (equipmentOverride) {
+          equipmentOverrideInsights = `\nEQUIPMENT OVERRIDE — NEVER prescribe exercises requiring equipment outside this list:
+- Available Equipment: ${equipmentOverride.join(', ')}
+- Only use exercises compatible with this equipment. Substitute alternatives if needed.`;
+        }
+
+        // 10. Training Goal Insights (existing logic)
         let trainingGoalInsights = '';
         if (trainingGoal === 'Cutting') {
-          trainingGoalInsights = `TRAINING GOAL: Cutting — design a program with calorie deficit focus, muscle retention emphasis, progressive overload on main lifts, and moderate conditioning. The diet must reflect a deficit with high protein (1.2-1.5g/lb) to preserve muscle. Include more conditioning work and fat-loss metabolic resistance training. Reflect this in diet.dailyCalories (deficit) and macros.`;
+          trainingGoalInsights = `\nTRAINING GOAL: Cutting — design a program with calorie deficit focus, muscle retention emphasis, progressive overload on main lifts, and moderate conditioning. The diet must reflect a deficit with high protein (1.2-1.5g/lb) to preserve muscle. Include more conditioning work and fat-loss metabolic resistance training. Reflect this in diet.dailyCalories (deficit) and macros.`;
         } else if (trainingGoal === 'Maintenance') {
-          trainingGoalInsights = `TRAINING GOAL: Maintenance — sustain current physique with balanced volume, maintenance calories, and maintenance macros. Include skill work, deload integration, and recovery focus. The diet must reflect maintenance calorie targets with balanced macros.`;
+          trainingGoalInsights = `\nTRAINING GOAL: Maintenance — sustain current physique with balanced volume, maintenance calories, and maintenance macros. Include skill work, deload integration, and recovery focus. The diet must reflect maintenance calorie targets with balanced macros.`;
         } else if (trainingGoal === 'Bulking') {
-          trainingGoalInsights = `TRAINING GOAL: Bulking — design a program with calorie surplus focus, hypertrophy emphasis, progressive overload, and higher volume. The diet must reflect a surplus (300-500+ cal above TDEE) with high protein, abundant carbs, and adequate fat. Emphasize quality mass gain and nutrient density.`;
+          trainingGoalInsights = `\nTRAINING GOAL: Bulking — design a program with calorie surplus focus, hypertrophy emphasis, progressive overload, and higher volume. The diet must reflect a surplus (300-500+ cal above TDEE) with high protein, abundant carbs, and adequate fat. Emphasize quality mass gain and nutrient density.`;
         } else if (trainingGoal === 'Muscle Building') {
-          trainingGoalInsights = `TRAINING GOAL: Muscle Building — hard-focus hypertrophy program with 8-15 rep ranges, high volume accumulation, progressive overload, and time-under-tension cues. Include supersets, drop sets, and rest-pause sets. The diet must reflect a surplus with emphasis on carbs around training, high protein, and meal frequency for recovery and muscle protein synthesis.`;
+          trainingGoalInsights = `\nTRAINING GOAL: Muscle Building — hard-focus hypertrophy program with 8-15 rep ranges, high volume accumulation, progressive overload, and time-under-tension cues. Include supersets, drop sets, and rest-pause sets. The diet must reflect a surplus with emphasis on carbs around training, high protein, and meal frequency for recovery and muscle protein synthesis.`;
         } else if (trainingGoal === 'Overall Strength') {
-          trainingGoalInsights = `TRAINING GOAL: Overall Strength — CrossFit-style hybrid program combining compound lifts, endurance/cardio, conditioning, and bodyweight strength. The weekly schedule MUST include BOTH dedicated strength days (compound lifts, power development) AND cardiovascular/endurance days (running, rowing, sled pushes, Zone 2 training, intervals). This hybrid structure balances max strength with work capacity and conditioning. Mention this hybrid structure explicitly in the description and weeklySchedule.`;
+          trainingGoalInsights = `\nTRAINING GOAL: Overall Strength — CrossFit-style hybrid program combining compound lifts, endurance/cardio, conditioning, and bodyweight strength. The weekly schedule MUST include BOTH dedicated strength days (compound lifts, power development) AND cardiovascular/endurance days (running, rowing, sled pushes, Zone 2 training, intervals). This hybrid structure balances max strength with work capacity and conditioning. Mention this hybrid structure explicitly in the description and weeklySchedule.`;
         }
 
         // Build injury safety instructions only if useSurveyData is true AND injuries are provided
@@ -309,7 +475,7 @@ BODYBUILDING PHASES:
 - Mini-cut: short aggressive deficit, 4-8 weeks
 - Reverse diet: gradual calorie increase post-cut, metabolic restoration
 
-${trainingGoalInsights ? `\n${trainingGoalInsights}` : ''}
+${trainingGoalInsights}${planTypeInsights}${ageBracketInsights}${lifeStageInsights}${focusAreasInsights}${holisticInsights}${coachInsights}${daysPerWeekInsights}${sessionMinutesInsights}${equipmentOverrideInsights}
 
 ${profileContext ? `\n${profileContext}` : ''}
 
@@ -317,8 +483,6 @@ LEVEL SCALING — ALWAYS apply:
 - Beginner: lower volume (3 sets), simpler compound movements, no advanced techniques, RPE 6-7
 - Intermediate: moderate volume (4 sets), compound + isolation, occasional intensifiers, RPE 7-8
 - Advanced: high volume (5+ sets), advanced techniques (drop sets, supersets, rest-pause, RPE-based loading, periodization blocks), RPE 8-9+
-
-${equipmentInsights ? `\n${equipmentInsights}` : ''}
 
 ${hasInjuries ? `\n${injurySafetyInsights}` : `INJURY MODIFICATIONS — ALWAYS substitute conflicting exercises and include modifications in injuryModifications field:
 - Knee issues: avoid deep knee flexion, substitute leg press for squat, step-ups over lunges
@@ -333,6 +497,8 @@ ${hasInjuries ? `\n${injurySafetyInsights}` : `INJURY MODIFICATIONS — ALWAYS s
 
 DIET SECTION — ALWAYS include a complete diet section aligned with the phase, sport, athlete, and goal.
 
+LEGAL DISCLAIMER — ALWAYS append as the final tips element: "Not medical advice. Consult a licensed physician before starting any new program — especially if you have injuries, are pregnant, or have a chronic condition."
+
 RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
 
         // Build user prompt
@@ -346,19 +512,28 @@ RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
         if (athleteTemplate) userPromptParts.push(`- Athlete Inspiration: ${athleteTemplate}`);
         if (sport) userPromptParts.push(`- Sport: ${sport}`);
         if (trainingGoal) userPromptParts.push(`- Training Goal: ${trainingGoal}`);
+        if (planType) userPromptParts.push(`- Plan Type: ${planType}`);
+        if (ageBracket) userPromptParts.push(`- Age Bracket: ${ageBracket}`);
+        if (lifeStage) userPromptParts.push(`- Life Stage: ${lifeStage}`);
+        if (focusAreas && focusAreas.length > 0) userPromptParts.push(`- Focus Areas: ${focusAreas.join(', ')}`);
+        if (holistic) userPromptParts.push(`- Holistic Mode: ENABLED (include yoga/mobility/breathwork)`);
+        if (customCoach) userPromptParts.push(`- Custom Coach: ${customCoach}`);
+        if (daysPerWeek) userPromptParts.push(`- Training Days Per Week: ${daysPerWeek}`);
+        if (sessionMinutes) userPromptParts.push(`- Target Session Duration: ${sessionMinutes} minutes`);
+        if (equipmentOverride && equipmentOverride.length > 0) userPromptParts.push(`- Equipment Available: ${equipmentOverride.join(', ')}`);
 
         if (useSurveyData && profile) {
           if (profile.age) userPromptParts.push(`- Age: ${profile.age}`);
           if (profile.weight) userPromptParts.push(`- Weight: ${profile.weight}`);
           if (profile.sex) userPromptParts.push(`- Sex: ${profile.sex}`);
           if (profile.goal) userPromptParts.push(`- Goal: ${profile.goal}`);
-          if (profile.equip) userPromptParts.push(`- Equipment: ${profile.equip}`);
-          if (profile.days) userPromptParts.push(`- Training Days Per Week: ${profile.days}`);
+          if (profile.equip && !equipmentOverride) userPromptParts.push(`- Equipment: ${profile.equip}`);
+          if (profile.days && !daysPerWeek) userPromptParts.push(`- Training Days Per Week: ${profile.days}`);
           if (hasInjuries) userPromptParts.push(`- Injuries/Limitations: ${profile.injuries.join(', ')}`);
         }
 
         userPromptParts.push('');
-        userPromptParts.push('Generate a complete, expert-level program. If this is a famous athlete, use their REAL training methods. If this is a sport, use sport-science conditioning. If this is military/first responder, use functional fitness and job-specific demands. Apply all injury modifications and equipment constraints.');
+        userPromptParts.push('Generate a complete, expert-level program incorporating ALL specified parameters. Use their real training methodologies, sport science, and military protocols as needed. Apply all injury modifications, equipment constraints, and holistic requirements.');
 
         const userPrompt = userPromptParts.join('\n');
         const systemPrompt = baseSystemPrompt;
@@ -423,7 +598,27 @@ RETURN ONLY VALID JSON. No markdown. No explanation. No code fences.`;
           }
         }
 
-        app.logger.info({ programName: jsonData.name, useSurveyData, hasProfile: !!profile }, 'Athlete program generated');
+        // ALWAYS add legal disclaimer as the final tip
+        if (!Array.isArray(jsonData.tips)) {
+          jsonData.tips = [];
+        }
+        const legalDisclaimer =
+          'Not medical advice. Consult a licensed physician before starting any new program — especially if you have injuries, are pregnant, or have a chronic condition.';
+        if (!jsonData.tips.includes(legalDisclaimer)) {
+          jsonData.tips.push(legalDisclaimer);
+        }
+
+        app.logger.info(
+          {
+            programName: jsonData.name,
+            useSurveyData,
+            hasProfile: !!profile,
+            planType,
+            ageBracket,
+            holistic,
+          },
+          'Athlete program generated'
+        );
         return jsonData;
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to generate athlete program');
