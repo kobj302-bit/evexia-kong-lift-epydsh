@@ -22,6 +22,15 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ProGate } from '@/components/ProGate';
 import { COLORS } from '@/constants/data';
 import { resetOnboarding } from '@/utils/onboardingStorage';
+import {
+  isDisclaimerAcknowledged,
+  acknowledgeDisclaimer,
+  DISCLAIMER_SHORT,
+  DISCLAIMER_FULL,
+  DISCLAIMER_FOOTER,
+} from '@/utils/disclaimer';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const PHASES = ['Bulking', 'Cutting', 'Maintenance', 'Setting the Stage', 'Building Muscle'];
@@ -34,6 +43,55 @@ const TRAINING_GOALS = [
   { label: 'Overall Strength', desc: 'CrossFit-style — compound lifts + cardio + endurance + bodyweight strength' },
 ];
 
+const PLAN_TYPES = [
+  { label: '💪 Strength & Hypertrophy', value: 'strength_hypertrophy' },
+  { label: '🪖 Military / Tactical', value: 'military_tactical' },
+  { label: '🏆 Athletic / Sport-specific', value: 'athletic_sport' },
+  { label: '🧘 Holistic / Wellness', value: 'holistic_wellness' },
+  { label: '🤸 Mobility / Recovery', value: 'mobility_recovery' },
+  { label: '🏃 Endurance / Cardio', value: 'endurance_cardio' },
+  { label: '🏋️ Powerlifting', value: 'powerlifting' },
+  { label: '🤾 Calisthenics', value: 'calisthenics' },
+  { label: '🥊 Combat Sports', value: 'combat_sports' },
+  { label: '⏳ Longevity / Healthspan', value: 'longevity' },
+  { label: '✏️ Custom (use my description)', value: 'custom' },
+];
+
+const AGE_BRACKETS = [
+  { label: 'Under 30', value: 'under_30' },
+  { label: '30s', value: '30s' },
+  { label: '40s', value: '40s' },
+  { label: '50s', value: '50s' },
+  { label: '60+', value: '60_plus' },
+];
+
+const LIFE_STAGES = [
+  { label: '🚀 Peak Performance', value: 'Peak Performance' },
+  { label: '🔁 Comeback / Rehab', value: 'Comeback / Rehab' },
+  { label: '⚖️ Maintenance', value: 'Maintenance' },
+  { label: '🧓 Senior / Longevity', value: 'Senior / Longevity' },
+  { label: '🌱 Beginner Foundation', value: 'Beginner Foundation' },
+];
+
+const FOCUS_AREAS = [
+  'Strength', 'Hypertrophy', 'Speed', 'Power', 'Mobility', 'Recovery',
+  'Mental', 'Conditioning', 'Skill', 'Flexibility', 'Balance', 'Endurance',
+];
+
+const DAYS_PER_WEEK_OPTIONS = [2, 3, 4, 5, 6, 7];
+const SESSION_MINUTES_OPTIONS = [30, 45, 60, 90, 120];
+
+const COACHES = [
+  { label: '🔥 David Goggins', value: 'David Goggins', prefill: 'Train in the style of David Goggins' },
+  { label: '⚓ Jocko Willink', value: 'Jocko Willink', prefill: 'Train in the style of Jocko Willink' },
+  { label: '🧠 Andrew Huberman', value: 'Andrew Huberman', prefill: 'Train in the style of Andrew Huberman (protocol)' },
+  { label: '💪 Jeff Cavaliere', value: 'Jeff Cavaliere', prefill: 'Train in the style of Jeff Cavaliere (AthleanX)' },
+  { label: '🤸 Chris Heria', value: 'Chris Heria', prefill: 'Train in the style of Chris Heria' },
+  { label: '🩺 Peter Attia', value: 'Peter Attia', prefill: 'Train in the style of Peter Attia (longevity)' },
+  { label: '🧬 Bryan Johnson', value: 'Bryan Johnson', prefill: 'Train in the style of Bryan Johnson (Blueprint)' },
+  { label: '🎤 Joe Rogan', value: 'Joe Rogan', prefill: 'Train in the style of Joe Rogan (generalist)' },
+];
+
 interface Template {
   label: string;
   emoji: string;
@@ -41,9 +99,12 @@ interface Template {
   athleteTemplate?: string;
   sport?: string;
   phase?: string;
+  lifeStage?: string;
+  planType?: string;
 }
 
 const TEMPLATES: Template[] = [
+  // Original entries
   { label: 'Ronaldo', emoji: '🦵', description: 'Train like Cristiano Ronaldo', athleteTemplate: 'Cristiano Ronaldo', sport: 'Soccer' },
   { label: 'Arnold', emoji: '💪', description: 'Arnold Schwarzenegger Golden Era bodybuilding', athleteTemplate: 'Arnold Schwarzenegger' },
   { label: 'LeBron', emoji: '🏀', description: 'LeBron James NBA performance training', athleteTemplate: 'LeBron James', sport: 'Basketball' },
@@ -67,7 +128,27 @@ const TEMPLATES: Template[] = [
   { label: 'Maintenance', emoji: '🎯', description: 'Maintenance phase to sustain current physique', phase: 'Maintenance' },
   { label: 'Setting the Stage', emoji: '🏗️', description: 'Setting the stage for peak competition prep', phase: 'Setting the Stage' },
   { label: 'Build Muscle', emoji: '💪', description: 'Focused muscle building hypertrophy program', phase: 'Building Muscle' },
+  // Life-stage variants
+  { label: 'Ronaldo — Peak', emoji: '🦵', description: 'Train like Cristiano Ronaldo at peak performance', athleteTemplate: 'Cristiano Ronaldo', sport: 'Soccer', lifeStage: 'Peak Performance', phase: 'Maintenance' },
+  { label: 'Ronaldo — Comeback', emoji: '🦵', description: 'Cristiano Ronaldo comeback and rehab protocol', athleteTemplate: 'Cristiano Ronaldo', sport: 'Soccer', lifeStage: 'Comeback / Rehab' },
+  { label: 'Ronaldo — Longevity', emoji: '🦵', description: 'Cristiano Ronaldo longevity and senior training', athleteTemplate: 'Cristiano Ronaldo', sport: 'Soccer', lifeStage: 'Senior / Longevity', planType: 'longevity' },
+  { label: 'Arnold — Golden Era Bulk', emoji: '💪', description: 'Arnold Schwarzenegger Golden Era bulk program', athleteTemplate: 'Arnold Schwarzenegger', lifeStage: 'Peak Performance', phase: 'Bulking' },
+  { label: 'Arnold — Olympia Cut', emoji: '💪', description: 'Arnold Schwarzenegger Olympia cutting phase', athleteTemplate: 'Arnold Schwarzenegger', lifeStage: 'Peak Performance', phase: 'Cutting' },
+  { label: 'Arnold — Senior Maintenance', emoji: '💪', description: 'Arnold Schwarzenegger senior maintenance training', athleteTemplate: 'Arnold Schwarzenegger', lifeStage: 'Senior / Longevity', phase: 'Maintenance' },
+  { label: 'LeBron — Rookie', emoji: '🏀', description: 'LeBron James rookie foundation training', athleteTemplate: 'LeBron James', sport: 'Basketball', lifeStage: 'Beginner Foundation' },
+  { label: 'LeBron — Prime', emoji: '🏀', description: 'LeBron James prime performance training', athleteTemplate: 'LeBron James', sport: 'Basketball', lifeStage: 'Peak Performance' },
+  { label: 'LeBron — Longevity Mode', emoji: '🏀', description: 'LeBron James longevity and recovery mode', athleteTemplate: 'LeBron James', sport: 'Basketball', lifeStage: 'Senior / Longevity', planType: 'longevity' },
+  { label: 'Phelps — Olympic Prep', emoji: '🏊', description: 'Michael Phelps Olympic preparation training', athleteTemplate: 'Michael Phelps', sport: 'Swimming', lifeStage: 'Peak Performance' },
+  { label: 'Phelps — Off-Season', emoji: '🏊', description: 'Michael Phelps off-season maintenance', athleteTemplate: 'Michael Phelps', sport: 'Swimming', lifeStage: 'Maintenance', phase: 'Maintenance' },
+  { label: 'CBum — Off-Season', emoji: '🏋️', description: 'Chris Bumstead off-season bulk program', athleteTemplate: 'Chris Bumstead', phase: 'Bulking' },
+  { label: 'CBum — Stage Prep', emoji: '🏋️', description: 'Chris Bumstead stage prep cutting phase', athleteTemplate: 'Chris Bumstead', phase: 'Setting the Stage' },
+  { label: 'Goggins — Hell Week', emoji: '🔥', description: 'David Goggins Hell Week military tactical training', planType: 'military_tactical', lifeStage: 'Peak Performance' },
+  { label: 'Jocko — Discipline', emoji: '⚓', description: 'Jocko Willink discipline-based maintenance training', planType: 'military_tactical', lifeStage: 'Maintenance', phase: 'Maintenance' },
+  { label: 'Huberman Foundational', emoji: '🧠', description: 'Andrew Huberman foundational longevity protocol', planType: 'longevity', lifeStage: 'Maintenance', phase: 'Maintenance' },
+  { label: 'Bryan Johnson Blueprint', emoji: '🧬', description: 'Bryan Johnson Blueprint longevity training', planType: 'longevity', lifeStage: 'Senior / Longevity' },
 ];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function goalToPhase(goal: string): string {
   if (goal?.toLowerCase().includes('bulk')) return 'Bulking';
@@ -83,6 +164,18 @@ function surveyGoalToTrainingGoal(goal: string): string {
   return 'Maintenance';
 }
 
+function deriveAgeBracket(age: number | string | undefined): string {
+  const n = typeof age === 'string' ? parseInt(age, 10) : (age || 0);
+  if (!n || isNaN(n)) return '30s';
+  if (n < 30) return 'under_30';
+  if (n < 40) return '30s';
+  if (n < 50) return '40s';
+  if (n < 60) return '50s';
+  return '60_plus';
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function AthleteTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -90,6 +183,7 @@ export default function AthleteTab() {
   const { isSubscribed, hasDailyPass, purchaseDailyPass } = useSubscription();
   const { width } = useWindowDimensions();
 
+  // Existing state
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState(state.profile.exp || 'Beginner');
   const [phase, setPhase] = useState(goalToPhase(state.profile.goal));
@@ -103,6 +197,29 @@ export default function AthleteTab() {
   const [dietExpanded, setDietExpanded] = useState(false);
   const [deloadMode, setDeloadMode] = useState(false);
   const [routinesModalVisible, setRoutinesModalVisible] = useState(false);
+
+  // New customization state
+  const [planType, setPlanType] = useState('strength_hypertrophy');
+  const [ageBracket, setAgeBracket] = useState(deriveAgeBracket(state.profile.age));
+  const [lifeStage, setLifeStage] = useState('Maintenance');
+  const [focusAreas, setFocusAreas] = useState<string[]>([]);
+  const [holistic, setHolistic] = useState(false);
+  const [daysPerWeek, setDaysPerWeek] = useState<number>(
+    typeof state.profile.days === 'number' ? state.profile.days : 4
+  );
+  const [sessionMinutes, setSessionMinutes] = useState(60);
+  const [customCoach, setCustomCoach] = useState('');
+
+  // Disclaimer state
+  const [disclaimerModalVisible, setDisclaimerModalVisible] = useState(false);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
+
+  // Add custom day modal state
+  const [addDayModalVisible, setAddDayModalVisible] = useState(false);
+  const [newDayName, setNewDayName] = useState('');
+  const [newDayFocus, setNewDayFocus] = useState('');
+  const [newDayDuration, setNewDayDuration] = useState('');
+  const [newDayExercises, setNewDayExercises] = useState('');
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -147,14 +264,31 @@ export default function AthleteTab() {
     if (t.athleteTemplate !== undefined) setAthleteTemplate(t.athleteTemplate);
     if (t.sport !== undefined) setSport(t.sport);
     if (t.phase !== undefined) setPhase(t.phase);
+    if (t.lifeStage !== undefined) setLifeStage(t.lifeStage);
+    if (t.planType !== undefined) setPlanType(t.planType);
   };
 
-  const handleGenerate = async () => {
-    if (!description.trim()) {
-      showToast('Describe your ideal routine first!');
-      return;
+  const handleCoachPress = (coach: typeof COACHES[0]) => {
+    console.log('[Athlete] Coach inspiration selected:', coach.value);
+    if (customCoach === coach.value) {
+      setCustomCoach('');
+    } else {
+      setCustomCoach(coach.value);
+      if (!description.trim()) {
+        setDescription(coach.prefill);
+      }
     }
-    console.log('[Athlete] Generate routine — level:', level, 'phase:', phase, 'trainingGoal:', trainingGoal, 'useSurveyData:', useSurveyData, 'description:', description);
+  };
+
+  const handleFocusAreaToggle = (area: string) => {
+    console.log('[Athlete] Focus area toggled:', area);
+    setFocusAreas((prev) =>
+      prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
+    );
+  };
+
+  const doGenerate = async () => {
+    console.log('[Athlete] Generate routine — level:', level, 'phase:', phase, 'trainingGoal:', trainingGoal, 'planType:', planType, 'ageBracket:', ageBracket, 'lifeStage:', lifeStage, 'daysPerWeek:', daysPerWeek, 'sessionMinutes:', sessionMinutes, 'holistic:', holistic, 'customCoach:', customCoach, 'focusAreas:', focusAreas, 'useSurveyData:', useSurveyData, 'description:', description);
     setLoading(true);
     setError('');
     setExpandedDay(null);
@@ -165,9 +299,17 @@ export default function AthleteTab() {
         phase,
         trainingGoal,
         useSurveyData,
+        planType,
+        ageBracket,
+        lifeStage,
+        daysPerWeek,
+        sessionMinutes,
       };
       if (athleteTemplate) body.athleteTemplate = athleteTemplate;
       if (sport) body.sport = sport;
+      if (focusAreas.length > 0) body.focusAreas = focusAreas;
+      if (holistic) body.holistic = true;
+      if (customCoach) body.customCoach = customCoach;
       if (useSurveyData) {
         body.profile = {
           age: state.profile.age,
@@ -179,6 +321,7 @@ export default function AthleteTab() {
           injuries: state.profile.injuries,
         };
       }
+      console.log('[Athlete] POST /api/ai/athlete — body keys:', Object.keys(body));
       const response = await fetch(
         'https://tc9zmyamhv4vudbhz49epzeyr82j76wn.app.specular.dev/api/ai/athlete',
         {
@@ -201,6 +344,35 @@ export default function AthleteTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!description.trim()) {
+      showToast('Describe your ideal routine first!');
+      return;
+    }
+    const acked = await isDisclaimerAcknowledged();
+    if (!acked) {
+      console.log('[Athlete] Disclaimer not yet acknowledged — showing modal');
+      setPendingGenerate(true);
+      setDisclaimerModalVisible(true);
+      return;
+    }
+    await doGenerate();
+  };
+
+  const handleDisclaimerAccept = async () => {
+    console.log('[Athlete] Disclaimer accepted');
+    await acknowledgeDisclaimer();
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
+    await doGenerate();
+  };
+
+  const handleDisclaimerCancel = () => {
+    console.log('[Athlete] Disclaimer cancelled');
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
   };
 
   const handleAddToTracker = () => {
@@ -237,10 +409,48 @@ export default function AthleteTab() {
     showToast(`📚 Loaded: ${routine.name}`, true);
   };
 
+  const handleAddCustomDay = () => {
+    console.log('[Athlete] Add custom day pressed');
+    setNewDayName('');
+    setNewDayFocus('');
+    setNewDayDuration('');
+    setNewDayExercises('');
+    setAddDayModalVisible(true);
+  };
+
+  const handleConfirmAddDay = () => {
+    const result = state.athleteResult;
+    if (!result) return;
+    console.log('[Athlete] Confirm add custom day — name:', newDayName, 'focus:', newDayFocus);
+    const parsedExercises = newDayExercises
+      .split('\n')
+      .filter((line) => line.trim() && !line.trim().startsWith('#'))
+      .map((line) => {
+        const parts = line.split('|').map((p) => p.trim());
+        return {
+          name: parts[0] || '—',
+          sets: parts[1] || '—',
+          reps: parts[2] || '—',
+          rest: parts[3] || '—',
+          notes: parts[4] || '',
+        };
+      });
+    const newDay = {
+      name: newDayName || 'Custom Day',
+      focus: newDayFocus || '',
+      duration: newDayDuration || '',
+      exercises: parsedExercises,
+    };
+    const updatedDays = [...(result.days || []), newDay];
+    updateState({ athleteResult: { ...result, days: updatedDays } });
+    setAddDayModalVisible(false);
+    showToast('✅ Custom day added!', true);
+  };
+
   const result = state.athleteResult;
-  const hasInjuries = useSurveyData && state.profile.injuries && state.profile.injuries.filter((i) => i !== 'None').length > 0;
-  const injuryList = hasInjuries ? state.profile.injuries.filter((i) => i !== 'None').join(', ') : '';
-  const surveyDataOffWithInjuries = !useSurveyData && state.profile.injuries && state.profile.injuries.filter((i) => i !== 'None').length > 0;
+  const hasInjuries = useSurveyData && state.profile.injuries && state.profile.injuries.filter((i: string) => i !== 'None').length > 0;
+  const injuryList = hasInjuries ? state.profile.injuries.filter((i: string) => i !== 'None').join(', ') : '';
+  const surveyDataOffWithInjuries = !useSurveyData && state.profile.injuries && state.profile.injuries.filter((i: string) => i !== 'None').length > 0;
 
   const selectedGoalObj = TRAINING_GOALS.find((g) => g.label === trainingGoal);
   const selectedGoalDesc = selectedGoalObj ? selectedGoalObj.desc : '';
@@ -280,7 +490,18 @@ export default function AthleteTab() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Header */}
+      {/* ── Medical Disclaimer Banner ── */}
+      <AnimatedPressable
+        onPress={() => {
+          console.log('[Athlete] Disclaimer banner tapped');
+          Alert.alert('Medical Disclaimer', DISCLAIMER_FULL, [{ text: 'Got it', style: 'default' }]);
+        }}
+        style={styles.disclaimerBanner}
+      >
+        <Text style={styles.disclaimerBannerText}>{DISCLAIMER_SHORT}</Text>
+      </AnimatedPressable>
+
+      {/* ── Header ── */}
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.pageTitle}>🦍 AI Routine Generator</Text>
@@ -299,7 +520,7 @@ export default function AthleteTab() {
         )}
       </View>
 
-      {/* Injury Warning — only when useSurveyData ON and injuries exist */}
+      {/* ── Injury Warning ── */}
       {hasInjuries && (
         <View style={styles.injuryBanner}>
           <Text style={styles.injuryBannerText}>
@@ -308,7 +529,7 @@ export default function AthleteTab() {
         </View>
       )}
 
-      {/* Survey data OFF + injuries warning */}
+      {/* ── Survey data OFF + injuries warning ── */}
       {surveyDataOffWithInjuries && (
         <View style={styles.surveyOffWarning}>
           <Text style={styles.surveyOffWarningText}>
@@ -317,7 +538,28 @@ export default function AthleteTab() {
         </View>
       )}
 
-      {/* Quick Templates */}
+      {/* ── Coach Inspiration ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>🎙️ COACH INSPIRATION</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templateRow}>
+          {COACHES.map((c) => (
+            <AnimatedPressable
+              key={c.value}
+              onPress={() => handleCoachPress(c)}
+              style={[styles.templateChip, customCoach === c.value && styles.templateChipActive]}
+            >
+              <Text
+                numberOfLines={1}
+                style={[styles.templateLabel, customCoach === c.value && styles.templateLabelActive]}
+              >
+                {c.label}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ── Quick Templates ── */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>⚡ QUICK TEMPLATES</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templateRow}>
@@ -342,7 +584,7 @@ export default function AthleteTab() {
         </ScrollView>
       </View>
 
-      {/* Description Input */}
+      {/* ── Description Input ── */}
       <View style={styles.card}>
         <Text style={styles.label}>DESCRIBE YOUR IDEAL ROUTINE</Text>
         <TextInput
@@ -359,7 +601,148 @@ export default function AthleteTab() {
         />
       </View>
 
-      {/* Level Selector */}
+      {/* ── Plan Type ── */}
+      <View style={styles.card}>
+        <Text style={styles.label}>PLAN TYPE</Text>
+        <View style={styles.phaseGrid}>
+          {PLAN_TYPES.map((pt) => (
+            <AnimatedPressable
+              key={pt.value}
+              onPress={() => {
+                console.log('[Athlete] Plan type selected:', pt.value);
+                setPlanType(pt.value);
+              }}
+              style={[styles.phasePill, planType === pt.value && styles.phasePillActive]}
+            >
+              <Text numberOfLines={1} style={[styles.phaseText, planType === pt.value && styles.phaseTextActive]}>
+                {pt.label}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </View>
+      </View>
+
+      {/* ── Age Bracket ── */}
+      <View style={styles.card}>
+        <Text style={styles.label}>AGE BRACKET</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScrollRow}>
+          {AGE_BRACKETS.map((ab) => (
+            <AnimatedPressable
+              key={ab.value}
+              onPress={() => {
+                console.log('[Athlete] Age bracket selected:', ab.value);
+                setAgeBracket(ab.value);
+              }}
+              style={[styles.hScrollPill, ageBracket === ab.value && styles.hScrollPillActive]}
+            >
+              <Text numberOfLines={1} style={[styles.hScrollPillText, ageBracket === ab.value && styles.hScrollPillTextActive]}>
+                {ab.label}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </ScrollView>
+        <Text style={styles.helperText}>Kong will tailor recovery, joint-friendly variations, and intensity to your age bracket.</Text>
+      </View>
+
+      {/* ── Life Stage ── */}
+      <View style={styles.card}>
+        <Text style={styles.label}>LIFE STAGE</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScrollRow}>
+          {LIFE_STAGES.map((ls) => (
+            <AnimatedPressable
+              key={ls.value}
+              onPress={() => {
+                console.log('[Athlete] Life stage selected:', ls.value);
+                setLifeStage(ls.value);
+              }}
+              style={[styles.hScrollPill, lifeStage === ls.value && styles.hScrollPillActive]}
+            >
+              <Text numberOfLines={1} style={[styles.hScrollPillText, lifeStage === ls.value && styles.hScrollPillTextActive]}>
+                {ls.label}
+              </Text>
+            </AnimatedPressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ── Focus Areas ── */}
+      <View style={styles.card}>
+        <Text style={styles.label}>FOCUS AREAS (multi-select)</Text>
+        <View style={styles.phaseGrid}>
+          {FOCUS_AREAS.map((area) => {
+            const isSelected = focusAreas.includes(area);
+            return (
+              <AnimatedPressable
+                key={area}
+                onPress={() => handleFocusAreaToggle(area)}
+                style={[styles.focusChip, isSelected && styles.focusChipActive]}
+              >
+                <Text numberOfLines={1} style={[styles.focusChipText, isSelected && styles.focusChipTextActive]}>
+                  {area}
+                </Text>
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* ── Schedule ── */}
+      <View style={styles.card}>
+        <Text style={styles.label}>SCHEDULE</Text>
+        <Text style={styles.subLabel}>DAYS / WEEK</Text>
+        <View style={styles.pillRow}>
+          {DAYS_PER_WEEK_OPTIONS.map((d) => (
+            <AnimatedPressable
+              key={d}
+              onPress={() => {
+                console.log('[Athlete] Days per week selected:', d);
+                setDaysPerWeek(d);
+              }}
+              style={[styles.pill, daysPerWeek === d && styles.pillActive]}
+            >
+              <Text numberOfLines={1} style={[styles.pillText, daysPerWeek === d && styles.pillTextActive]}>{d}</Text>
+            </AnimatedPressable>
+          ))}
+        </View>
+        <Text style={styles.subLabel}>SESSION LENGTH (min)</Text>
+        <View style={styles.pillRow}>
+          {SESSION_MINUTES_OPTIONS.map((m) => (
+            <AnimatedPressable
+              key={m}
+              onPress={() => {
+                console.log('[Athlete] Session minutes selected:', m);
+                setSessionMinutes(m);
+              }}
+              style={[styles.pill, sessionMinutes === m && styles.pillActive]}
+            >
+              <Text numberOfLines={1} style={[styles.pillText, sessionMinutes === m && styles.pillTextActive]}>{m}</Text>
+            </AnimatedPressable>
+          ))}
+        </View>
+      </View>
+
+      {/* ── Holistic Mode ── */}
+      <View style={styles.card}>
+        <View style={styles.surveyToggleRow}>
+          <View style={styles.surveyToggleInfo}>
+            <Text style={styles.surveyToggleLabel}>Holistic Mode</Text>
+          </View>
+          <Switch
+            value={holistic}
+            onValueChange={(val) => {
+              console.log('[Athlete] Holistic mode toggled:', val);
+              setHolistic(val);
+            }}
+            trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
+            thumbColor={holistic ? COLORS.goldBright : COLORS.textSecondary}
+          />
+        </View>
+        <Text style={styles.surveyToggleHint}>
+          Add yoga, mobility, breathwork & sleep guidance to your plan.
+        </Text>
+      </View>
+
+      {/* ── Level & Phase ── */}
       <View style={styles.card}>
         <Text style={styles.label}>EXPERIENCE LEVEL</Text>
         <View style={styles.pillRow}>
@@ -394,7 +777,7 @@ export default function AthleteTab() {
         </View>
       </View>
 
-      {/* Training Goal Selector */}
+      {/* ── Training Goal ── */}
       <View style={styles.card}>
         <Text style={styles.label}>TRAINING GOAL</Text>
         <View style={styles.goalGrid}>
@@ -422,7 +805,7 @@ export default function AthleteTab() {
         ) : null}
       </View>
 
-      {/* Survey Data Toggle */}
+      {/* ── Survey Data Toggle ── */}
       <View style={styles.card}>
         <View style={styles.surveyToggleRow}>
           <View style={styles.surveyToggleInfo}>
@@ -446,14 +829,14 @@ export default function AthleteTab() {
         </AnimatedPressable>
       </View>
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
         </View>
       ) : null}
 
-      {/* Generate Button */}
+      {/* ── Generate Button ── */}
       <AnimatedPressable onPress={handleGenerate} style={styles.generateBtn} disabled={loading}>
         {loading ? (
           <View style={styles.loadingRow}>
@@ -465,7 +848,7 @@ export default function AthleteTab() {
         )}
       </AnimatedPressable>
 
-      {/* Result Card */}
+      {/* ── Result Card ── */}
       {result && (
         <View style={styles.resultCard}>
           {/* Result Header */}
@@ -750,6 +1133,11 @@ export default function AthleteTab() {
             </View>
           )}
 
+          {/* Add Custom Day Button */}
+          <AnimatedPressable onPress={handleAddCustomDay} style={styles.addDayBtn}>
+            <Text style={styles.addDayBtnText}>➕ Add a custom workout day</Text>
+          </AnimatedPressable>
+
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <AnimatedPressable onPress={handleAddToTracker} style={styles.trackerBtn}>
@@ -761,10 +1149,15 @@ export default function AthleteTab() {
               </Text>
             </AnimatedPressable>
           </View>
+
+          {/* Disclaimer Footer */}
+          <View style={styles.disclaimerFooter}>
+            <Text style={styles.disclaimerFooterText}>{DISCLAIMER_FOOTER}</Text>
+          </View>
         </View>
       )}
 
-      {/* Empty State */}
+      {/* ── Empty State ── */}
       {!result && !loading && (
         <View style={styles.emptyState}>
           <KongMascot size={80} />
@@ -775,7 +1168,7 @@ export default function AthleteTab() {
         </View>
       )}
 
-      {/* My Routines Modal */}
+      {/* ── My Routines Modal ── */}
       <Modal
         visible={routinesModalVisible}
         animationType="slide"
@@ -816,13 +1209,125 @@ export default function AthleteTab() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* ── Disclaimer Modal ── */}
+      <Modal
+        visible={disclaimerModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDisclaimerCancel}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>⚠️ Medical Disclaimer</Text>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <Text style={styles.disclaimerModalText}>{DISCLAIMER_FULL}</Text>
+          </ScrollView>
+          <View style={styles.disclaimerModalActions}>
+            <AnimatedPressable onPress={handleDisclaimerAccept} style={styles.disclaimerAcceptBtn}>
+              <Text style={styles.disclaimerAcceptBtnText}>I understand & accept</Text>
+            </AnimatedPressable>
+            <TouchableOpacity onPress={handleDisclaimerCancel} style={styles.disclaimerCancelLink}>
+              <Text style={styles.disclaimerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Add Custom Day Modal ── */}
+      <Modal
+        visible={addDayModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setAddDayModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>➕ Add Custom Day</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[Athlete] Close add day modal');
+                setAddDayModalVisible(false);
+              }}
+              style={styles.modalClose}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
+            <Text style={styles.addDayFieldLabel}>Day Name</Text>
+            <TextInput
+              style={styles.addDayInput}
+              value={newDayName}
+              onChangeText={setNewDayName}
+              placeholder="e.g. Saturday Cardio"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+            <Text style={styles.addDayFieldLabel}>Focus</Text>
+            <TextInput
+              style={styles.addDayInput}
+              value={newDayFocus}
+              onChangeText={setNewDayFocus}
+              placeholder="e.g. Sprint intervals"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+            <Text style={styles.addDayFieldLabel}>Duration</Text>
+            <TextInput
+              style={styles.addDayInput}
+              value={newDayDuration}
+              onChangeText={setNewDayDuration}
+              placeholder="e.g. 45 min"
+              placeholderTextColor={COLORS.textTertiary}
+            />
+            <Text style={styles.addDayFieldLabel}>Exercises (one per line)</Text>
+            <Text style={styles.addDayHint}>Format: Name | sets | reps | rest | notes</Text>
+            <TextInput
+              style={[styles.addDayInput, styles.addDayTextArea]}
+              value={newDayExercises}
+              onChangeText={setNewDayExercises}
+              multiline
+              numberOfLines={6}
+              placeholder={'Bench Press | 4 | 8 | 90s | Focus on form\nSquat | 3 | 10 | 2min'}
+              placeholderTextColor={COLORS.textTertiary}
+              textAlignVertical="top"
+            />
+            <View style={styles.addDayBtnRow}>
+              <AnimatedPressable
+                onPress={() => {
+                  console.log('[Athlete] Cancel add day');
+                  setAddDayModalVisible(false);
+                }}
+                style={styles.addDayCancelBtn}
+              >
+                <Text style={styles.addDayCancelBtnText}>Cancel</Text>
+              </AnimatedPressable>
+              <AnimatedPressable onPress={handleConfirmAddDay} style={styles.addDayConfirmBtn}>
+                <Text style={styles.addDayConfirmBtnText}>Add Day</Text>
+              </AnimatedPressable>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
+
+  // Disclaimer banner
+  disclaimerBanner: {
+    backgroundColor: 'rgba(212,160,23,0.10)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,160,23,0.25)',
+  },
+  disclaimerBannerText: { fontSize: 12, color: '#C8A020', lineHeight: 18 },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: COLORS.text, letterSpacing: -0.5, flexShrink: 1 },
@@ -874,7 +1379,7 @@ const styles = StyleSheet.create({
   },
   templateChipActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   templateEmoji: { fontSize: 15 },
-  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, maxWidth: 80 },
+  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, maxWidth: 120 },
   templateLabelActive: { color: COLORS.gold },
 
   card: {
@@ -886,6 +1391,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   label: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
+  subLabel: { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, letterSpacing: 1, textTransform: 'uppercase' },
+  helperText: { fontSize: 12, color: COLORS.textTertiary, lineHeight: 18 },
   textArea: {
     backgroundColor: COLORS.surface2,
     borderRadius: 10,
@@ -897,6 +1404,20 @@ const styles = StyleSheet.create({
     minHeight: 100,
     lineHeight: 22,
   },
+
+  // Horizontal scroll pill row
+  hScrollRow: { gap: 8, paddingRight: 8 },
+  hScrollPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  hScrollPillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
+  hScrollPillText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  hScrollPillTextActive: { color: COLORS.gold },
 
   pillRow: { flexDirection: 'row', gap: 8 },
   pill: {
@@ -925,6 +1446,19 @@ const styles = StyleSheet.create({
   phasePillActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   phaseText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1 },
   phaseTextActive: { color: COLORS.gold },
+
+  // Focus area chips (multi-select)
+  focusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  focusChipActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
+  focusChipText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1 },
+  focusChipTextActive: { color: COLORS.gold },
 
   // Training Goal
   goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -1218,6 +1752,18 @@ const styles = StyleSheet.create({
   injuryModLabel: { fontSize: 11, fontWeight: '800', color: COLORS.red, letterSpacing: 1, textTransform: 'uppercase' },
   injuryModText: { fontSize: 13, color: COLORS.red, lineHeight: 20, flex: 1 },
 
+  // Add custom day button
+  addDayBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+  },
+  addDayBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary },
+
   // Action Buttons
   actionButtons: { gap: 10 },
   trackerBtn: {
@@ -1246,6 +1792,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border2,
   },
   saveBtnText: { fontSize: 15, fontWeight: '800', color: COLORS.gold },
+
+  // Disclaimer footer
+  disclaimerFooter: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  disclaimerFooterText: { fontSize: 11, color: COLORS.textTertiary, lineHeight: 17, textAlign: 'center' },
 
   // Empty State
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 14 },
@@ -1286,4 +1842,57 @@ const styles = StyleSheet.create({
   routineName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   routineMeta: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   routineLoad: { fontSize: 14, fontWeight: '700', color: COLORS.gold },
+
+  // Disclaimer modal
+  disclaimerModalText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  disclaimerModalActions: {
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  disclaimerAcceptBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  disclaimerAcceptBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+  disclaimerCancelLink: { alignItems: 'center', paddingVertical: 8 },
+  disclaimerCancelText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
+
+  // Add day modal
+  addDayFieldLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  addDayHint: { fontSize: 11, color: COLORS.textTertiary, marginTop: -6, marginBottom: 4 },
+  addDayInput: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 12,
+  },
+  addDayTextArea: { minHeight: 120, textAlignVertical: 'top' },
+  addDayBtnRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  addDayCancelBtn: {
+    flex: 1,
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  addDayCancelBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary },
+  addDayConfirmBtn: {
+    flex: 2,
+    backgroundColor: COLORS.gold,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  addDayConfirmBtnText: { fontSize: 15, fontWeight: '900', color: '#0A0A0A' },
 });

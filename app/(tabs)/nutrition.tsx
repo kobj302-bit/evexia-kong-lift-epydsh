@@ -1,11 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Switch, Animated, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Switch, Animated, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, DIET_TYPES } from '@/constants/data';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ProGate } from '@/components/ProGate';
+import {
+  isDisclaimerAcknowledged,
+  acknowledgeDisclaimer,
+  DISCLAIMER_SHORT,
+  DISCLAIMER_FULL,
+  DISCLAIMER_FOOTER,
+} from '@/utils/disclaimer';
 
 const GOALS = ['Bulk', 'Cut', 'Maintain'];
 const ACTIVITY_LEVELS = ['Sedentary', 'Light', 'Moderate', 'Active', 'Very Active'];
@@ -53,6 +60,8 @@ export default function NutritionTab() {
   const [sport, setSport] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [disclaimerModalVisible, setDisclaimerModalVisible] = useState(false);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -82,7 +91,7 @@ export default function NutritionTab() {
     if (opt.dietType) setDietType(opt.dietType);
   };
 
-  const handleCalculate = async () => {
+  const doCalculate = async () => {
     console.log('[Nutrition] Calculate pressed — weight:', weight, 'height:', height, 'goal:', goal, 'activity:', activity, 'phase:', phase, 'athleteMatch:', athleteMatch, 'sport:', sport);
     setLoading(true);
     setError('');
@@ -102,6 +111,7 @@ export default function NutritionTab() {
       if (athleteMatch) body.athleteMatch = athleteMatch;
       if (sport) body.sport = sport;
 
+      console.log('[Nutrition] POST /api/ai/nutrition — body keys:', Object.keys(body));
       const response = await fetch(
         'https://tc9zmyamhv4vudbhz49epzeyr82j76wn.app.specular.dev/api/ai/nutrition',
         {
@@ -127,6 +137,32 @@ export default function NutritionTab() {
     }
   };
 
+  const handleCalculate = async () => {
+    console.log('[Nutrition] Calculate button pressed');
+    const acked = await isDisclaimerAcknowledged();
+    if (!acked) {
+      console.log('[Nutrition] Disclaimer not yet acknowledged — showing modal');
+      setPendingGenerate(true);
+      setDisclaimerModalVisible(true);
+      return;
+    }
+    await doCalculate();
+  };
+
+  const handleDisclaimerAccept = async () => {
+    console.log('[Nutrition] Disclaimer accepted');
+    await acknowledgeDisclaimer();
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
+    await doCalculate();
+  };
+
+  const handleDisclaimerCancel = () => {
+    console.log('[Nutrition] Disclaimer cancelled');
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
+  };
+
   const result = state.nResult;
 
   const proteinPct = result?.macros ? Math.round((result.macros.protein * 4) / result.targetCalories * 100) : 33;
@@ -140,6 +176,17 @@ export default function NutritionTab() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Medical Disclaimer Banner */}
+      <AnimatedPressable
+        onPress={() => {
+          console.log('[Nutrition] Disclaimer banner tapped');
+          Alert.alert('Medical Disclaimer', DISCLAIMER_FULL, [{ text: 'Got it', style: 'default' }]);
+        }}
+        style={styles.disclaimerBanner}
+      >
+        <Text style={styles.disclaimerBannerText}>{DISCLAIMER_SHORT}</Text>
+      </AnimatedPressable>
+
       {/* Header */}
       <Text style={styles.pageTitle}>🧮 Nutrition Calculator</Text>
       <Text style={styles.pageSubtitle}>Get your TDEE, macros, and a personalized meal plan</Text>
@@ -496,8 +543,38 @@ export default function NutritionTab() {
               </View>
             </View>
           )}
+
+          {/* Disclaimer Footer */}
+          <View style={styles.disclaimerFooter}>
+            <Text style={styles.disclaimerFooterText}>{DISCLAIMER_FOOTER}</Text>
+          </View>
         </View>
       )}
+
+      {/* Disclaimer Modal */}
+      <Modal
+        visible={disclaimerModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDisclaimerCancel}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>⚠️ Medical Disclaimer</Text>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <Text style={styles.disclaimerModalText}>{DISCLAIMER_FULL}</Text>
+          </ScrollView>
+          <View style={styles.disclaimerModalActions}>
+            <AnimatedPressable onPress={handleDisclaimerAccept} style={styles.disclaimerAcceptBtn}>
+              <Text style={styles.disclaimerAcceptBtnText}>I understand & accept</Text>
+            </AnimatedPressable>
+            <TouchableOpacity onPress={handleDisclaimerCancel} style={styles.disclaimerCancelLink}>
+              <Text style={styles.disclaimerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -505,6 +582,16 @@ export default function NutritionTab() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
+
+  disclaimerBanner: {
+    backgroundColor: 'rgba(212,160,23,0.10)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,160,23,0.25)',
+  },
+  disclaimerBannerText: { fontSize: 12, color: '#C8A020', lineHeight: 18 },
+
   pageTitle: { fontSize: 26, fontWeight: '900', color: COLORS.text, letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
 
@@ -779,4 +866,43 @@ const styles = StyleSheet.create({
   groceryItem: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   groceryDot: { fontSize: 14, color: COLORS.gold, marginTop: 1 },
   groceryText: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 22, flex: 1 },
+
+  // Disclaimer footer
+  disclaimerFooter: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  disclaimerFooterText: { fontSize: 11, color: COLORS.textTertiary, lineHeight: 17, textAlign: 'center' },
+
+  // Modal
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  modalContent: { padding: 16, gap: 10 },
+  disclaimerModalText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  disclaimerModalActions: {
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  disclaimerAcceptBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  disclaimerAcceptBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+  disclaimerCancelLink: { alignItems: 'center', paddingVertical: 8 },
+  disclaimerCancelText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
 });

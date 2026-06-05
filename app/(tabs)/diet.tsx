@@ -1,11 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TextInput, Animated, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS, DIET_TYPES } from '@/constants/data';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ProGate } from '@/components/ProGate';
+import {
+  isDisclaimerAcknowledged,
+  acknowledgeDisclaimer,
+  DISCLAIMER_SHORT,
+  DISCLAIMER_FULL,
+  DISCLAIMER_FOOTER,
+} from '@/utils/disclaimer';
 
 const GOALS = [
   { label: 'Bulk', emoji: '📈' },
@@ -22,6 +29,9 @@ export default function DietTab() {
   const [dietType, setDietType] = useState('Balanced');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [disclaimerModalVisible, setDisclaimerModalVisible] = useState(false);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
+
   const spinAnim = useRef(new Animated.Value(0)).current;
   const spinLoop = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -41,7 +51,7 @@ export default function DietTab() {
 
   if (!isSubscribed) return <ProGate feature="Diet" icon="🥗" description="AI-powered meal plans tailored to your goals" />;
 
-  const handleGenerate = async () => {
+  const doGenerate = async () => {
     console.log('[Diet] Generate meal plan — goal:', goal, 'dietType:', dietType);
     setLoading(true);
     setError('');
@@ -59,6 +69,7 @@ export default function DietTab() {
           goal: state.profile.goal,
         };
       }
+      console.log('[Diet] POST /api/ai/diet — goal:', goal, 'dietType:', dietType);
       const response = await fetch(
         'https://tc9zmyamhv4vudbhz49epzeyr82j76wn.app.specular.dev/api/ai/diet',
         {
@@ -82,6 +93,32 @@ export default function DietTab() {
     }
   };
 
+  const handleGenerate = async () => {
+    console.log('[Diet] Generate button pressed');
+    const acked = await isDisclaimerAcknowledged();
+    if (!acked) {
+      console.log('[Diet] Disclaimer not yet acknowledged — showing modal');
+      setPendingGenerate(true);
+      setDisclaimerModalVisible(true);
+      return;
+    }
+    await doGenerate();
+  };
+
+  const handleDisclaimerAccept = async () => {
+    console.log('[Diet] Disclaimer accepted');
+    await acknowledgeDisclaimer();
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
+    await doGenerate();
+  };
+
+  const handleDisclaimerCancel = () => {
+    console.log('[Diet] Disclaimer cancelled');
+    setDisclaimerModalVisible(false);
+    setPendingGenerate(false);
+  };
+
   const handleSave = () => {
     if (!state.dietResult) return;
     console.log('[Diet] Save meal plan:', state.dietResult.name);
@@ -102,6 +139,17 @@ export default function DietTab() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Medical Disclaimer Banner */}
+      <AnimatedPressable
+        onPress={() => {
+          console.log('[Diet] Disclaimer banner tapped');
+          Alert.alert('Medical Disclaimer', DISCLAIMER_FULL, [{ text: 'Got it', style: 'default' }]);
+        }}
+        style={styles.disclaimerBanner}
+      >
+        <Text style={styles.disclaimerBannerText}>{DISCLAIMER_SHORT}</Text>
+      </AnimatedPressable>
+
       <Text style={styles.pageTitle}>🥗 AI Meal Planner</Text>
       <Text style={styles.pageSubtitle}>Kong will design your perfect nutrition plan</Text>
 
@@ -121,7 +169,14 @@ export default function DietTab() {
         <Text style={styles.label}>Goal</Text>
         <View style={styles.goalRow}>
           {GOALS.map((g) => (
-            <AnimatedPressable key={g.label} onPress={() => setGoal(g.label)} style={[styles.goalPill, goal === g.label && styles.goalPillActive]}>
+            <AnimatedPressable
+              key={g.label}
+              onPress={() => {
+                console.log('[Diet] Goal selected:', g.label);
+                setGoal(g.label);
+              }}
+              style={[styles.goalPill, goal === g.label && styles.goalPillActive]}
+            >
               <Text style={styles.goalEmoji}>{g.emoji}</Text>
               <Text style={[styles.goalText, goal === g.label && styles.goalTextActive]}>{g.label}</Text>
             </AnimatedPressable>
@@ -131,7 +186,14 @@ export default function DietTab() {
         <Text style={styles.label}>Diet Type</Text>
         <View style={styles.dietGrid}>
           {DIET_TYPES.map((d) => (
-            <AnimatedPressable key={d.name} onPress={() => setDietType(d.name)} style={[styles.dietCard, dietType === d.name && styles.dietCardActive]}>
+            <AnimatedPressable
+              key={d.name}
+              onPress={() => {
+                console.log('[Diet] Diet type selected:', d.name);
+                setDietType(d.name);
+              }}
+              style={[styles.dietCard, dietType === d.name && styles.dietCardActive]}
+            >
               <Text style={styles.dietEmoji}>{d.emoji}</Text>
               <Text style={[styles.dietName, dietType === d.name && styles.dietNameActive]}>{d.name}</Text>
             </AnimatedPressable>
@@ -216,8 +278,38 @@ export default function DietTab() {
           <AnimatedPressable onPress={handleSave} style={styles.saveBtnFull}>
             <Text style={styles.saveBtnFullText}>Save This Plan 💾</Text>
           </AnimatedPressable>
+
+          {/* Disclaimer Footer */}
+          <View style={styles.disclaimerFooter}>
+            <Text style={styles.disclaimerFooterText}>{DISCLAIMER_FOOTER}</Text>
+          </View>
         </View>
       )}
+
+      {/* Disclaimer Modal */}
+      <Modal
+        visible={disclaimerModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleDisclaimerCancel}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>⚠️ Medical Disclaimer</Text>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <Text style={styles.disclaimerModalText}>{DISCLAIMER_FULL}</Text>
+          </ScrollView>
+          <View style={styles.disclaimerModalActions}>
+            <AnimatedPressable onPress={handleDisclaimerAccept} style={styles.disclaimerAcceptBtn}>
+              <Text style={styles.disclaimerAcceptBtnText}>I understand & accept</Text>
+            </AnimatedPressable>
+            <TouchableOpacity onPress={handleDisclaimerCancel} style={styles.disclaimerCancelLink}>
+              <Text style={styles.disclaimerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -225,6 +317,16 @@ export default function DietTab() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 16, paddingTop: 16, gap: 16 },
+
+  disclaimerBanner: {
+    backgroundColor: 'rgba(212,160,23,0.10)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,160,23,0.25)',
+  },
+  disclaimerBannerText: { fontSize: 12, color: '#C8A020', lineHeight: 18 },
+
   pageTitle: { fontSize: 24, fontWeight: '900', color: COLORS.text },
   pageSubtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: -8 },
   card: {
@@ -343,4 +445,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveBtnFullText: { fontSize: 15, fontWeight: '900', color: '#0A0A0A' },
+
+  // Disclaimer footer
+  disclaimerFooter: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  disclaimerFooterText: { fontSize: 11, color: COLORS.textTertiary, lineHeight: 17, textAlign: 'center' },
+
+  // Modal
+  modalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+  modalContent: { padding: 16, gap: 10 },
+  disclaimerModalText: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  disclaimerModalActions: {
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  disclaimerAcceptBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  disclaimerAcceptBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+  disclaimerCancelLink: { alignItems: 'center', paddingVertical: 8 },
+  disclaimerCancelText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
 });
