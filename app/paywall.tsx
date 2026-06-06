@@ -81,6 +81,12 @@ const FEATURES = [
   },
 ];
 
+// Legal URLs (required by Apple Guideline 3.1.2)
+// TODO: Replace PRIVACY_POLICY_URL with your hosted privacy policy before App Store submission.
+// Apple's standard EULA is acceptable for Terms of Service.
+const TERMS_OF_SERVICE_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const PRIVACY_POLICY_URL = "https://www.evexia.app/privacy"; // PLACEHOLDER — replace with real URL
+
 // Customize: Your app's colors
 const colors = {
   primary: "#007AFF",
@@ -175,6 +181,14 @@ export default function PaywallScreen() {
   const handleClose = () => {
     console.log("[Paywall] Close button pressed");
     router.replace("/(tabs)/home");
+  };
+
+  const handleOpenLegalUrl = (url: string, label: string) => {
+    console.log(`[Paywall] Opening legal URL: ${label}`);
+    Linking.openURL(url).catch((err) => {
+      console.log(`[Paywall] Failed to open ${label}:`, err.message);
+      Alert.alert("Could not open link", `Unable to open ${label}. Please try again.`);
+    });
   };
 
   // Handle web mock purchase (replicates RevenueCat test store flow for web preview)
@@ -479,8 +493,27 @@ export default function PaywallScreen() {
                   )}
                 </TouchableOpacity>
                 <Text style={styles.legalText}>
-                  Preview mode — purchases available in the mobile app
+                  Preview mode — purchases available in the mobile app. By subscribing in the app, you agree to the Terms of Service and acknowledge the Privacy Policy.
                 </Text>
+                <View style={styles.legalLinksRow}>
+                  <TouchableOpacity
+                    style={styles.legalLink}
+                    onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
+                    accessibilityRole="link"
+                    accessibilityLabel="Terms of Service"
+                  >
+                    <Text style={styles.legalLinkText}>Terms of Service</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.legalLinkDivider}>|</Text>
+                  <TouchableOpacity
+                    style={styles.legalLink}
+                    onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
+                    accessibilityRole="link"
+                    accessibilityLabel="Privacy Policy"
+                  >
+                    <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             ) : (
               <>
@@ -519,13 +552,30 @@ export default function PaywallScreen() {
                   )}
                 </TouchableOpacity>
 
-                {/* Legal Text - Required by App Store */}
+                {/* Legal Text - Required by Apple Guideline 3.1.2 */}
                 <Text style={styles.legalText}>
                   Payment will be charged to your{" "}
-                  {Platform.OS === "ios" ? "Apple ID" : "Google Play"} account.
-                  Subscription automatically renews unless canceled at least 24 hours
-                  before the end of the current period.
+                  {Platform.OS === "ios" ? "Apple ID" : "Google Play"} account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your account settings on the App Store after purchase.
                 </Text>
+                <View style={styles.legalLinksRow}>
+                  <TouchableOpacity
+                    style={styles.legalLink}
+                    onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
+                    accessibilityRole="link"
+                    accessibilityLabel="Terms of Service"
+                  >
+                    <Text style={styles.legalLinkText}>Terms of Service</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.legalLinkDivider}>|</Text>
+                  <TouchableOpacity
+                    style={styles.legalLink}
+                    onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
+                    accessibilityRole="link"
+                    accessibilityLabel="Privacy Policy"
+                  >
+                    <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -1095,5 +1145,26 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  legalLinksRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 12,
+  },
+  legalLink: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  legalLinkText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.9)",
+    textDecorationLine: "underline",
+    fontWeight: "500",
+  },
+  legalLinkDivider: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.5)",
   },
 });
