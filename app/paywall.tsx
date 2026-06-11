@@ -84,8 +84,8 @@ const FEATURES = [
 // Legal URLs (required by Apple Guideline 3.1.2)
 // TODO: Replace PRIVACY_POLICY_URL with your hosted privacy policy before App Store submission.
 // Apple's standard EULA is acceptable for Terms of Service.
-const TERMS_OF_SERVICE_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
-const PRIVACY_POLICY_URL = "https://www.evexia.app/privacy"; // PLACEHOLDER — replace with real URL
+const TERMS_OF_SERVICE_URL = "https://kobj302-bit.github.io/evexia-kong-lift-epydsh/terms.html";
+const PRIVACY_POLICY_URL = "https://kobj302-bit.github.io/evexia-kong-lift-epydsh/privacy.html";
 
 // Customize: Your app's colors
 const colors = {

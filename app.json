@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Evexia: Kong Lift",
-    "slug": "evexia-kong-lift-epydsh",
+    "slug": "evexia-kong-lift",
     "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
