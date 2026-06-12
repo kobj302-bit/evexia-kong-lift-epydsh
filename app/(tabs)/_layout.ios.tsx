@@ -87,6 +87,10 @@ export default function TabLayout() {
           <Icon sf="target" />
           <Label>Goals</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="calendar">
+          <Icon sf="calendar" />
+          <Label>Calendar</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
       <Toast visible={toast.visible} message={toast.message} isGold={toast.isGold} />
     </View>

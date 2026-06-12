@@ -17,6 +17,7 @@ const TABS = [
   { name: 'nutrition', route: '/(tabs)/nutrition' as const, icon: 'favorite' as const, label: 'Nutrition' },
   { name: 'community', route: '/(tabs)/community' as const, icon: 'group' as const, label: 'Community' },
   { name: 'goals', route: '/(tabs)/goals' as const, icon: 'track-changes' as const, label: 'Goals' },
+  { name: 'calendar', route: '/(tabs)/calendar' as const, icon: 'calendar-today' as const, label: 'Calendar' },
 ];
 
 function AppHeader() {
@@ -81,6 +82,7 @@ export default function TabLayout() {
         <Stack.Screen name="nutrition" />
         <Stack.Screen name="community" />
         <Stack.Screen name="goals" />
+        <Stack.Screen name="calendar" />
       </Stack>
       <FloatingTabBar
         tabs={TABS}
