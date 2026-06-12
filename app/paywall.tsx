@@ -65,6 +65,11 @@ const FEATURES = [
     description: "Export your full workout history as a CSV for any spreadsheet",
   },
   {
+    icon: "📋",
+    title: "AI Routine Import",
+    description: "Upload a photo or type any routine — AI parses it and adds it to your tracker instantly",
+  },
+  {
     icon: "🏋️",
     title: "Plate Calculator",
     description: "Instantly see which plates to load for any target weight",

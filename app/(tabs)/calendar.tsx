@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   ImageSourcePropType,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
@@ -113,6 +114,10 @@ function buildCalendarGrid(year: number, month: number): DayCell[] {
 export default function CalendarScreen() {
   const { state } = useApp();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  // 16px horizontal padding on scroll content + 16px card padding on each side = 32+32=64 total
+  const cellSize = Math.floor((windowWidth - 32 - 32) / 7);
+  const dayNumFontSize = Math.max(11, Math.min(14, cellSize * 0.35));
 
   const today = todayStr();
   const todayDate = new Date();
@@ -197,7 +202,7 @@ export default function CalendarScreen() {
         {/* Day of week labels */}
         <View style={styles.dayLabelsRow}>
           {DAY_LABELS.map((label, i) => (
-            <View key={i} style={styles.dayLabelCell}>
+            <View key={i} style={[styles.dayLabelCell, { width: cellSize }]}>
               <Text style={styles.dayLabelText}>{label}</Text>
             </View>
           ))}
@@ -224,10 +229,10 @@ export default function CalendarScreen() {
                 onPress={() => handleDayPress(cell.dateStr)}
                 style={[
                   styles.dayCell,
-                  { backgroundColor: cellBg, borderColor: cellBorder },
+                  { backgroundColor: cellBg, borderColor: cellBorder, width: cellSize, height: cellSize },
                 ]}
               >
-                <Text style={[styles.dayNum, { color: numColor }]}>{cell.day}</Text>
+                <Text numberOfLines={1} style={[styles.dayNum, { color: numColor, fontSize: dayNumFontSize }]}>{cell.day}</Text>
                 {hasWorkout && !isSelected && (
                   <View style={styles.workoutDot} />
                 )}
@@ -245,23 +250,23 @@ export default function CalendarScreen() {
         <View style={styles.statPill}>
           <Text style={styles.statEmoji}>🏋️</Text>
           <Text style={styles.statNum}>{monthWorkouts}</Text>
-          <Text style={styles.statLabel}>this month</Text>
+          <Text numberOfLines={2} adjustsFontSizeToFit style={styles.statLabel}>this month</Text>
         </View>
         <View style={styles.statPill}>
           <Text style={styles.statEmoji}>🔥</Text>
           <Text style={styles.statNum}>{currentStreak}</Text>
-          <Text style={styles.statLabel}>day streak</Text>
+          <Text numberOfLines={2} adjustsFontSizeToFit style={styles.statLabel}>day streak</Text>
         </View>
         <View style={styles.statPill}>
           <Text style={styles.statEmoji}>📅</Text>
           <Text style={styles.statNum}>{totalWorkouts}</Text>
-          <Text style={styles.statLabel}>total</Text>
+          <Text numberOfLines={2} adjustsFontSizeToFit style={styles.statLabel}>total</Text>
         </View>
       </View>
 
       {/* Detail Card */}
       <View style={styles.detailCard}>
-        <Text style={styles.detailDateHeader}>{selectedDateHeader}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={styles.detailDateHeader}>{selectedDateHeader}</Text>
 
         {!selectedWorkout ? (
           <View style={styles.emptyState}>
@@ -279,7 +284,7 @@ export default function CalendarScreen() {
             {/* Exercises */}
             {selectedWorkout.exercises.map((ex, exIdx) => (
               <View key={exIdx} style={styles.exerciseBlock}>
-                <Text style={styles.exerciseName}>{ex.exercise}</Text>
+                <Text numberOfLines={2} style={styles.exerciseName}>{ex.exercise}</Text>
                 {ex.sets.map((set, setIdx) => {
                   const setNum = setIdx + 1;
                   const repsVal = set.reps;
@@ -378,29 +383,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   dayCell: {
-    width: '14.2857%',
-    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
     borderWidth: 1.5,
-    marginVertical: 2,
+    marginBottom: 2,
   },
   dayNum: {
-    fontSize: 14,
     fontWeight: '600',
   },
   workoutDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: COLORS.gold,
     marginTop: 2,
   },
   workoutDotSelected: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#0A0A0A',
     marginTop: 2,
   },
@@ -508,15 +510,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.gold,
     minWidth: 44,
+    flexShrink: 0,
   },
   setSep: {
     fontSize: 13,
     color: COLORS.textTertiary,
+    flexShrink: 0,
   },
   setDetail: {
     fontSize: 13,
     color: COLORS.textSecondary,
     flex: 1,
+    flexShrink: 1,
   },
 
   // Volume row

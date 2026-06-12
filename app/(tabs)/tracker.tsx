@@ -356,12 +356,16 @@ export default function TrackerTab() {
             {/* My Routines button */}
             <AnimatedPressable
               onPress={() => {
-                console.log('[Tracker] My Routines button pressed');
+                console.log('[Tracker] My Routines button pressed, isSubscribed:', isSubscribed);
+                if (!isSubscribed) {
+                  router.push('/paywall');
+                  return;
+                }
                 router.push('/routine-import');
               }}
               style={styles.routinesBtn}
             >
-              <Text style={styles.routinesBtnText}>📋 My Routines</Text>
+              <Text style={styles.routinesBtnText}>📋 Routines{!isSubscribed ? ' 🔒' : ''}</Text>
             </AnimatedPressable>
             {/* Plate Calculator button */}
             <AnimatedPressable

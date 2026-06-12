@@ -386,6 +386,20 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     }
   };
 
+  // Poll every 60 seconds while a daily pass is active to detect expiry
+  useEffect(() => {
+    if (!hasDailyPass) return;
+    const interval = setInterval(async () => {
+      const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
+      if (!savedPass || Date.now() >= parseInt(savedPass, 10)) {
+        console.log('[RevenueCat] Daily pass expired — revoking access');
+        await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
+        setHasDailyPass(false);
+      }
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [hasDailyPass]);
+
   const mockWebPurchase = () => {
     if (!isWeb) return;
     if (typeof window !== "undefined") {
