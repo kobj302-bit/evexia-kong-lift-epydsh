@@ -91,6 +91,10 @@ export default function TabLayout() {
           <Icon sf="calendar" />
           <Label>Calendar</Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="glowup">
+          <Icon sf="sparkles" />
+          <Label>Glow Up</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
       <Toast visible={toast.visible} message={toast.message} isGold={toast.isGold} />
     </View>

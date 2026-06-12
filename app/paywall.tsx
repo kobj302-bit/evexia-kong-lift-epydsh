@@ -84,6 +84,11 @@ const FEATURES = [
     title: "Deload Week Mode",
     description: "Auto-reduce sets and weight for a recovery deload week",
   },
+  {
+    icon: "✨",
+    title: "Glow Up System (+$3/mo)",
+    description: "Complete natural glow-up: appearance, posture, height optimization, skin, fascia, daily habits, grocery list & XP gamification",
+  },
 ];
 
 // Legal URLs (required by Apple Guideline 3.1.2)

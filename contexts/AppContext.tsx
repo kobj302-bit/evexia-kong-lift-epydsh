@@ -104,6 +104,11 @@ export interface AppState {
   proTheme: boolean;
   streakShields: number;
   lastShieldRefill: string | null;
+  glowUpAckDisclaimer: boolean;
+  glowUpHabits: Record<string, boolean>;
+  glowUpGrocery: Record<string, boolean>;
+  glowUpGroceryWeek: string | null;
+  glowUpStreakShield: boolean;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -158,6 +163,11 @@ const DEFAULT_STATE: AppState = {
   proTheme: false,
   streakShields: 1,
   lastShieldRefill: null,
+  glowUpAckDisclaimer: false,
+  glowUpHabits: {},
+  glowUpGrocery: {},
+  glowUpGroceryWeek: null,
+  glowUpStreakShield: false,
 };
 
 interface AppContextType {
