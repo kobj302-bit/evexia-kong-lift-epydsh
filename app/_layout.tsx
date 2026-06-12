@@ -104,6 +104,13 @@ export default function RootLayout() {
                       headerTitleStyle: { fontWeight: '800', color: '#F5F5F0' },
                     }}
                   />
+                  <Stack.Screen
+                    name="routine-import"
+                    options={{
+                      headerShown: false,
+                      presentation: 'modal',
+                    }}
+                  />
                 </Stack>
                 <SystemBars style="light" />
               </GestureHandlerRootView>

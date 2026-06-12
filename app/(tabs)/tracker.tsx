@@ -352,20 +352,32 @@ export default function TrackerTab() {
       <View style={styles.sessionCard}>
         <View style={styles.sessionTitleRow}>
           <Text style={styles.sectionTitle}>🏋️ Session Logger</Text>
-          {/* Plate Calculator button */}
-          <AnimatedPressable
-            onPress={() => {
-              console.log('[Tracker] Plate Calculator button pressed');
-              if (!isSubscribed) {
-                router.push('/paywall');
-                return;
-              }
-              setPlateModalVisible(true);
-            }}
-            style={styles.plateBtn}
-          >
-            <Text style={styles.plateBtnText}>🏋️ Plates{!isSubscribed ? ' 🔒' : ''}</Text>
-          </AnimatedPressable>
+          <View style={styles.sessionHeaderBtns}>
+            {/* My Routines button */}
+            <AnimatedPressable
+              onPress={() => {
+                console.log('[Tracker] My Routines button pressed');
+                router.push('/routine-import');
+              }}
+              style={styles.routinesBtn}
+            >
+              <Text style={styles.routinesBtnText}>📋 My Routines</Text>
+            </AnimatedPressable>
+            {/* Plate Calculator button */}
+            <AnimatedPressable
+              onPress={() => {
+                console.log('[Tracker] Plate Calculator button pressed');
+                if (!isSubscribed) {
+                  router.push('/paywall');
+                  return;
+                }
+                setPlateModalVisible(true);
+              }}
+              style={styles.plateBtn}
+            >
+              <Text style={styles.plateBtnText}>🏋️ Plates{!isSubscribed ? ' 🔒' : ''}</Text>
+            </AnimatedPressable>
+          </View>
         </View>
 
         <View style={styles.addExRow}>
@@ -731,6 +743,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sessionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sessionHeaderBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  routinesBtn: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    marginBottom: 8,
+  },
+  routinesBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.gold },
   plateBtn: {
     backgroundColor: COLORS.surface2,
     borderRadius: 10,
