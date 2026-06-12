@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
   Animated, LayoutAnimation, Platform, Modal, TouchableOpacity,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -10,6 +11,7 @@ import { KongMascot } from '@/components/KongMascot';
 import { useApp, SessionSet, WorkoutHistory, PR } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
+import { getCoachingMessage } from '@/utils/coaching';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -89,6 +91,18 @@ function getWeeklyVolume(history: WorkoutHistory[], exerciseName: string): numbe
   return weeks.reverse(); // oldest first
 }
 
+// Check if it's a new week (Monday) since lastShieldRefill
+function isNewWeekSinceRefill(lastRefill: string | null): boolean {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon
+  if (dayOfWeek !== 1) return false; // Only refill on Monday
+  if (!lastRefill) return true;
+  const lastDate = new Date(lastRefill);
+  const lastMonday = lastDate.toISOString().split('T')[0];
+  const todayStr = now.toISOString().split('T')[0];
+  return lastMonday !== todayStr;
+}
+
 export default function TrackerTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -102,8 +116,22 @@ export default function TrackerTab() {
   const [plateTarget, setPlateTarget] = useState('135');
   const [plateBar, setPlateBar] = useState('45');
 
+  // Pro celebration modal state
+  const [showProCelebration, setShowProCelebration] = useState(false);
+  const [celebrationMsg, setCelebrationMsg] = useState('');
+  const [celebrationXP, setCelebrationXP] = useState(0);
+
   const session = state.session;
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // Shield auto-refill on Monday
+  useEffect(() => {
+    if (!isSubscribed) return;
+    if (isNewWeekSinceRefill(state.lastShieldRefill)) {
+      console.log('[Tracker] Shield refill triggered — new Monday');
+      updateState({ streakShields: 1, lastShieldRefill: new Date().toISOString() });
+    }
+  }, [isSubscribed]);
 
   const addExercise = () => {
     if (!newExercise.trim()) return;
@@ -148,24 +176,38 @@ export default function TrackerTab() {
       showToast('Add at least one exercise first!');
       return;
     }
-    console.log('[Tracker] Finish workout — exercises:', session.length);
+    console.log('[Tracker] Finish workout — exercises:', session.length, 'isSubscribed:', isSubscribed);
 
-    const xpEarned = 50 + session.length * 10;
+    // 2x XP for Pro members
+    const baseXP = 50 + session.length * 10;
+    const xpEarned = isSubscribed ? baseXP * 2 : baseXP;
+    console.log('[Tracker] XP earned:', xpEarned, isSubscribed ? '(2x Pro bonus)' : '');
+
     const now = new Date();
     const todayIso = now.toISOString().split('T')[0];
 
     let newStreak = state.streak;
     let newBestStreak = state.bestStreak;
+    let shieldUsed = false;
+
     if (state.lastWorkout) {
       const last = new Date(state.lastWorkout);
       const lastStr = last.toISOString().split('T')[0];
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
+
       if (lastStr === yesterdayStr || lastStr === todayIso) {
         newStreak = lastStr === todayIso ? state.streak : state.streak + 1;
       } else {
-        newStreak = 1;
+        // Missed a day — check for streak shield
+        if (isSubscribed && state.streakShields > 0 && lastStr !== todayIso) {
+          console.log('[Tracker] Streak shield activated! Protecting streak:', state.streak);
+          newStreak = state.streak + 1;
+          shieldUsed = true;
+        } else {
+          newStreak = 1;
+        }
       }
     } else {
       newStreak = 1;
@@ -198,7 +240,7 @@ export default function TrackerTab() {
       xpEarned,
     };
 
-    updateState({
+    const stateUpdate: any = {
       session: [],
       lastWorkout: now.toISOString(),
       totalWorkouts: state.totalWorkouts + 1,
@@ -206,14 +248,32 @@ export default function TrackerTab() {
       bestStreak: newBestStreak,
       history: [historyEntry, ...state.history].slice(0, 50),
       prs: newPRs,
-    });
+    };
 
+    if (shieldUsed) {
+      stateUpdate.streakShields = state.streakShields - 1;
+    }
+
+    updateState(stateUpdate);
     addXP(xpEarned);
 
-    if (prNames.length > 0) {
-      prNames.forEach((name) => triggerPR(name));
+    if (shieldUsed) {
+      showToast('🛡️ Streak Shield activated! Streak protected.', true);
+    }
+
+    if (isSubscribed) {
+      // Get coaching message before history is updated (pass current history)
+      const msg = getCoachingMessage(state.history, session, newStreak, state.totalWorkouts);
+      console.log('[Tracker] Pro celebration — coaching message:', msg);
+      setCelebrationMsg(msg);
+      setCelebrationXP(xpEarned);
+      setShowProCelebration(true);
     } else {
-      showToast(`💪 Workout done! +${xpEarned} XP`, true);
+      if (prNames.length > 0) {
+        prNames.forEach((name) => triggerPR(name));
+      } else {
+        showToast(`💪 Workout done! +${xpEarned} XP`, true);
+      }
     }
   };
 
@@ -265,6 +325,25 @@ export default function TrackerTab() {
   const plateTarget_n = parseFloat(plateTarget) || 0;
   const plateBar_n = parseFloat(plateBar) || 45;
   const plateResult = plateTarget_n > 0 ? calcPlates(plateTarget_n, plateBar_n) : '';
+
+  // Shield display
+  const shieldCount = state.streakShields ?? 0;
+  const shieldText = shieldCount > 0
+    ? `You have ${shieldCount} streak shield active. If you miss a day, your streak is protected.`
+    : 'Shield used. Refills next Monday.';
+
+  // XP badge text for session header
+  const xpBadgeText = '⚡ 2× XP';
+
+  // Celebration XP display
+  const celebrationXPText = `+${celebrationXP} XP ⚡`;
+
+  // Fake analytics preview rows for non-subscribers
+  const fakeAnalyticsRows = [
+    { name: 'Bench Press', pr: '185', est: '196' },
+    { name: 'Squat', pr: '225', est: '239' },
+    { name: 'Deadlift', pr: '275', est: '293' },
+  ];
 
   return (
     <ScrollView
@@ -348,10 +427,39 @@ export default function TrackerTab() {
         </View>
       </View>
 
+      {/* Streak Shield — Pro only */}
+      {isSubscribed && (
+        <View style={[styles.shieldCard, shieldCount > 0 ? styles.shieldCardActive : styles.shieldCardEmpty]}>
+          <View style={styles.shieldHeader}>
+            <Text style={styles.shieldTitle}>🛡️ Streak Shield</Text>
+            {shieldCount > 0 && (
+              <View style={styles.shieldCountBadge}>
+                <Text style={styles.shieldCountText}>{shieldCount} Active</Text>
+              </View>
+            )}
+          </View>
+          <Text style={[styles.shieldDesc, shieldCount === 0 && styles.shieldDescEmpty]}>
+            {shieldText}
+          </Text>
+          {shieldCount > 0 && (
+            <View style={styles.shieldAutoNote}>
+              <Text style={styles.shieldAutoNoteText}>Auto-activates if you miss a day</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Session Logger */}
       <View style={styles.sessionCard}>
         <View style={styles.sessionTitleRow}>
-          <Text style={styles.sectionTitle}>🏋️ Session Logger</Text>
+          <View style={styles.sessionTitleLeft}>
+            <Text style={styles.sectionTitle}>🏋️ Session Logger</Text>
+            {isSubscribed && (
+              <View style={styles.xpMultiplierBadge}>
+                <Text style={styles.xpMultiplierText}>{xpBadgeText}</Text>
+              </View>
+            )}
+          </View>
           <View style={styles.sessionHeaderBtns}>
             {/* My Routines button */}
             <AnimatedPressable
@@ -559,8 +667,28 @@ export default function TrackerTab() {
             )}
           </View>
         ) : (
-          <View style={styles.analyticsBlur}>
-            <View style={styles.analyticsBlurOverlay}>
+          <View style={styles.analyticsBlurContainer}>
+            {/* Fake preview rows behind blur */}
+            <View style={styles.analyticsPreview}>
+              {fakeAnalyticsRows.map((row, i) => (
+                <View key={i} style={styles.analyticsPreviewRow}>
+                  <View style={styles.analyticsLiftInfo}>
+                    <Text style={styles.analyticsLiftName}>{row.name}</Text>
+                    <Text style={styles.analyticsLiftSub}>PR: {row.pr} lb • Est 1RM: {row.est} lb</Text>
+                  </View>
+                  <View style={styles.volBars}>
+                    {[20, 32, 28, 40].map((h, wi) => (
+                      <View key={wi} style={styles.volBarWrap}>
+                        <View style={[styles.volBar, { height: h }]} />
+                        <Text style={styles.volBarLabel}>W{wi + 1}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+            {/* BlurView overlay */}
+            <BlurView intensity={60} tint="dark" style={styles.analyticsBlurOverlay}>
               <Text style={styles.analyticsBlurIcon}>📊</Text>
               <Text style={styles.analyticsBlurTitle}>Advanced Analytics</Text>
               <Text style={styles.analyticsBlurSub}>Volume trends, 1RM estimates, total tonnage</Text>
@@ -573,7 +701,7 @@ export default function TrackerTab() {
               >
                 <Text style={styles.analyticsUnlockText}>Unlock Pro Analytics</Text>
               </AnimatedPressable>
-            </View>
+            </BlurView>
           </View>
         )}
       </View>
@@ -661,6 +789,38 @@ export default function TrackerTab() {
           </View>
         </View>
       </Modal>
+
+      {/* Pro Celebration Modal */}
+      <Modal
+        visible={showProCelebration}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowProCelebration(false)}
+      >
+        <View style={styles.celebrationBackdrop}>
+          <View style={styles.celebrationCard}>
+            <KongMascot size={80} mood="happy" />
+            <View style={styles.celebrationProBadge}>
+              <Text style={styles.celebrationProBadgeText}>👑 KONG PRO</Text>
+            </View>
+            <Text style={styles.celebrationTitle}>Workout Complete!</Text>
+            <Text style={styles.celebrationMsg}>{celebrationMsg}</Text>
+            <View style={styles.celebrationXPRow}>
+              <Text style={styles.celebrationXP}>{celebrationXPText}</Text>
+              <Text style={styles.celebrationXPSub}>2× Pro Bonus</Text>
+            </View>
+            <AnimatedPressable
+              onPress={() => {
+                console.log('[Tracker] Pro celebration closed');
+                setShowProCelebration(false);
+              }}
+              style={styles.celebrationBtn}
+            >
+              <Text style={styles.celebrationBtnText}>Let's Go! 🦍</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -738,6 +898,42 @@ const styles = StyleSheet.create({
   weekCheckDone: { backgroundColor: COLORS.green, borderColor: COLORS.green },
   weekCheckMark: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
   weekDayLabel: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+
+  // Streak Shield
+  shieldCard: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    gap: 8,
+  },
+  shieldCardActive: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.border2,
+  },
+  shieldCardEmpty: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+  },
+  shieldHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  shieldTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+  shieldCountBadge: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  shieldCountText: { fontSize: 11, fontWeight: '900', color: '#0A0A0A' },
+  shieldDesc: { fontSize: 13, color: COLORS.gold, lineHeight: 20 },
+  shieldDescEmpty: { color: COLORS.textSecondary },
+  shieldAutoNote: {
+    backgroundColor: 'rgba(212,160,23,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  shieldAutoNoteText: { fontSize: 11, fontWeight: '700', color: COLORS.gold },
+
   sessionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -746,7 +942,18 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 12,
   },
-  sessionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sessionTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  sessionTitleLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 },
+  xpMultiplierBadge: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.gold,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 8,
+  },
+  xpMultiplierText: { fontSize: 11, fontWeight: '800', color: COLORS.gold },
   sessionHeaderBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   routinesBtn: {
     backgroundColor: COLORS.goldMuted,
@@ -919,19 +1126,31 @@ const styles = StyleSheet.create({
   },
   tonnageLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   tonnageValue: { fontSize: 16, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
-  analyticsBlur: {
+
+  // Analytics blur (non-subscriber)
+  analyticsBlurContainer: {
     borderRadius: 10,
     overflow: 'hidden',
-    minHeight: 120,
+    minHeight: 160,
+  },
+  analyticsPreview: {
+    padding: 8,
+    gap: 8,
+  },
+  analyticsPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   analyticsBlurOverlay: {
-    backgroundColor: COLORS.surface2,
-    borderRadius: 10,
-    padding: 20,
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    padding: 20,
   },
   analyticsBlurIcon: { fontSize: 32 },
   analyticsBlurTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
@@ -1023,4 +1242,53 @@ const styles = StyleSheet.create({
   },
   plateResultLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
   plateResultValue: { fontSize: 18, fontWeight: '900', color: COLORS.gold, textAlign: 'center' },
+
+  // Pro Celebration Modal
+  celebrationBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  celebrationCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+    maxWidth: 360,
+  },
+  celebrationProBadge: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.gold,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  celebrationProBadgeText: { fontSize: 12, fontWeight: '900', color: COLORS.gold, letterSpacing: 1 },
+  celebrationTitle: { fontSize: 22, fontWeight: '900', color: COLORS.gold, textAlign: 'center' },
+  celebrationMsg: {
+    fontSize: 14,
+    color: COLORS.text,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  celebrationXPRow: { alignItems: 'center', gap: 2 },
+  celebrationXP: { fontSize: 28, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
+  celebrationXPSub: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  celebrationBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  celebrationBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
 });

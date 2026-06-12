@@ -101,6 +101,9 @@ export interface AppState {
   battles: Battle[];
   disclaimerAck: boolean;
   kongIdx: number;
+  proTheme: boolean;
+  streakShields: number;
+  lastShieldRefill: string | null;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -152,6 +155,9 @@ const DEFAULT_STATE: AppState = {
   ],
   disclaimerAck: false,
   kongIdx: 0,
+  proTheme: false,
+  streakShields: 1,
+  lastShieldRefill: null,
 };
 
 interface AppContextType {

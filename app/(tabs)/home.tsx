@@ -102,7 +102,14 @@ export default function HomeTab() {
         <View style={styles.profileLeft}>
           <Text style={styles.profileAvatar}>{state.profile.avatar}</Text>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{state.profile.username || 'KongLifter'}</Text>
+            <View style={styles.profileNameRow}>
+              <Text style={styles.profileName}>{state.profile.username || 'KongLifter'}</Text>
+              {isSubscribed && (
+                <View style={styles.proBadge}>
+                  <Text style={styles.proBadgeText}>👑 PRO</Text>
+                </View>
+              )}
+            </View>
             <View style={[styles.rankBadge, { backgroundColor: `${rank.color}20`, borderColor: rank.color }]}>
               <Text style={[styles.rankText, { color: rank.color }]}>{rank.emoji}</Text>
               <Text style={[styles.rankText, { color: rank.color }]}>{rank.name}</Text>
@@ -232,7 +239,17 @@ const styles = StyleSheet.create({
   profileLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   profileAvatar: { fontSize: 44 },
   profileInfo: { gap: 6 },
+  profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   profileName: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  proBadge: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.gold,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  proBadgeText: { fontSize: 11, fontWeight: '900', color: COLORS.gold },
   rankBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, flexDirection: 'row', gap: 4 },
   rankText: { fontSize: 12, fontWeight: '700' },
   profileRight: { alignItems: 'flex-end' },

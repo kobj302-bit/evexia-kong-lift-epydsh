@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KongMascot } from '@/components/KongMascot';
@@ -19,6 +20,7 @@ interface ProGateProps {
   description: string;
   showDailyPass?: boolean;
   onDailyPass?: () => void;
+  previewContent?: React.ReactNode;
 }
 
 const INCLUDED_FEATURES = [
@@ -34,7 +36,7 @@ const INCLUDED_FEATURES = [
   { icon: '🔄', label: 'Deload Week Mode' },
 ];
 
-export function ProGate({ feature, icon, description, showDailyPass, onDailyPass }: ProGateProps) {
+export function ProGate({ feature, icon, description, showDailyPass, onDailyPass, previewContent }: ProGateProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { restorePurchases } = useSubscription();
@@ -68,6 +70,46 @@ export function ProGate({ feature, icon, description, showDailyPass, onDailyPass
   };
 
   const titleText = `${feature} is Kong Pro`;
+
+  // If previewContent is provided, show frosted preview layout
+  if (previewContent) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        {/* Preview content behind overlay */}
+        <View style={styles.previewWrapper}>
+          {previewContent}
+        </View>
+
+        {/* Dark overlay + blur */}
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
+          <View style={styles.previewOverlay}>
+            {/* X Close Button */}
+            <TouchableOpacity
+              style={[styles.closeButtonOverlay, { top: insets.top + 12 }]}
+              onPress={handleClose}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
+            {/* Lock card centered */}
+            <View style={styles.lockCard}>
+              <KongMascot size={70} />
+              <Text style={styles.lockIcon}>🔒</Text>
+              <Text style={styles.featureIcon}>{icon}</Text>
+              <Text style={styles.title}>{titleText}</Text>
+              <Text style={styles.description}>{description}</Text>
+              <AnimatedPressable onPress={handleUnlock} style={styles.unlockBtn}>
+                <Text style={styles.unlockBtnText}>Unlock Kong Pro — $7/month</Text>
+              </AnimatedPressable>
+              <TouchableOpacity onPress={handleRestore} style={styles.restoreBtn}>
+                <Text style={styles.restoreBtnText}>Restore Purchase</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BlurView>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -143,6 +185,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: BG,
+  },
+  // Preview layout
+  previewWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,10,10,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  closeButtonOverlay: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 999,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockCard: {
+    backgroundColor: SURFACE,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1.5,
+    borderColor: GOLD,
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    maxWidth: 340,
   },
   scrollContent: {
     alignItems: 'center',

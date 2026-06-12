@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import FloatingTabBar from '@/components/FloatingTabBar';
 import { useApp } from '@/contexts/AppContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Toast } from '@/components/Toast';
 import { COLORS } from '@/constants/data';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
@@ -22,6 +23,7 @@ const TABS = [
 
 function AppHeader() {
   const { state } = useApp();
+  const { isSubscribed } = useSubscription();
   const router = useRouter();
 
   const handleSettings = () => {
@@ -29,11 +31,21 @@ function AppHeader() {
     router.push('/settings');
   };
 
+  const proThemeActive = isSubscribed && state.proTheme;
+  const headerBg = proThemeActive ? '#1A1400' : COLORS.surface;
+  const headerBorderColor = proThemeActive ? COLORS.gold : COLORS.border;
+  const headerBorderWidth = proThemeActive ? 1 : 1;
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: headerBorderColor, borderBottomWidth: headerBorderWidth }]}>
       <View style={styles.headerLeft}>
         <Text style={styles.headerKong}>🦍</Text>
         <Text style={styles.headerTitle}>EVEXIA</Text>
+        {isSubscribed && (
+          <View style={styles.proBadge}>
+            <Text style={styles.proBadgeText}>👑 PRO</Text>
+          </View>
+        )}
       </View>
       <View style={styles.headerCenter}>
         {state.activeProg && (
@@ -102,13 +114,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerKong: { fontSize: 20 },
   headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.gold, letterSpacing: 2 },
+  proBadge: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.gold,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  proBadgeText: { fontSize: 11, fontWeight: '900', color: COLORS.gold },
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   headerProg: { fontSize: 11, color: COLORS.gold, fontWeight: '700', maxWidth: 120 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },

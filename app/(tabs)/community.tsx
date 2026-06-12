@@ -10,6 +10,14 @@ import { ProGate } from '@/components/ProGate';
 const TEAM_EMOJIS = ['🦁', '🦅', '💀', '🌊', '🔥', '⚡', '🐺', '👑', '🦍', '🏆'];
 const TEAM_COLORS = [COLORS.red, COLORS.blue, '#606060', COLORS.green, '#FF6B00', COLORS.gold];
 
+const FAKE_TONNAGE_BOARD = [
+  { name: 'IronKing_88', avatar: '🦁', tonnage: 284500 },
+  { name: 'GainzGod', avatar: '💪', tonnage: 201200 },
+  { name: 'SteelPhoenix', avatar: '🔥', tonnage: 178400 },
+  { name: 'BarbellBeast', avatar: '🏋️', tonnage: 154900 },
+  { name: 'ApexLifter', avatar: '⚡', tonnage: 132700 },
+];
+
 export default function CommunityTab() {
   const insets = useSafeAreaInsets();
   const { state, updateState, addXP, showToast } = useApp();
@@ -64,6 +72,14 @@ export default function CommunityTab() {
   const myTeamData = allTeams.find((t) => t.id === state.myTeam);
   const rank = getRank(state.xp);
 
+  // Calculate user's total tonnage
+  const userTonnage = state.history.reduce((sum, h) =>
+    sum + h.exercises.reduce((s2, ex) =>
+      s2 + ex.sets.reduce((s3, set) =>
+        s3 + (parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0), 0), 0), 0);
+  const userTonnageFormatted = Math.round(userTonnage).toLocaleString();
+  const username = state.profile.username || 'You';
+
   return (
     <ScrollView
       style={styles.container}
@@ -73,6 +89,40 @@ export default function CommunityTab() {
     >
       <Text style={styles.pageTitle}>🏆 Community</Text>
       <Text style={styles.pageSubtitle}>Compete, challenge, and conquer</Text>
+
+      {/* Pro Tonnage Board */}
+      <View style={styles.section}>
+        <Text style={styles.proExclusiveLabel}>👑 PRO EXCLUSIVE</Text>
+        <Text style={styles.sectionTitle}>🏆 Pro Tonnage Board</Text>
+        <View style={styles.leaderboardCard}>
+          {FAKE_TONNAGE_BOARD.map((user, idx) => {
+            const isFirst = idx === 0;
+            return (
+              <View key={user.name} style={[styles.leaderRow, isFirst && styles.leaderRowFirst]}>
+                <Text style={[styles.leaderRank, isFirst && styles.leaderRankGold]}>#{idx + 1}</Text>
+                <Text style={styles.leaderAvatar}>{user.avatar}</Text>
+                <View style={styles.leaderInfo}>
+                  <Text style={[styles.leaderName, isFirst && { color: COLORS.gold }]}>{user.name}</Text>
+                  <Text style={styles.leaderRankName}>Pro Member</Text>
+                </View>
+                <Text style={[styles.leaderXP, isFirst && { color: COLORS.gold }]}>
+                  {user.tonnage.toLocaleString()} lb
+                </Text>
+              </View>
+            );
+          })}
+          {/* User row */}
+          <View style={[styles.leaderRow, styles.leaderRowMe]}>
+            <Text style={[styles.leaderRank, { color: COLORS.gold }]}>You</Text>
+            <Text style={styles.leaderAvatar}>{state.profile.avatar}</Text>
+            <View style={styles.leaderInfo}>
+              <Text style={[styles.leaderName, { color: COLORS.gold }]}>{username}</Text>
+              <Text style={styles.leaderRankName}>{rank.name}</Text>
+            </View>
+            <Text style={[styles.leaderXP, { color: COLORS.gold }]}>{userTonnageFormatted} lb</Text>
+          </View>
+        </View>
+      </View>
 
       {/* My Team */}
       <View style={styles.section}>
@@ -263,6 +313,13 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  proExclusiveLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
   myTeamCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -398,6 +455,7 @@ const styles = StyleSheet.create({
   leaderRowFirst: { backgroundColor: `${COLORS.gold}10` },
   leaderRowMe: { backgroundColor: `${COLORS.gold}08` },
   leaderRank: { fontSize: 14, fontWeight: '800', color: COLORS.textSecondary, width: 28, textAlign: 'center' },
+  leaderRankGold: { color: COLORS.gold },
   leaderAvatar: { fontSize: 24 },
   leaderInfo: { flex: 1, gap: 1 },
   leaderName: { fontSize: 14, fontWeight: '700', color: COLORS.text },

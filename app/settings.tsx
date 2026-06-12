@@ -97,6 +97,9 @@ export default function SettingsScreen() {
               myTeam: null,
               joinedChallenges: [],
               disclaimerAck: false,
+              proTheme: false,
+              streakShields: 1,
+              lastShieldRefill: null,
               profile: {
                 username: '',
                 avatar: '🦍',
@@ -119,6 +122,11 @@ export default function SettingsScreen() {
         },
       ]
     );
+  };
+
+  const handleProThemeToggle = (value: boolean) => {
+    console.log('[Settings] Pro theme toggled:', value);
+    updateState({ proTheme: value });
   };
 
   return (
@@ -159,6 +167,43 @@ export default function SettingsScreen() {
           </View>
         )}
       </View>
+
+      {/* Kong Pro Theme — only for subscribers */}
+      {isSubscribed && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎨 Appearance</Text>
+          <View style={[styles.card, styles.proThemeCard]}>
+            <View style={styles.proThemeHeader}>
+              <View style={styles.proThemeTitleRow}>
+                <Text style={styles.proThemeTitle}>👑 Dark Gold Theme</Text>
+                <View style={styles.proExclusiveBadge}>
+                  <Text style={styles.proExclusiveBadgeText}>PRO</Text>
+                </View>
+              </View>
+              <Text style={styles.proThemeSubtitle}>Exclusive Pro color scheme</Text>
+            </View>
+            {/* Preview swatch */}
+            <View style={styles.themePreviewRow}>
+              <View style={[styles.themeSwatch, { backgroundColor: '#0A0A0A', borderColor: COLORS.border }]}>
+                <Text style={styles.themeSwatchLabel}>Default</Text>
+              </View>
+              <Text style={styles.themeArrow}>→</Text>
+              <View style={[styles.themeSwatch, { backgroundColor: '#0D0A00', borderColor: COLORS.gold }]}>
+                <Text style={[styles.themeSwatchLabel, { color: COLORS.gold }]}>Gold</Text>
+              </View>
+            </View>
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Enable Dark Gold Theme</Text>
+              <Switch
+                value={state.proTheme}
+                onValueChange={handleProThemeToggle}
+                trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
+                thumbColor={state.proTheme ? COLORS.goldBright : COLORS.textSecondary}
+              />
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Profile Section */}
       <View style={styles.section}>
@@ -373,4 +418,33 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   proActiveBadgeText: { fontSize: 11, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
+
+  // Pro Theme card
+  proThemeCard: {
+    borderColor: COLORS.border2,
+    borderWidth: 1.5,
+    gap: 14,
+  },
+  proThemeHeader: { gap: 4 },
+  proThemeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  proThemeTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gold },
+  proExclusiveBadge: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  proExclusiveBadgeText: { fontSize: 10, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
+  proThemeSubtitle: { fontSize: 12, color: COLORS.textSecondary },
+  themePreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  themeSwatch: {
+    flex: 1,
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeSwatchLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  themeArrow: { fontSize: 18, color: COLORS.textSecondary },
 });
