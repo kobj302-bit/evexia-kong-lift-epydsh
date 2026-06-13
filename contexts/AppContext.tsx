@@ -109,6 +109,7 @@ export interface AppState {
   glowUpGrocery: Record<string, boolean>;
   glowUpGroceryWeek: string | null;
   glowUpStreakShield: boolean;
+  glowUpStartDate: string | null;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -168,6 +169,7 @@ const DEFAULT_STATE: AppState = {
   glowUpGrocery: {},
   glowUpGroceryWeek: null,
   glowUpStreakShield: false,
+  glowUpStartDate: null,
 };
 
 interface AppContextType {
