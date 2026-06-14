@@ -14,7 +14,6 @@ import {
   Animated,
   Modal,
   Platform,
-  Linking,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -1745,9 +1744,6 @@ export default function GlowUpScreen() {
         {/* ── CLEAN BODY CARE ── */}
         <BodyCareSection />
 
-        {/* ── AFFILIATE / RECOMMENDED PRODUCTS ── */}
-        <AffiliateSection />
-
         {/* ── PRODUCTIVITY SYSTEM ── */}
         <ProductivitySection />
 
@@ -1998,170 +1994,6 @@ function BodyCareSection() {
   );
 }
 
-// ─── Affiliate Section ────────────────────────────────────────────────────────
-
-interface AffiliateProduct {
-  emoji: string;
-  name: string;
-  brand: string;
-  url: string;
-}
-
-interface AffiliateCategory {
-  title: string;
-  products: AffiliateProduct[];
-}
-
-function AffiliateSection() {
-  const [open, setOpen] = useState(false);
-  const [openCat, setOpenCat] = useState<Record<string, boolean>>({});
-
-  const toggleCat = (key: string) => {
-    console.log('[GlowUp] Affiliate category toggled:', key);
-    setOpenCat((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleShop = (product: AffiliateProduct) => {
-    console.log('[GlowUp] Shop link pressed:', product.name, product.url);
-    Linking.openURL(product.url).catch((err) =>
-      console.log('[GlowUp] Failed to open URL:', err),
-    );
-  };
-
-  const CATEGORIES: (AffiliateCategory & { key: string })[] = [
-    {
-      key: 'supplements',
-      title: '💊 Supplements',
-      products: [
-        { emoji: '💪', name: 'Creatine Monohydrate', brand: 'Thorne Research', url: 'https://amzn.to/creatine-thorne' },
-        { emoji: '☀️', name: 'Vitamin D3+K2', brand: 'Thorne Research', url: 'https://amzn.to/d3k2-thorne' },
-        { emoji: '🐟', name: 'Omega-3 Fish Oil', brand: 'Nordic Naturals Ultimate Omega', url: 'https://amzn.to/omega3-nordic' },
-        { emoji: '🧲', name: 'Magnesium Glycinate', brand: 'Pure Encapsulations', url: 'https://amzn.to/mag-glycinate' },
-        { emoji: '🔬', name: 'Zinc Carnosine', brand: 'Jarrow Formulas', url: 'https://amzn.to/zinc-carnosine' },
-        { emoji: '🌱', name: 'Probiotic DS-01', brand: 'Seed', url: 'https://seed.com' },
-        { emoji: '⚡', name: 'Electrolytes', brand: 'LMNT', url: 'https://drinklmnt.com' },
-      ],
-    },
-    {
-      key: 'skincare',
-      title: '✨ Skincare',
-      products: [
-        { emoji: '🥩', name: 'Beef Tallow Balm', brand: 'Ancestral Supplements', url: 'https://amzn.to/tallow-balm' },
-        { emoji: '🔴', name: 'Red Light Therapy Joovv Go 2.0', brand: 'Joovv', url: 'https://joovv.com' },
-        { emoji: '💎', name: 'Gua Sha Stone', brand: 'Mount Lai Rose Quartz', url: 'https://amzn.to/guasha-mountlai' },
-        { emoji: '🪨', name: 'Jade Roller', brand: 'Mount Lai', url: 'https://amzn.to/jaderoller-mountlai' },
-        { emoji: '🦷', name: 'Copper Tongue Scraper', brand: "Dr. Tung's", url: 'https://amzn.to/tongue-scraper' },
-      ],
-    },
-    {
-      key: 'cleaning',
-      title: '🧹 Cleaning',
-      products: [
-        { emoji: '🌿', name: 'Branch Basics Starter Kit', brand: 'Branch Basics', url: 'https://branchbasics.com' },
-        { emoji: '🧼', name: "Dr. Bronner's Castile Soap", brand: "Dr. Bronner's", url: 'https://amzn.to/drbronners' },
-        { emoji: '🐑', name: 'Wool Dryer Balls', brand: 'Smart Sheep', url: 'https://amzn.to/wool-dryer-balls' },
-      ],
-    },
-    {
-      key: 'water',
-      title: '💧 Water',
-      products: [
-        { emoji: '🚰', name: 'APEC ROES-50 RO Filter', brand: 'APEC', url: 'https://amzn.to/apec-ro-filter' },
-        { emoji: '📊', name: 'TDS Meter', brand: 'Generic', url: 'https://amzn.to/tds-meter' },
-        { emoji: '🥤', name: 'Clearly Filtered Pitcher', brand: 'Clearly Filtered', url: 'https://amzn.to/clearly-filtered' },
-      ],
-    },
-    {
-      key: 'fitness',
-      title: '🏋️ Fitness Tools',
-      products: [
-        { emoji: '🔵', name: 'Foam Roller GRID', brand: 'TriggerPoint', url: 'https://amzn.to/triggerpoint-foam' },
-        { emoji: '🟡', name: 'Resistance Bands', brand: 'Rogue', url: 'https://roguefitness.com' },
-        { emoji: '🔩', name: 'Pull-up Bar', brand: 'Iron Gym', url: 'https://amzn.to/iron-gym-pullup' },
-      ],
-    },
-    {
-      key: 'food',
-      title: '🍫 Food',
-      products: [
-        { emoji: '⚡', name: 'LMNT Electrolytes', brand: 'LMNT', url: 'https://drinklmnt.com' },
-        { emoji: '🥤', name: 'Olipop Prebiotic Soda', brand: 'Olipop', url: 'https://drinkolipop.com' },
-        { emoji: '🍫', name: 'Hu Kitchen Chocolate', brand: 'Hu Kitchen', url: 'https://amzn.to/hu-chocolate' },
-        { emoji: '🌮', name: 'Siete Grain-Free Chips', brand: 'Siete', url: 'https://amzn.to/siete-chips' },
-      ],
-    },
-  ];
-
-  return (
-    <View style={glowStyles.card}>
-      <TouchableOpacity
-        style={glowStyles.cardHeader}
-        onPress={() => {
-          console.log('[GlowUp] Recommended Products section toggled');
-          setOpen((v) => !v);
-        }}
-        activeOpacity={0.7}
-      >
-        <View style={glowStyles.cardHeaderLeft}>
-          <View style={glowStyles.goldAccent} />
-          <Text style={glowStyles.cardTitle}>💰 Recommended Products</Text>
-        </View>
-        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
-      </TouchableOpacity>
-
-      {open && (
-        <View style={glowStyles.cardBody}>
-          {/* Disclosure banner */}
-          <View style={glowStyles.affiliateBanner}>
-            <Text style={glowStyles.affiliateBannerText}>
-              These are products we personally recommend. Some links are affiliate links — we earn a small commission at no extra cost to you.
-            </Text>
-          </View>
-
-          {CATEGORIES.map((cat) => (
-            <View key={cat.key} style={glowStyles.subCard}>
-              <TouchableOpacity
-                style={glowStyles.subHeader}
-                onPress={() => toggleCat(cat.key)}
-                activeOpacity={0.7}
-              >
-                <Text style={glowStyles.subTitle}>{cat.title}</Text>
-                <Text style={glowStyles.subChevron}>{openCat[cat.key] ? '▼' : '▶'}</Text>
-              </TouchableOpacity>
-              {openCat[cat.key] && (
-                <View style={glowStyles.subBody}>
-                  {cat.products.map((product, i) => (
-                    <View key={i} style={glowStyles.affiliateRow}>
-                      <Text style={glowStyles.affiliateEmoji}>{product.emoji}</Text>
-                      <View style={glowStyles.affiliateInfo}>
-                        <Text style={glowStyles.affiliateName}>{product.name}</Text>
-                        <Text style={glowStyles.affiliateBrand}>{product.brand}</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={glowStyles.shopBtn}
-                        onPress={() => handleShop(product)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={glowStyles.shopBtnText}>Shop →</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))}
-
-          <View style={glowStyles.affiliateNote}>
-            <Text style={glowStyles.affiliateNoteText}>
-              To set up real affiliate links: join Amazon Associates (affiliate-program.amazon.com), LMNT, Seed, Branch Basics, and Joovv affiliate programs. Replace the placeholder URLs with your unique affiliate tracking links.
-            </Text>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-}
-
 // ─── Productivity Section ─────────────────────────────────────────────────────
 
 function ProductivitySection() {
@@ -2387,70 +2219,6 @@ const glowStyles = StyleSheet.create({
   productWhy: {
     fontSize: 12,
     color: COLORS.textSecondary,
-  },
-  affiliateBanner: {
-    backgroundColor: COLORS.goldMuted,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border2,
-  },
-  affiliateBannerText: {
-    fontSize: 12,
-    color: COLORS.gold,
-    lineHeight: 17,
-    fontWeight: '600',
-  },
-  affiliateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    gap: 10,
-  },
-  affiliateEmoji: {
-    fontSize: 20,
-    width: 28,
-    textAlign: 'center',
-  },
-  affiliateInfo: {
-    flex: 1,
-    gap: 1,
-  },
-  affiliateName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  affiliateBrand: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  shopBtn: {
-    backgroundColor: COLORS.goldMuted,
-    borderColor: COLORS.gold,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  shopBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.gold,
-  },
-  affiliateNote: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: COLORS.surface3,
-    borderRadius: 10,
-  },
-  affiliateNoteText: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
-    lineHeight: 16,
   },
 });
 
