@@ -14,6 +14,7 @@ import {
   Animated,
   Modal,
   Platform,
+  Linking,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -1738,11 +1739,720 @@ export default function GlowUpScreen() {
           ))}
         </SectionCard>
 
+        {/* ── LIFESTYLE OPTIMIZATION ── */}
+        <LifestyleSection />
+
+        {/* ── CLEAN BODY CARE ── */}
+        <BodyCareSection />
+
+        {/* ── AFFILIATE / RECOMMENDED PRODUCTS ── */}
+        <AffiliateSection />
+
+        {/* ── PRODUCTIVITY SYSTEM ── */}
+        <ProductivitySection />
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ─── Lifestyle Section ────────────────────────────────────────────────────────
+
+function LifestyleSection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Lifestyle sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const SUB_SECTIONS = [
+    {
+      key: 'clean_living',
+      title: '🧺 Clean Living',
+      items: [
+        { heading: 'Laundry', body: 'Use fragrance-free, dye-free detergent (Branch Basics or Molly\'s Suds). Wash on cold. Line dry when possible. Avoid dryer sheets — use wool dryer balls with a few drops of lavender essential oil instead. Wash bedsheets weekly.' },
+        { heading: 'Dishes', body: 'Use Branch Basics dish soap or castile soap (Dr. Bronner\'s). Avoid antibacterial soaps with triclosan. Run dishwasher on eco mode. Let dishes air dry.' },
+        { heading: 'House Cleaning', body: 'Branch Basics All-Purpose Concentrate for all surfaces. Baking soda + white vinegar for drains. Microfiber cloths instead of paper towels. Open windows 10 min daily for air exchange.' },
+      ],
+    },
+    {
+      key: 'air_quality',
+      title: '🌿 Air Quality',
+      items: [
+        { heading: 'Best Air-Filtering Plants (NASA Clean Air Study)', body: '• Peace Lily — removes benzene, formaldehyde, trichloroethylene\n• Spider Plant — removes formaldehyde, xylene\n• Snake Plant (Sansevieria) — releases oxygen at night, removes toxins\n• Pothos — removes benzene, formaldehyde\n• Boston Fern — removes formaldehyde, xylene\n• Rubber Plant — removes formaldehyde\n• Bamboo Palm — removes benzene, formaldehyde, trichloroethylene\n\nTip: 1 plant per 100 sq ft for meaningful air filtration.' },
+      ],
+    },
+    {
+      key: 'water_quality',
+      title: '💧 Water Quality',
+      items: [
+        { heading: 'Best Reverse Osmosis Filters', body: '#1 Pick: APEC ROES-50 — 5-stage, removes 99% of contaminants, ~$200, under-sink\n\nRunner-up: iSpring RCC7AK — adds alkaline remineralization stage, ~$230\n\nCountertop: Waterdrop D6 — no installation needed, ~$300, great for renters\n\nPitcher: Clearly Filtered — removes 365+ contaminants including fluoride, ~$90\n\nAlways remineralize RO water with a pinch of Himalayan salt or electrolyte drops. Test your tap water first: use a TDS meter (~$15 on Amazon).' },
+      ],
+    },
+    {
+      key: 'food_prep',
+      title: '🥦 Food Prep',
+      items: [
+        { heading: 'Clean Produce with Baking Soda', body: '1. Fill a large bowl with cold water\n2. Add 1 tsp baking soda per 2 cups water\n3. Soak produce 12–15 minutes (removes pesticide residue up to 96% per studies)\n4. Rinse thoroughly under cold running water\n5. Pat dry and store\n\nWorks best on: apples, grapes, strawberries, leafy greens, bell peppers.' },
+      ],
+    },
+    {
+      key: 'cheat_meals',
+      title: '🍔 Cheat Meal Upgrades',
+      items: [
+        { heading: 'Better Burger', body: 'Grass-fed beef patty, sourdough bun, raw cheese, avocado, mustard, no seed-oil condiments.' },
+        { heading: 'Better Pizza', body: 'Sourdough crust, San Marzano tomatoes, fresh mozzarella, olive oil drizzle, fresh basil.' },
+        { heading: 'Better Fries', body: 'Russet potatoes, tallow or avocado oil, sea salt, air fryer or oven at 425°F.' },
+        { heading: 'Better Ice Cream', body: 'Coconut milk base, raw honey sweetener, vanilla bean — brands: Coconut Bliss, Nada Moo.' },
+        { heading: 'Better Pasta', body: 'Sourdough pasta or chickpea pasta, olive oil, garlic, grass-fed butter, parmesan.' },
+        { heading: 'Better Chocolate', body: '85%+ dark chocolate — Lindt 90%, Alter Eco, Hu Kitchen.' },
+        { heading: 'Better Chips', body: 'Siete grain-free chips (avocado oil), Jackson\'s sweet potato chips (coconut oil).' },
+        { heading: 'Better Soda', body: 'Olipop or Poppi (prebiotic), sparkling water + fruit juice, kombucha.' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Lifestyle Optimization section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>🏠 Lifestyle Optimization</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {SUB_SECTIONS.map((sub) => (
+            <View key={sub.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(sub.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{sub.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[sub.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[sub.key] && (
+                <View style={glowStyles.subBody}>
+                  {sub.items.map((item, i) => (
+                    <View key={i} style={glowStyles.tipItem}>
+                      <Text style={glowStyles.tipHeading}>{item.heading}</Text>
+                      <Text style={glowStyles.tipBody}>{item.body}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Body Care Section ────────────────────────────────────────────────────────
+
+function BodyCareSection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Body care sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const CATEGORIES = [
+    {
+      key: 'shampoo',
+      title: '💇 Shampoo & Hair',
+      products: [
+        { name: 'Prose Custom Shampoo', why: 'Sulfate-free, personalized formula' },
+        { name: 'Acure Organics Shampoo', why: 'Clean ingredients, affordable' },
+        { name: 'Briogeo Scalp Revival', why: 'Charcoal + tea tree, removes buildup' },
+        { name: 'Moroccanoil Treatment', why: 'Argan oil, reduces frizz and breakage' },
+      ],
+    },
+    {
+      key: 'body_wash',
+      title: '🚿 Body Wash',
+      products: [
+        { name: "Dr. Bronner's Pure Castile Soap", why: '18-in-1, organic, no synthetics' },
+        { name: 'Necessaire The Body Wash', why: 'Niacinamide + AHAs, skin-improving' },
+        { name: 'Dove Men+Care Extra Fresh', why: 'Gentle, no harsh sulfates (budget pick)' },
+      ],
+    },
+    {
+      key: 'deodorant',
+      title: '🌿 Deodorant',
+      products: [
+        { name: 'Native Deodorant', why: 'Aluminum-free, coconut oil + shea butter' },
+        { name: 'Lume Whole Body Deodorant', why: 'Clinically proven 72-hour odor control' },
+        { name: "Schmidt's Natural Deodorant", why: 'Baking soda + arrowroot, effective' },
+      ],
+    },
+    {
+      key: 'face_wash',
+      title: '🧴 Face Wash',
+      products: [
+        { name: 'CeraVe Hydrating Cleanser', why: 'Ceramides, gentle, dermatologist recommended' },
+        { name: 'Cetaphil Gentle Skin Cleanser', why: 'Fragrance-free, non-stripping' },
+        { name: "Kiehl's Ultra Facial Cleanser", why: 'Hydrating, for all skin types' },
+      ],
+    },
+    {
+      key: 'moisturizer',
+      title: '💧 Moisturizer',
+      products: [
+        { name: 'Tallow & Honey Balm (Santa Cruz Medicinals)', why: 'Bioidentical to skin sebum' },
+        { name: 'CeraVe Moisturizing Cream', why: 'Ceramides + hyaluronic acid' },
+        { name: 'Neutrogena Hydro Boost', why: 'Water gel, lightweight, non-comedogenic' },
+      ],
+    },
+    {
+      key: 'sunscreen',
+      title: '☀️ Sunscreen',
+      products: [
+        { name: 'EltaMD UV Clear SPF 46', why: 'Zinc oxide, niacinamide, dermatologist favorite' },
+        { name: 'Supergoop Unseen Sunscreen SPF 40', why: 'Invisible, no white cast' },
+        { name: 'Badger Clear Zinc SPF 30', why: 'Mineral, reef-safe, clean ingredients' },
+      ],
+    },
+    {
+      key: 'oral',
+      title: '🦷 Oral Care',
+      products: [
+        { name: 'Risewell Hydroxyapatite Toothpaste', why: 'Remineralizes enamel, fluoride-free option' },
+        { name: 'Cocofloss', why: 'Coconut oil infused, removes more plaque than regular floss' },
+        { name: 'Bite Toothpaste Bits', why: 'Zero-waste, clean ingredients' },
+        { name: 'Copper Tongue Scraper', why: 'Removes bacteria, improves breath' },
+      ],
+    },
+    {
+      key: 'tools',
+      title: '🔧 Tools',
+      products: [
+        { name: 'Gua Sha Stone (rose quartz or jade)', why: 'Facial lymph drainage' },
+        { name: 'Jade Roller', why: 'Reduces puffiness, improves circulation' },
+        { name: 'Derma Roller 0.25mm', why: 'Stimulates collagen (weekly use only)' },
+        { name: 'Red Light Therapy Device (Joovv Go or Mito Red)', why: 'Skin rejuvenation, collagen' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Clean Body Care section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>🚿 Clean Body Care</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {CATEGORIES.map((cat) => (
+            <View key={cat.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(cat.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{cat.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[cat.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[cat.key] && (
+                <View style={glowStyles.subBody}>
+                  {cat.products.map((p, i) => (
+                    <View key={i} style={glowStyles.productRow}>
+                      <Text style={glowStyles.productName}>{p.name}</Text>
+                      <Text style={glowStyles.productWhy}>{p.why}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Affiliate Section ────────────────────────────────────────────────────────
+
+interface AffiliateProduct {
+  emoji: string;
+  name: string;
+  brand: string;
+  url: string;
+}
+
+interface AffiliateCategory {
+  title: string;
+  products: AffiliateProduct[];
+}
+
+function AffiliateSection() {
+  const [open, setOpen] = useState(false);
+  const [openCat, setOpenCat] = useState<Record<string, boolean>>({});
+
+  const toggleCat = (key: string) => {
+    console.log('[GlowUp] Affiliate category toggled:', key);
+    setOpenCat((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleShop = (product: AffiliateProduct) => {
+    console.log('[GlowUp] Shop link pressed:', product.name, product.url);
+    Linking.openURL(product.url).catch((err) =>
+      console.log('[GlowUp] Failed to open URL:', err),
+    );
+  };
+
+  const CATEGORIES: (AffiliateCategory & { key: string })[] = [
+    {
+      key: 'supplements',
+      title: '💊 Supplements',
+      products: [
+        { emoji: '💪', name: 'Creatine Monohydrate', brand: 'Thorne Research', url: 'https://amzn.to/creatine-thorne' },
+        { emoji: '☀️', name: 'Vitamin D3+K2', brand: 'Thorne Research', url: 'https://amzn.to/d3k2-thorne' },
+        { emoji: '🐟', name: 'Omega-3 Fish Oil', brand: 'Nordic Naturals Ultimate Omega', url: 'https://amzn.to/omega3-nordic' },
+        { emoji: '🧲', name: 'Magnesium Glycinate', brand: 'Pure Encapsulations', url: 'https://amzn.to/mag-glycinate' },
+        { emoji: '🔬', name: 'Zinc Carnosine', brand: 'Jarrow Formulas', url: 'https://amzn.to/zinc-carnosine' },
+        { emoji: '🌱', name: 'Probiotic DS-01', brand: 'Seed', url: 'https://seed.com' },
+        { emoji: '⚡', name: 'Electrolytes', brand: 'LMNT', url: 'https://drinklmnt.com' },
+      ],
+    },
+    {
+      key: 'skincare',
+      title: '✨ Skincare',
+      products: [
+        { emoji: '🥩', name: 'Beef Tallow Balm', brand: 'Ancestral Supplements', url: 'https://amzn.to/tallow-balm' },
+        { emoji: '🔴', name: 'Red Light Therapy Joovv Go 2.0', brand: 'Joovv', url: 'https://joovv.com' },
+        { emoji: '💎', name: 'Gua Sha Stone', brand: 'Mount Lai Rose Quartz', url: 'https://amzn.to/guasha-mountlai' },
+        { emoji: '🪨', name: 'Jade Roller', brand: 'Mount Lai', url: 'https://amzn.to/jaderoller-mountlai' },
+        { emoji: '🦷', name: 'Copper Tongue Scraper', brand: "Dr. Tung's", url: 'https://amzn.to/tongue-scraper' },
+      ],
+    },
+    {
+      key: 'cleaning',
+      title: '🧹 Cleaning',
+      products: [
+        { emoji: '🌿', name: 'Branch Basics Starter Kit', brand: 'Branch Basics', url: 'https://branchbasics.com' },
+        { emoji: '🧼', name: "Dr. Bronner's Castile Soap", brand: "Dr. Bronner's", url: 'https://amzn.to/drbronners' },
+        { emoji: '🐑', name: 'Wool Dryer Balls', brand: 'Smart Sheep', url: 'https://amzn.to/wool-dryer-balls' },
+      ],
+    },
+    {
+      key: 'water',
+      title: '💧 Water',
+      products: [
+        { emoji: '🚰', name: 'APEC ROES-50 RO Filter', brand: 'APEC', url: 'https://amzn.to/apec-ro-filter' },
+        { emoji: '📊', name: 'TDS Meter', brand: 'Generic', url: 'https://amzn.to/tds-meter' },
+        { emoji: '🥤', name: 'Clearly Filtered Pitcher', brand: 'Clearly Filtered', url: 'https://amzn.to/clearly-filtered' },
+      ],
+    },
+    {
+      key: 'fitness',
+      title: '🏋️ Fitness Tools',
+      products: [
+        { emoji: '🔵', name: 'Foam Roller GRID', brand: 'TriggerPoint', url: 'https://amzn.to/triggerpoint-foam' },
+        { emoji: '🟡', name: 'Resistance Bands', brand: 'Rogue', url: 'https://roguefitness.com' },
+        { emoji: '🔩', name: 'Pull-up Bar', brand: 'Iron Gym', url: 'https://amzn.to/iron-gym-pullup' },
+      ],
+    },
+    {
+      key: 'food',
+      title: '🍫 Food',
+      products: [
+        { emoji: '⚡', name: 'LMNT Electrolytes', brand: 'LMNT', url: 'https://drinklmnt.com' },
+        { emoji: '🥤', name: 'Olipop Prebiotic Soda', brand: 'Olipop', url: 'https://drinkolipop.com' },
+        { emoji: '🍫', name: 'Hu Kitchen Chocolate', brand: 'Hu Kitchen', url: 'https://amzn.to/hu-chocolate' },
+        { emoji: '🌮', name: 'Siete Grain-Free Chips', brand: 'Siete', url: 'https://amzn.to/siete-chips' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Recommended Products section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>💰 Recommended Products</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {/* Disclosure banner */}
+          <View style={glowStyles.affiliateBanner}>
+            <Text style={glowStyles.affiliateBannerText}>
+              These are products we personally recommend. Some links are affiliate links — we earn a small commission at no extra cost to you.
+            </Text>
+          </View>
+
+          {CATEGORIES.map((cat) => (
+            <View key={cat.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleCat(cat.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{cat.title}</Text>
+                <Text style={glowStyles.subChevron}>{openCat[cat.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openCat[cat.key] && (
+                <View style={glowStyles.subBody}>
+                  {cat.products.map((product, i) => (
+                    <View key={i} style={glowStyles.affiliateRow}>
+                      <Text style={glowStyles.affiliateEmoji}>{product.emoji}</Text>
+                      <View style={glowStyles.affiliateInfo}>
+                        <Text style={glowStyles.affiliateName}>{product.name}</Text>
+                        <Text style={glowStyles.affiliateBrand}>{product.brand}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={glowStyles.shopBtn}
+                        onPress={() => handleShop(product)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={glowStyles.shopBtnText}>Shop →</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+
+          <View style={glowStyles.affiliateNote}>
+            <Text style={glowStyles.affiliateNoteText}>
+              To set up real affiliate links: join Amazon Associates (affiliate-program.amazon.com), LMNT, Seed, Branch Basics, and Joovv affiliate programs. Replace the placeholder URLs with your unique affiliate tracking links.
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Productivity Section ─────────────────────────────────────────────────────
+
+function ProductivitySection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Productivity sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const SUB_SECTIONS = [
+    {
+      key: 'time_blocking',
+      title: '🗓 Time Blocking',
+      items: [
+        { heading: 'Morning Power Block (6–9 AM)', body: 'Morning routine, workout, breakfast — non-negotiable.' },
+        { heading: 'Deep Work Block (9 AM–12 PM)', body: 'Most important task of the day, phone on Do Not Disturb.' },
+        { heading: 'Admin Block (1–3 PM)', body: 'Emails, calls, errands, low-cognitive tasks.' },
+        { heading: 'Creative/Learning Block (3–5 PM)', body: 'Skill building, reading, content creation.' },
+        { heading: 'Wind Down (8–10 PM)', body: 'No screens after 9 PM, prep for next day, sleep by 10 PM.' },
+      ],
+    },
+    {
+      key: 'weekly_review',
+      title: '📋 Weekly Review System',
+      items: [
+        { heading: 'Every Sunday', body: 'Review last week\'s wins and misses, plan next week\'s priorities.' },
+        { heading: '3 Non-Negotiable Goals', body: 'Set 3 non-negotiable goals for the week (write them down).' },
+        { heading: 'Review', body: 'Review finances, health metrics, relationships.' },
+        { heading: 'Prep', body: 'Prep meals and gym bag for Monday.' },
+      ],
+    },
+    {
+      key: 'focus',
+      title: '🎯 Focus Protocols',
+      items: [
+        { heading: 'Pomodoro', body: '25 min deep work, 5 min break, repeat 4x, then 30 min break.' },
+        { heading: 'Phone Rules', body: 'No phone first 30 min after waking, no phone 1 hr before bed.' },
+        { heading: 'Notification Audit', body: 'Turn off all non-essential notifications.' },
+        { heading: 'Single-Tasking', body: 'One task at a time, close all other tabs/apps.' },
+        { heading: 'Environment Design', body: 'Clean desk = clear mind. Remove all distractions before starting work.' },
+      ],
+    },
+    {
+      key: 'morning_routine',
+      title: '🌅 Morning Routine Optimization',
+      items: [
+        { heading: 'Same Wake Time', body: 'Wake at the same time every day (even weekends) — regulates circadian rhythm.' },
+        { heading: 'No Snooze', body: 'No alarm snooze — place phone across the room.' },
+        { heading: 'First 5 Min', body: 'Water, light, movement — no phone.' },
+        { heading: 'Journal 5 Min', body: '3 things grateful for, 1 intention for the day.' },
+        { heading: 'Cold Exposure', body: '30–60 sec cold shower at end of shower — increases dopamine 250%.' },
+      ],
+    },
+    {
+      key: 'evening_routine',
+      title: '🌙 Evening Routine',
+      items: [
+        { heading: 'Dim Lights After 8 PM', body: 'Signals melatonin production.' },
+        { heading: "Tomorrow's Top 3", body: "Write tomorrow's top 3 tasks tonight — reduces decision fatigue in the morning." },
+        { heading: 'Read Physical Book', body: '20–30 min — better sleep than screens.' },
+        { heading: 'Magnesium Glycinate', body: '30 min before bed — improves sleep quality.' },
+        { heading: 'Gratitude Practice', body: '3 things that went well today.' },
+      ],
+    },
+    {
+      key: 'digital_minimalism',
+      title: '📵 Digital Minimalism',
+      items: [
+        { heading: 'Social Media', body: 'Delete social media apps from phone, use only on desktop.' },
+        { heading: 'Grayscale Mode', body: 'Use grayscale mode on phone to reduce dopamine hits.' },
+        { heading: 'App Limits', body: '30 min max for entertainment apps.' },
+        { heading: 'Physical Planner', body: 'Use a physical planner or notebook for tasks — reduces screen time.' },
+        { heading: 'Weekly Digital Detox', body: '1 day per week with no social media.' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Productivity System section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>⚡ Productivity System</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {SUB_SECTIONS.map((sub) => (
+            <View key={sub.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(sub.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{sub.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[sub.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[sub.key] && (
+                <View style={glowStyles.subBody}>
+                  {sub.items.map((item, i) => (
+                    <View key={i} style={glowStyles.tipItem}>
+                      <Text style={glowStyles.tipHeading}>{item.heading}</Text>
+                      <Text style={glowStyles.tipBody}>{item.body}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Shared styles for new sections ──────────────────────────────────────────
+
+const glowStyles = StyleSheet.create({
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 10,
+  },
+  goldAccent: {
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: COLORS.gold,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+    flex: 1,
+  },
+  chevron: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginLeft: 8,
+  },
+  cardBody: {
+    marginTop: 14,
+    gap: 8,
+  },
+  subCard: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  subTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
+    flex: 1,
+  },
+  subChevron: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  subBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  tipItem: {
+    gap: 3,
+  },
+  tipHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.gold,
+  },
+  tipBody: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  productRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 2,
+  },
+  productName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  productWhy: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  affiliateBanner: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  affiliateBannerText: {
+    fontSize: 12,
+    color: COLORS.gold,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+  affiliateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 10,
+  },
+  affiliateEmoji: {
+    fontSize: 20,
+    width: 28,
+    textAlign: 'center',
+  },
+  affiliateInfo: {
+    flex: 1,
+    gap: 1,
+  },
+  affiliateName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  affiliateBrand: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  shopBtn: {
+    backgroundColor: COLORS.goldMuted,
+    borderColor: COLORS.gold,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  shopBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.gold,
+  },
+  affiliateNote: {
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: COLORS.surface3,
+    borderRadius: 10,
+  },
+  affiliateNoteText: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    lineHeight: 16,
+  },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 

@@ -394,6 +394,32 @@ export default function PaywallScreen() {
               ))}
             </View>
 
+            {/* Glow Up Add-On Card */}
+            <View style={styles.glowUpAddonCard}>
+              <View style={styles.glowUpAddonHeader}>
+                <Text style={styles.glowUpAddonIcon}>✨</Text>
+                <View style={styles.glowUpAddonTitleWrap}>
+                  <Text style={styles.glowUpAddonTitle}>Glow Up Add-On</Text>
+                  <Text style={styles.glowUpAddonPrice}>+$3/month</Text>
+                </View>
+              </View>
+              <Text style={styles.glowUpAddonDesc}>
+                The most complete natural glow-up system ever built. Appearance, physique, height optimization, posture, skin, fascia, debloat, energy, and daily habits — all gamified with XP.
+              </Text>
+              <TouchableOpacity
+                style={styles.glowUpAddonBtn}
+                onPress={() => {
+                  console.log("[Paywall] Unlock Glow Up button pressed");
+                  if (selectedPackage) {
+                    handlePurchase();
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.glowUpAddonBtnText}>Unlock Glow Up →</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Package Selection */}
             {activePackages.length > 0 && (
               <View style={styles.packagesContainer}>
@@ -1176,5 +1202,56 @@ const styles = StyleSheet.create({
   legalLinkDivider: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.5)",
+  },
+  // Glow Up Add-On Card
+  glowUpAddonCard: {
+    backgroundColor: "rgba(212, 160, 23, 0.08)",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#D4A017",
+  },
+  glowUpAddonHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 12,
+  },
+  glowUpAddonIcon: {
+    fontSize: 28,
+  },
+  glowUpAddonTitleWrap: {
+    flex: 1,
+  },
+  glowUpAddonTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#FFD700",
+    letterSpacing: 0.5,
+  },
+  glowUpAddonPrice: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "rgba(255, 215, 0, 0.75)",
+    marginTop: 1,
+  },
+  glowUpAddonDesc: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.85)",
+    lineHeight: 19,
+    marginBottom: 14,
+  },
+  glowUpAddonBtn: {
+    backgroundColor: "#D4A017",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  glowUpAddonBtnText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#0A0A0A",
+    letterSpacing: 0.5,
   },
 });
