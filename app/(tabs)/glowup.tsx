@@ -1747,6 +1747,9 @@ export default function GlowUpScreen() {
         {/* ── PRODUCTIVITY SYSTEM ── */}
         <ProductivitySection />
 
+        {/* ── RECOMMENDED PRODUCTS ── */}
+        <RecommendedProductsSection />
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -2108,6 +2111,141 @@ function ProductivitySection() {
                     <View key={i} style={glowStyles.tipItem}>
                       <Text style={glowStyles.tipHeading}>{item.heading}</Text>
                       <Text style={glowStyles.tipBody}>{item.body}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Recommended Products Section ────────────────────────────────────────────
+
+function RecommendedProductsSection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Recommended products category toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const PRODUCT_CATEGORIES = [
+    {
+      key: 'supplements',
+      title: '💊 Supplements',
+      products: [
+        { name: 'Creatine Monohydrate', desc: 'Increases strength, muscle volume, and cognitive performance. Take 5g daily with water.' },
+        { name: 'Vitamin D3 + K2', desc: 'Supports testosterone, bone density, and immune function. Take 5,000 IU D3 with 100mcg K2 daily.' },
+        { name: 'Omega-3 Fish Oil', desc: 'Reduces inflammation, supports brain and heart health. Take 2–3g EPA/DHA daily with food.' },
+        { name: 'Magnesium Glycinate', desc: 'Improves sleep quality, reduces cortisol, supports muscle recovery. Take 400mg before bed.' },
+        { name: 'Zinc Carnosine', desc: 'Supports gut lining integrity, testosterone production, and immune health. Take with food.' },
+        { name: 'Probiotic (50B CFU)', desc: 'Restores gut microbiome diversity. Look for multi-strain formulas with Lactobacillus and Bifidobacterium.' },
+        { name: 'Electrolyte Packets', desc: 'Replenishes sodium, potassium, and magnesium lost through sweat. Use LMNT or Liquid IV.' },
+      ],
+    },
+    {
+      key: 'skincare',
+      title: '🧴 Skincare',
+      products: [
+        { name: 'Beef Tallow Moisturizer', desc: 'Bioidentical to human sebum. Deeply nourishing without synthetic chemicals. Apply after cleansing.' },
+        { name: 'Natural Cleanser (Castile Soap)', desc: "Dr. Bronner's or similar. Gentle, no sulfates or synthetic fragrance." },
+        { name: 'Gua Sha Stone', desc: 'Rose quartz or jade. Used for facial lymph drainage and reducing puffiness. Use with facial oil.' },
+        { name: 'Red Light Therapy Device', desc: 'Joovv Go or Mito Red. Stimulates collagen production and skin rejuvenation. Use 10–15 min daily.' },
+        { name: 'Magnesium Body Spray', desc: 'Transdermal magnesium absorption. Spray on skin after shower for muscle relaxation and sleep support.' },
+        { name: 'Derma Roller 0.25mm', desc: 'Micro-needling stimulates collagen. Use once per week on clean skin, followed by serum.' },
+      ],
+    },
+    {
+      key: 'cleaning',
+      title: '🧺 Cleaning',
+      products: [
+        { name: 'Branch Basics Concentrate', desc: 'Non-toxic, plant-based all-purpose cleaner. One bottle replaces all household cleaners.' },
+        { name: "Molly's Suds Laundry Powder", desc: 'Fragrance-free, dye-free laundry detergent. Safe for sensitive skin and hormones.' },
+        { name: 'Wool Dryer Balls', desc: 'Replaces dryer sheets. Add a few drops of lavender essential oil for natural scent.' },
+        { name: 'Baking Soda + White Vinegar', desc: 'Natural drain cleaner and surface deodorizer. Safe, cheap, and effective.' },
+        { name: 'Microfiber Cloths', desc: 'Replaces paper towels. Reusable, more effective at trapping bacteria and dust.' },
+      ],
+    },
+    {
+      key: 'water',
+      title: '💧 Water',
+      products: [
+        { name: 'APEC ROES-50 Reverse Osmosis Filter', desc: '5-stage under-sink filter. Removes 99% of contaminants including fluoride, chlorine, and heavy metals.' },
+        { name: 'Clearly Filtered Pitcher', desc: 'Removes 365+ contaminants including fluoride. Best pitcher option for renters.' },
+        { name: 'Waterdrop D6 Countertop RO', desc: 'No installation needed. Great for apartments. Removes 99.9% of contaminants.' },
+        { name: 'TDS Meter', desc: 'Tests total dissolved solids in your tap water. Use before buying a filter to know what you need.' },
+        { name: 'Copper Cup', desc: 'Drinking from copper has antimicrobial properties and may support digestion. Use for morning water.' },
+        { name: 'Himalayan Salt (for remineralization)', desc: 'Add a pinch to RO water to restore essential minerals stripped by filtration.' },
+      ],
+    },
+    {
+      key: 'fitness',
+      title: '🏋️ Fitness',
+      products: [
+        { name: 'Pull-Up Bar (doorframe)', desc: 'Essential for dead hangs and pull-ups. Fits any doorframe, no installation required.' },
+        { name: 'Foam Roller', desc: 'For fascial release and muscle recovery. Use daily on posterior chain, IT band, and calves.' },
+        { name: 'Resistance Bands', desc: 'For warm-up activation (band pull-aparts, face pulls, clamshells). Lightweight and portable.' },
+        { name: 'Jump Rope', desc: 'Best low-impact cardio tool. 10 min = 30 min jogging in caloric burn. Great for sprint days.' },
+        { name: 'Lifting Belt', desc: 'Supports intra-abdominal pressure on heavy compound lifts. Use for squats and deadlifts above 80% 1RM.' },
+        { name: 'Wrist Wraps', desc: 'Stabilizes wrists on heavy pressing movements. Reduces injury risk on bench and overhead press.' },
+      ],
+    },
+    {
+      key: 'food',
+      title: '🥩 Food',
+      products: [
+        { name: 'Grass-Fed Ground Beef', desc: 'Higher omega-3 and CLA content than conventional. Best protein source for testosterone and muscle.' },
+        { name: 'Pasture-Raised Eggs', desc: 'Higher vitamin D, omega-3, and choline than conventional eggs. Eat 3–5 daily.' },
+        { name: 'Raw Honey', desc: 'Antimicrobial, prebiotic, and antioxidant-rich. Use instead of refined sugar. Manuka or local preferred.' },
+        { name: 'Kefir', desc: 'Fermented dairy with 30+ probiotic strains. Supports gut health and immune function. Drink 1 cup daily.' },
+        { name: 'Bone Broth', desc: 'Rich in collagen, glycine, and minerals. Supports gut lining, joint health, and skin elasticity.' },
+        { name: 'Sauerkraut / Kimchi', desc: 'Fermented vegetables with live cultures. Eat 2–3 tbsp daily for gut microbiome diversity.' },
+        { name: 'Extra Virgin Olive Oil', desc: 'High in oleocanthal (anti-inflammatory). Use cold or at low heat. Avoid seed oils entirely.' },
+        { name: 'Sourdough Bread', desc: 'Long-fermented sourdough has lower glycemic index and is easier to digest than commercial bread.' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Recommended Products section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>💰 Recommended Products</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {PRODUCT_CATEGORIES.map((cat) => (
+            <View key={cat.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(cat.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{cat.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[cat.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[cat.key] && (
+                <View style={glowStyles.subBody}>
+                  {cat.products.map((p, i) => (
+                    <View key={i} style={glowStyles.productRow}>
+                      <Text style={glowStyles.productName}>{p.name}</Text>
+                      <Text style={glowStyles.productWhy}>{p.desc}</Text>
                     </View>
                   ))}
                 </View>
