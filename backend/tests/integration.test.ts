@@ -645,5 +645,117 @@ describe("API Integration Tests", () => {
         await expectStatus(res, 400);
       });
     });
+
+    describe("POST /api/parse-routine", () => {
+      test("Parse routine from text", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "Monday: Chest and Triceps\n- Bench Press 4x5\n- Incline Dumbbell Press 3x8\n- Tricep Dips 3x10\n\nTuesday: Back and Biceps\n- Deadlifts 4x3\n- Barbell Rows 4x6\n- Barbell Curls 3x8",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.daysPerWeek).toBeDefined();
+        expect(data.days).toBeDefined();
+        expect(Array.isArray(data.days)).toBe(true);
+      });
+
+      test("Parse routine with emoji and description", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "Upper Lower Split\n\nMonday Upper: Bench, Rows, Pull-ups, Lateral Raises\nTuesday Lower: Squats, Leg Press, Hamstring Curls\nWednesday Rest\nThursday Upper: Incline Press, Face Pulls, Lat Pulldowns\nFriday Lower: Deadlifts, Leg Extensions, Calf Raises",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.daysPerWeek).toBeDefined();
+        expect(data.days).toBeDefined();
+      });
+
+      test("Parse routine from base64 image", async () => {
+        const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="; // 1x1 PNG
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_base64: base64Image,
+            image_mime: "image/png",
+          }),
+        });
+        // Will likely fail or return empty since the image has no text, but should not error
+        await expectStatus(res, 200, 400);
+      });
+
+      test("Parse routine with multiple days of exercises", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "PPL Routine\nPush Day: Bench Press 4x8, Incline DB Press 3x10, Tricep Rope Pushdown 3x12\nPull Day: Deadlift 3x3, Barbell Rows 4x6, Lat Pulldown 3x10\nLeg Day: Squats 4x8, Leg Press 3x10, Leg Curls 3x12",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(Array.isArray(data.days)).toBe(true);
+        if (data.days.length > 0) {
+          expect(data.days[0].name).toBeDefined();
+          expect(Array.isArray(data.days[0].exercises)).toBe(true);
+        }
+      });
+
+      test("Return 400 when missing both text and image", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        await expectStatus(res, 400);
+      });
+
+      test("Return 400 for invalid base64 image", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_base64: "not-valid-base64!!!!",
+            image_mime: "image/jpeg",
+          }),
+        });
+        await expectStatus(res, 400, 500);
+      });
+
+      test("Parse routine with default image mime type", async () => {
+        const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_base64: base64Image,
+          }),
+        });
+        await expectStatus(res, 200, 400);
+      });
+
+      test("Parse routine with text containing structured format", async () => {
+        const res = await api("/api/parse-routine", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: "Full Body Workout 3x per week\nDay 1: Squat 5x5, Bench 5x5, Barbell Row 5x5\nDay 2: Deadlift 3x5, Overhead Press 5x5, Pullups 3x8\nDay 3: Leg Press 3x10, Incline Bench 3x8, Face Pulls 3x15",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.name).toBeDefined();
+        expect(data.daysPerWeek).toBeDefined();
+      });
+    });
   });
 });

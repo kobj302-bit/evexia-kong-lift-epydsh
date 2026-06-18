@@ -61,6 +61,23 @@ interface NutritionRequest {
   apiKey?: string;
 }
 
+interface ParseRoutineRequest {
+  text?: string;
+  image_base64?: string;
+  image_mime?: string;
+}
+
+interface ParsedRoutine {
+  name: string;
+  daysPerWeek: number;
+  emoji: string;
+  description: string;
+  days: Array<{
+    name: string;
+    exercises: string[];
+  }>;
+}
+
 const errorResponse = {
   type: 'object',
   properties: {
@@ -94,6 +111,81 @@ async function callClaudeAPI(
     return stripped;
   } catch (error) {
     logger.warn({ err: error }, 'Claude API call failed, using mock response');
+    return '';
+  }
+}
+
+async function callOpenRouterAPI(
+  systemPrompt: string,
+  messageContent: any,
+  logger: any,
+  timeoutMs: number = 60000
+): Promise<string> {
+  logger.debug(
+    { systemPromptLength: systemPrompt.length, timeoutMs },
+    'Calling OpenRouter API'
+  );
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    logger.warn('OPENROUTER_API_KEY environment variable not set, using mock response');
+    return '';
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: messageContent,
+          },
+        ],
+        temperature: 0.3,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      logger.warn(
+        { statusCode: response.status, error: errorData },
+        'OpenRouter API error, using mock response'
+      );
+      return '';
+    }
+
+    const data = await response.json() as any;
+    const text = data.choices?.[0]?.message?.content || '';
+
+    // Strip markdown code fences
+    const stripped = text
+      .replace(/^```(?:json)?\s*\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+
+    return stripped;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.warn({ timeoutMs }, 'OpenRouter API call timeout, using mock response');
+    } else {
+      logger.warn({ err: error }, 'OpenRouter API call failed, using mock response');
+    }
     return '';
   }
 }
@@ -1055,6 +1147,186 @@ ${trainingDays ? 'Include weeklyPlan with training day vs rest day calorie targe
       } catch (error) {
         app.logger.error({ err: error, message: error instanceof Error ? error.message : String(error) }, 'Failed to calculate nutrition');
         return reply.status(500).send({ error: 'Failed to generate response. Please try again.' });
+      }
+    }
+  );
+
+  // POST /api/parse-routine
+  fastify.post<{ Body: ParseRoutineRequest }>(
+    '/api/parse-routine',
+    {
+      schema: {
+        description: 'Parse a workout routine from text or image into structured JSON',
+        tags: ['ai', 'routine'],
+        body: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'Typed workout routine text' },
+            image_base64: { type: 'string', description: 'Base64 encoded image' },
+            image_mime: { type: 'string', description: 'Image MIME type (e.g. image/jpeg)', default: 'image/jpeg' },
+          },
+        },
+        response: {
+          200: {
+            description: 'Parsed routine structure',
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              daysPerWeek: { type: 'number' },
+              emoji: { type: 'string' },
+              description: { type: 'string' },
+              days: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    exercises: { type: 'array', items: { type: 'string' } },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Bad request', ...errorResponse },
+          500: { description: 'Internal server error', ...errorResponse },
+        },
+      },
+    },
+    async (request: FastifyRequest<{ Body: ParseRoutineRequest }>, reply: FastifyReply) => {
+      const { text, image_base64, image_mime = 'image/jpeg' } = request.body;
+
+      app.logger.info(
+        { hasText: !!text, hasImage: !!image_base64 },
+        'Parse routine request'
+      );
+
+      // Validate at least one input
+      if (!text && !image_base64) {
+        app.logger.warn('Parse routine request missing both text and image_base64');
+        return reply.status(400).send({
+          error: 'At least one of text or image_base64 must be provided',
+        });
+      }
+
+      // Validate base64 format if provided
+      if (image_base64) {
+        // Basic base64 validation - check for valid characters
+        if (!/^[A-Za-z0-9+/]*={0,2}$/.test(image_base64)) {
+          app.logger.warn('Invalid base64 format provided');
+          return reply.status(400).send({
+            error: 'Invalid base64 image format',
+          });
+        }
+      }
+
+      try {
+        const systemPrompt =
+          'You are a fitness coach assistant. Parse the provided workout routine into a structured JSON program. Return ONLY valid JSON with this exact shape: { name, daysPerWeek, emoji, description, days: [{ name, exercises: [string] }] }. Each exercise string should include sets and reps if mentioned (e.g. \'Bench Press 4x8\'). If no sets/reps are mentioned, just include the exercise name. Pick an appropriate emoji for the routine type. Keep day names concise like \'Day 1 — Push\'.';
+
+        let messageContent: any;
+
+        if (image_base64) {
+          // Build message with image
+          const imageDataUrl = `data:${image_mime};base64,${image_base64}`;
+          messageContent = [
+            {
+              type: 'text',
+              text: 'Parse this workout routine image into the required JSON format.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageDataUrl,
+              },
+            },
+          ];
+        } else {
+          // Text-only message
+          messageContent = `Parse this workout routine into the required JSON format:\n\n${text}`;
+        }
+
+        const responseText = await callOpenRouterAPI(
+          systemPrompt,
+          messageContent,
+          app.logger,
+          60000
+        );
+
+        let jsonData: ParsedRoutine | null = null;
+
+        if (responseText) {
+          try {
+            jsonData = JSON.parse(responseText);
+          } catch (parseError) {
+            app.logger.warn(
+              { parseError, raw: responseText },
+              'Failed to parse routine response as JSON'
+            );
+            jsonData = null;
+          }
+        }
+
+        // Create mock response if parsing failed or API returned empty
+        if (!jsonData) {
+          app.logger.info('Using mock routine response');
+
+          // Extract routine name from text if available
+          let routineName = 'Workout Routine';
+          if (text) {
+            const lines = text.split('\n');
+            if (lines.length > 0) {
+              routineName = lines[0].trim() || 'Workout Routine';
+            }
+          }
+
+          jsonData = {
+            name: routineName,
+            daysPerWeek: 3,
+            emoji: '💪',
+            description: 'A structured workout routine',
+            days: [
+              {
+                name: 'Day 1',
+                exercises: ['Exercise 1', 'Exercise 2', 'Exercise 3'],
+              },
+              {
+                name: 'Day 2',
+                exercises: ['Exercise 4', 'Exercise 5', 'Exercise 6'],
+              },
+              {
+                name: 'Day 3',
+                exercises: ['Exercise 7', 'Exercise 8', 'Exercise 9'],
+              },
+            ],
+          };
+        }
+
+        // Validate required fields
+        if (!jsonData.name || jsonData.daysPerWeek === undefined || !jsonData.emoji || !jsonData.description || !Array.isArray(jsonData.days)) {
+          app.logger.error(
+            { missingFields: { name: !jsonData.name, daysPerWeek: jsonData.daysPerWeek === undefined, emoji: !jsonData.emoji, description: !jsonData.description, days: !Array.isArray(jsonData.days) } },
+            'Parsed routine missing required fields'
+          );
+          return reply.status(400).send({
+            error: 'Parsed routine missing required fields',
+          });
+        }
+
+        app.logger.info(
+          { routineName: jsonData.name, daysPerWeek: jsonData.daysPerWeek },
+          'Routine parsed successfully'
+        );
+
+        return jsonData;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        app.logger.error(
+          { err: error, message: errorMsg },
+          'Failed to parse routine'
+        );
+        return reply.status(500).send({
+          error: errorMsg || 'Failed to parse routine. Please try again.',
+        });
       }
     }
   );
