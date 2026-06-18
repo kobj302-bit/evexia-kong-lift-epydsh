@@ -10,7 +10,7 @@ import { useApp } from '@/contexts/AppContext';
 import { COLORS, AVATARS } from '@/constants/data';
 import { isOnboardingComplete } from '@/utils/onboardingStorage';
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
 
 const GOALS = [
   { label: 'Build Muscle', emoji: '💪' },
@@ -36,6 +36,15 @@ export default function SurveyScreen() {
   const [age, setAge] = useState(state.profile?.age ? String(state.profile.age) : '25');
   const [weight, setWeight] = useState(state.profile?.weight ? String(state.profile.weight) : '180');
   const [sex, setSex] = useState(state.profile?.sex || 'Male');
+  const [bf, setBf] = useState(state.profile?.bf != null ? String(state.profile.bf) : '15');
+  const [heightFt, setHeightFt] = useState(state.profile?.height ? String(Math.floor((state.profile.height || 70) / 12)) : '5');
+  const [heightIn, setHeightIn] = useState(state.profile?.height ? String((state.profile.height || 70) % 12) : '10');
+  const [heightCm, setHeightCm] = useState(state.profile?.height ? String(Math.round((state.profile.height || 70) * 2.54)) : '178');
+  const [heightUnit, setHeightUnit] = useState<'ft' | 'cm'>(state.profile?.heightUnit || 'ft');
+  const [waist, setWaist] = useState(state.profile?.waist ? String(state.profile.waist) : '32');
+  const [neck, setNeck] = useState(state.profile?.neck ? String(state.profile.neck) : '15');
+  const [hip, setHip] = useState(state.profile?.hip ? String(state.profile.hip) : '38');
+  const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>(state.profile?.weightUnit || 'lbs');
   const [exp, setExp] = useState(state.profile?.exp || 'Beginner');
   const [yrs, setYrs] = useState(state.profile?.yrs != null ? String(state.profile.yrs) : '0');
   const [goal, setGoal] = useState(state.profile?.goal || 'Build Muscle');
@@ -116,15 +125,21 @@ export default function SurveyScreen() {
 
   const handleFinish = () => {
     console.log('[Survey] Completed — saving profile');
+    const heightInches = heightUnit === 'ft'
+      ? (parseInt(heightFt) || 5) * 12 + (parseInt(heightIn) || 10)
+      : Math.round((parseInt(heightCm) || 178) / 2.54);
+    const weightLbs = weightUnit === 'kg'
+      ? Math.round((parseFloat(weight) || 80) * 2.205)
+      : parseFloat(weight) || 180;
     updateState({
       view: 'app',
       profile: {
         username: username || 'KongLifter',
         avatar,
         age: parseInt(age) || 25,
-        weight: parseFloat(weight) || 180,
+        weight: weightLbs,
         sex,
-        bf: 15,
+        bf: parseFloat(bf) || 15,
         exp,
         yrs: parseInt(yrs) || 0,
         goal,
@@ -132,6 +147,12 @@ export default function SurveyScreen() {
         days,
         limNotes,
         injuries,
+        height: heightInches,
+        heightUnit,
+        waist: parseFloat(waist) || 32,
+        neck: parseFloat(neck) || 15,
+        hip: parseFloat(hip) || 38,
+        weightUnit,
       },
       expertMode,
       disclaimerAck: disclaimer,
@@ -140,8 +161,8 @@ export default function SurveyScreen() {
   };
 
   const canProceed = () => {
-    if (step === 6 && !username.trim()) return false;
-    if (step === 7 && !disclaimer) return false;
+    if (step === 7 && !username.trim()) return false;
+    if (step === 8 && !disclaimer) return false;
     return true;
   };
 
@@ -242,6 +263,104 @@ export default function SurveyScreen() {
 
         {step === 2 && (
           <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>📏 Body Composition</Text>
+            <Text style={styles.stepSubtitle}>Real data = real analysis. This powers your FFMI, TDEE, Navy BF%, and Glow Up scores.</Text>
+
+            {/* Height unit toggle */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Height</Text>
+              <View style={styles.pillRow}>
+                {(['ft', 'cm'] as const).map((u) => (
+                  <AnimatedPressable
+                    key={u}
+                    onPress={() => {
+                      console.log('[Survey] Height unit changed:', u);
+                      setHeightUnit(u);
+                    }}
+                    style={[styles.pill, heightUnit === u && styles.pillActive]}
+                  >
+                    <Text style={[styles.pillText, heightUnit === u && styles.pillTextActive]}>{u === 'ft' ? 'ft / in' : 'cm'}</Text>
+                  </AnimatedPressable>
+                ))}
+              </View>
+              {heightUnit === 'ft' ? (
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Feet</Text>
+                    <TextInput style={styles.input} value={heightFt} onChangeText={setHeightFt} keyboardType="numeric" placeholder="5" placeholderTextColor={COLORS.textTertiary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Inches</Text>
+                    <TextInput style={styles.input} value={heightIn} onChangeText={setHeightIn} keyboardType="numeric" placeholder="10" placeholderTextColor={COLORS.textTertiary} />
+                  </View>
+                </View>
+              ) : (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.inputLabel}>Centimeters</Text>
+                  <TextInput style={styles.input} value={heightCm} onChangeText={setHeightCm} keyboardType="numeric" placeholder="178" placeholderTextColor={COLORS.textTertiary} />
+                </View>
+              )}
+            </View>
+
+            {/* Weight unit toggle */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Weight Unit</Text>
+              <View style={styles.pillRow}>
+                {(['lbs', 'kg'] as const).map((u) => (
+                  <AnimatedPressable
+                    key={u}
+                    onPress={() => {
+                      console.log('[Survey] Weight unit changed:', u);
+                      setWeightUnit(u);
+                    }}
+                    style={[styles.pill, weightUnit === u && styles.pillActive]}
+                  >
+                    <Text style={[styles.pillText, weightUnit === u && styles.pillTextActive]}>{u}</Text>
+                  </AnimatedPressable>
+                ))}
+              </View>
+            </View>
+
+            {/* Body fat % */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Body Fat % (estimate)</Text>
+              <Text style={styles.fieldHint}>If unsure: lean/visible abs ≈ 10–14%, athletic ≈ 15–19%, average ≈ 20–24%</Text>
+              <TextInput style={styles.input} value={bf} onChangeText={setBf} keyboardType="numeric" placeholder="15" placeholderTextColor={COLORS.textTertiary} />
+            </View>
+
+            {/* Waist */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Waist Circumference (inches)</Text>
+              <Text style={styles.fieldHint}>Measure at navel, relaxed</Text>
+              <TextInput style={styles.input} value={waist} onChangeText={setWaist} keyboardType="numeric" placeholder="32" placeholderTextColor={COLORS.textTertiary} />
+            </View>
+
+            {/* Neck */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Neck Circumference (inches)</Text>
+              <Text style={styles.fieldHint}>Measure below larynx</Text>
+              <TextInput style={styles.input} value={neck} onChangeText={setNeck} keyboardType="numeric" placeholder="15" placeholderTextColor={COLORS.textTertiary} />
+            </View>
+
+            {/* Hip — females only */}
+            {sex === 'Female' && (
+              <View style={styles.field}>
+                <Text style={styles.label}>Hip Circumference (inches)</Text>
+                <Text style={styles.fieldHint}>Widest point — used for Navy BF formula</Text>
+                <TextInput style={styles.input} value={hip} onChangeText={setHip} keyboardType="numeric" placeholder="38" placeholderTextColor={COLORS.textTertiary} />
+              </View>
+            )}
+
+            <View style={[styles.field, { backgroundColor: COLORS.surface2, borderRadius: 12, padding: 14, marginTop: 8 }]}>
+              <Text style={{ fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 }}>
+                💡 These measurements power your Navy Body Fat %, FFMI (Fat-Free Mass Index), TDEE, BMI, lean mass, and Glow Up facial/body analysis. You can update them anytime in Settings.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {step === 3 && (
+          <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>🏋️ Experience Level</Text>
             <Text style={styles.stepSubtitle}>How long have you been training?</Text>
 
@@ -286,7 +405,7 @@ export default function SurveyScreen() {
           </View>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>🎯 Your Goal</Text>
             <Text style={styles.stepSubtitle}>What are you training for?</Text>
@@ -310,7 +429,7 @@ export default function SurveyScreen() {
           </View>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>🩹 Injuries & Limits</Text>
             <Text style={styles.stepSubtitle}>Kong needs to know what to avoid</Text>
@@ -341,7 +460,7 @@ export default function SurveyScreen() {
           </View>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>⚙️ Setup</Text>
             <Text style={styles.stepSubtitle}>What do you have to work with?</Text>
@@ -378,7 +497,7 @@ export default function SurveyScreen() {
           </View>
         )}
 
-        {step === 6 && (
+        {step === 7 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>👤 Username</Text>
             <Text style={styles.stepSubtitle}>What should Kong call you?</Text>
@@ -398,7 +517,7 @@ export default function SurveyScreen() {
           </View>
         )}
 
-        {step === 7 && (
+        {step === 8 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>🦍 Choose Your Avatar</Text>
             <Text style={styles.stepSubtitle}>Pick your Kong identity</Text>
@@ -488,6 +607,8 @@ const styles = StyleSheet.create({
   stepSubtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: -12 },
   field: { gap: 8 },
   label: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
+  fieldHint: { fontSize: 11, color: COLORS.textSecondary, marginBottom: 6, lineHeight: 16 },
+  inputLabel: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 4, fontWeight: '600' },
   input: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,

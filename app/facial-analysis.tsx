@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/data';
+import { useApp } from '@/contexts/AppContext';
+import { analyzeBody } from '@/utils/bodyAnalysis';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -262,6 +264,7 @@ const sliderStyles = StyleSheet.create({
 type ScreenPhase = 'intro' | 'form' | 'loading' | 'results';
 
 export default function FacialAnalysisScreen() {
+  const { state } = useApp();
   const [phase, setPhase] = useState<ScreenPhase>('intro');
   const [scores, setScores] = useState<Record<SliderKey, number>>({
     jawline: 5,
@@ -271,6 +274,23 @@ export default function FacialAnalysisScreen() {
     harmony: 5,
     neck: 5,
   });
+
+  const bodyAnalysis = useMemo(() => {
+    const p = state.profile;
+    if (!p?.height || !p?.weight) return null;
+    return analyzeBody({
+      weight: p.weight,
+      height: p.height,
+      age: p.age || 25,
+      sex: p.sex || 'Male',
+      bf: p.bf || 15,
+      waist: p.waist || 32,
+      neck: p.neck || 15,
+      hip: p.hip || 38,
+      weightUnit: p.weightUnit || 'lbs',
+      heightUnit: p.heightUnit || 'ft',
+    });
+  }, [state.profile]);
 
   const overallScore = Object.values(scores).reduce((a, b) => a + b, 0) / 6;
 
@@ -310,10 +330,59 @@ export default function FacialAnalysisScreen() {
   }
 
   if (phase === 'results') {
+    const bfDisplay = state.profile?.bf ?? 15;
+    const navyBFDisplay = bodyAnalysis ? bodyAnalysis.navyBF : null;
+    const ffmiDisplay = bodyAnalysis ? bodyAnalysis.ffmiNormalized : null;
+    const ffmiCatDisplay = bodyAnalysis ? bodyAnalysis.ffmiCategory : null;
+    const bmiDisplay = bodyAnalysis ? bodyAnalysis.bmi : null;
+    const bmiCatDisplay = bodyAnalysis ? bodyAnalysis.bmiCategory : null;
+
     return (
       <SafeAreaView style={s.container} edges={['bottom']}>
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
           <ScoreArc score={overallScore} />
+
+          {/* Body Composition Context */}
+          {bodyAnalysis && (
+            <View style={s.card}>
+              <Text style={s.sectionTitle}>BODY COMPOSITION CONTEXT</Text>
+              <Text style={s.bodyContextNote}>These metrics inform your facial structure analysis — lower body fat reveals more bone structure</Text>
+              <View style={s.bodyContextGrid}>
+                <View style={s.bodyContextItem}>
+                  <Text style={s.bodyContextLabel}>BODY FAT</Text>
+                  <Text style={s.bodyContextValue}>
+                    {bfDisplay}
+                    {'%'}
+                  </Text>
+                  {navyBFDisplay !== null && (
+                    <Text style={s.bodyContextSub}>
+                      {'Navy: '}
+                      {navyBFDisplay}
+                      {'%'}
+                    </Text>
+                  )}
+                </View>
+                <View style={s.bodyContextItem}>
+                  <Text style={s.bodyContextLabel}>FFMI</Text>
+                  <Text style={[s.bodyContextValue, { color: COLORS.gold }]}>
+                    {ffmiDisplay}
+                  </Text>
+                  {ffmiCatDisplay !== null && (
+                    <Text style={s.bodyContextSub} numberOfLines={1}>{ffmiCatDisplay}</Text>
+                  )}
+                </View>
+                <View style={s.bodyContextItem}>
+                  <Text style={s.bodyContextLabel}>BMI</Text>
+                  <Text style={s.bodyContextValue}>
+                    {bmiDisplay}
+                  </Text>
+                  {bmiCatDisplay !== null && (
+                    <Text style={s.bodyContextSub}>{bmiCatDisplay}</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Category Scores */}
           <View style={s.card}>
@@ -647,6 +716,46 @@ const s = StyleSheet.create({
   resultFill: {
     height: '100%',
     borderRadius: 3,
+  },
+
+  // Body Composition Context
+  bodyContextNote: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  bodyContextGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bodyContextItem: {
+    flex: 1,
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 2,
+  },
+  bodyContextLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    letterSpacing: 1.5,
+  },
+  bodyContextValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.text,
+  },
+  bodyContextSub: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    fontWeight: '600',
   },
 
   // Ascension Plan

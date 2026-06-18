@@ -72,6 +72,12 @@ export interface AppState {
     days: number;
     limNotes: string;
     injuries: string[];
+    height: number;
+    heightUnit: 'ft' | 'cm';
+    waist: number;
+    neck: number;
+    hip: number;
+    weightUnit: 'lbs' | 'kg';
   };
   expertMode: boolean;
   xp: number;
@@ -128,6 +134,12 @@ const DEFAULT_STATE: AppState = {
     days: 4,
     limNotes: '',
     injuries: [],
+    height: 70,
+    heightUnit: 'ft',
+    waist: 32,
+    neck: 15,
+    hip: 38,
+    weightUnit: 'lbs',
   },
   expertMode: false,
   xp: 0,

@@ -120,6 +120,12 @@ export default function SettingsScreen() {
                 days: 4,
                 limNotes: '',
                 injuries: [],
+                height: 70,
+                heightUnit: 'ft',
+                waist: 32,
+                neck: 15,
+                hip: 38,
+                weightUnit: 'lbs',
               },
             });
             showToast('🗑️ All data cleared.', false);
@@ -243,6 +249,76 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Body Measurements Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📏 Body Measurements</Text>
+        <View style={styles.card}>
+          {(() => {
+            const p = state.profile;
+            const heightInches = p.height || 70;
+            const heightUnit = p.heightUnit || 'ft';
+            const heightDisplay = heightUnit === 'ft'
+              ? `${Math.floor(heightInches / 12)}'${heightInches % 12}"`
+              : `${Math.round(heightInches * 2.54)} cm`;
+            const weightUnit = p.weightUnit || 'lbs';
+            const weightDisplay = weightUnit === 'kg'
+              ? `${Math.round((p.weight || 180) / 2.205)} kg`
+              : `${p.weight || 180} lbs`;
+            return (
+              <>
+                <View style={styles.measureRow}>
+                  <Text style={styles.measureLabel}>Height</Text>
+                  <Text style={styles.measureValue}>{heightDisplay}</Text>
+                </View>
+                <View style={styles.measureRow}>
+                  <Text style={styles.measureLabel}>Weight</Text>
+                  <Text style={styles.measureValue}>{weightDisplay}</Text>
+                </View>
+                <View style={styles.measureRow}>
+                  <Text style={styles.measureLabel}>Body Fat %</Text>
+                  <Text style={styles.measureValue}>
+                    {p.bf || 15}
+                    {'%'}
+                  </Text>
+                </View>
+                <View style={styles.measureRow}>
+                  <Text style={styles.measureLabel}>Waist</Text>
+                  <Text style={styles.measureValue}>
+                    {p.waist || 32}
+                    {' in'}
+                  </Text>
+                </View>
+                <View style={styles.measureRow}>
+                  <Text style={styles.measureLabel}>Neck</Text>
+                  <Text style={styles.measureValue}>
+                    {p.neck || 15}
+                    {' in'}
+                  </Text>
+                </View>
+                {p.sex === 'Female' && (
+                  <View style={styles.measureRow}>
+                    <Text style={styles.measureLabel}>Hip</Text>
+                    <Text style={styles.measureValue}>
+                      {p.hip || 38}
+                      {' in'}
+                    </Text>
+                  </View>
+                )}
+                <AnimatedPressable
+                  onPress={() => {
+                    console.log('[Settings] Edit Measurements pressed — navigating to survey');
+                    router.push('/survey');
+                  }}
+                  style={styles.retakeSurveyBtn}
+                >
+                  <Text style={styles.retakeSurveyBtnText}>Edit Measurements</Text>
+                </AnimatedPressable>
+              </>
+            );
+          })()}
+        </View>
+      </View>
+
       {/* Stats Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📊 Your Stats</Text>
@@ -359,6 +435,9 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 24, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
+  measureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  measureLabel: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
+  measureValue: { fontSize: 14, fontWeight: '800', color: COLORS.text },
   retakeSurveyTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   retakeSurveyDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
   retakeSurveyBtn: {

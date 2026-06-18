@@ -22,6 +22,7 @@ import { COLORS } from '@/constants/data';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { scheduleGlowUpNotifications } from '@/utils/glowupNotifications';
+import { analyzeBody, BodyAnalysisResult } from '@/utils/bodyAnalysis';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -958,6 +959,25 @@ export default function GlowUpScreen() {
   const monthDay = getMonthDay();
   const isPerfectDayInReach = habitProgress >= 0.8;
 
+  // ── Body analysis ──
+  const analysis = useMemo(() => {
+    const p = state.profile;
+    if (!p?.height || !p?.weight) return null;
+    console.log('[GlowUp] Computing body analysis for profile:', p.username);
+    return analyzeBody({
+      weight: p.weight,
+      height: p.height,
+      age: p.age || 25,
+      sex: p.sex || 'Male',
+      bf: p.bf || 15,
+      waist: p.waist || 32,
+      neck: p.neck || 15,
+      hip: p.hip || 38,
+      weightUnit: p.weightUnit || 'lbs',
+      heightUnit: p.heightUnit || 'ft',
+    });
+  }, [state.profile]);
+
   // ── Perfect day pillars ──
   const pillars = [
     { id: 'bodyunlock', label: 'Morning', emoji: '🌅' },
@@ -1215,6 +1235,9 @@ export default function GlowUpScreen() {
           </View>
           <Text style={styles.facialAnalysisArrow}>→</Text>
         </TouchableOpacity>
+
+        {/* ── BODY ANALYSIS ── */}
+        <BodyAnalysisSection analysis={analysis} bf={state.profile?.bf || 15} router={router} />
 
         {/* ── SECTION 13: WEEKLY SCHEDULE ── */}
         <View style={styles.card}>
@@ -1869,6 +1892,398 @@ export default function GlowUpScreen() {
     </SafeAreaView>
   );
 }
+
+// ─── Body Analysis Section ────────────────────────────────────────────────────
+
+function getBmiColor(category: string): string {
+  if (category === 'Normal') return COLORS.green;
+  if (category === 'Underweight') return COLORS.blue;
+  if (category === 'Overweight') return '#F59E0B';
+  return COLORS.red;
+}
+
+function getWthColor(category: string): string {
+  if (category === 'Healthy' || category === 'Extremely Slim') return COLORS.green;
+  if (category === 'Overweight') return '#F59E0B';
+  return COLORS.red;
+}
+
+const FFMI_TIERS = [
+  { label: 'Below Average', range: '< 18' },
+  { label: 'Average', range: '18–20' },
+  { label: 'Above Average', range: '20–22' },
+  { label: 'Excellent', range: '22–24' },
+  { label: 'Superior', range: '24–26' },
+  { label: 'Elite / Near Genetic Limit', range: '26+' },
+];
+
+function BodyAnalysisSection({
+  analysis,
+  bf,
+  router,
+}: {
+  analysis: BodyAnalysisResult | null;
+  bf: number;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const handleToggle = useCallback(() => {
+    console.log('[GlowUp] Body Analysis section toggled:', !open ? 'open' : 'closed');
+    setOpen((v) => !v);
+  }, [open]);
+
+  const handleUpdateMeasurements = useCallback(() => {
+    console.log('[GlowUp] Update Measurements button pressed');
+    router.push('/survey');
+  }, [router]);
+
+  if (!analysis) {
+    return (
+      <View style={glowStyles.card}>
+        <TouchableOpacity style={glowStyles.cardHeader} onPress={handleToggle} activeOpacity={0.7}>
+          <View style={glowStyles.cardHeaderLeft}>
+            <View style={glowStyles.goldAccent} />
+            <Text style={glowStyles.cardTitle}>📊 Body Analysis</Text>
+          </View>
+          <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+        </TouchableOpacity>
+        {open && (
+          <View style={glowStyles.cardBody}>
+            <View style={bodyStyles.promptCard}>
+              <Text style={bodyStyles.promptText}>Complete the survey to unlock your body composition analysis — FFMI, Navy BF%, TDEE, BMI, and more.</Text>
+              <TouchableOpacity style={bodyStyles.updateBtn} onPress={handleUpdateMeasurements} activeOpacity={0.8}>
+                <Text style={bodyStyles.updateBtnText}>Complete Survey →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  const bmiColor = getBmiColor(analysis.bmiCategory);
+  const wthColor = getWthColor(analysis.waistToHeightCategory);
+  const tdeeEntries = Object.entries(analysis.tdee);
+  const weightToGoalAbs = Math.abs(analysis.weightToGoal);
+  const weightToGoalText =
+    analysis.weightToGoal > 0
+      ? `You are ${weightToGoalAbs} lbs above ideal range`
+      : analysis.weightToGoal < 0
+      ? `You are ${weightToGoalAbs} lbs below ideal range`
+      : '✓ You are within your ideal weight range';
+  const weightToGoalColor =
+    analysis.weightToGoal === 0 ? COLORS.green :
+    Math.abs(analysis.weightToGoal) < 10 ? '#F59E0B' : COLORS.red;
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity style={glowStyles.cardHeader} onPress={handleToggle} activeOpacity={0.7}>
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>📊 Body Analysis</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {/* Row 1 — 2x2 key metrics */}
+          <View style={bodyStyles.metricsGrid}>
+            <View style={bodyStyles.metricCard}>
+              <Text style={bodyStyles.metricLabel}>HEIGHT</Text>
+              <Text style={bodyStyles.metricValue} numberOfLines={1}>{analysis.heightDisplay}</Text>
+            </View>
+            <View style={bodyStyles.metricCard}>
+              <Text style={bodyStyles.metricLabel}>BODY FAT</Text>
+              <Text style={bodyStyles.metricValue} numberOfLines={1}>
+                {bf}
+                {'% '}
+              </Text>
+              <Text style={bodyStyles.metricSub} numberOfLines={1}>{analysis.bfCategory}</Text>
+            </View>
+            <View style={bodyStyles.metricCard}>
+              <Text style={bodyStyles.metricLabel}>LEAN MASS</Text>
+              <Text style={bodyStyles.metricValue} numberOfLines={1}>
+                {analysis.leanMass}
+                {' lbs'}
+              </Text>
+            </View>
+            <View style={bodyStyles.metricCard}>
+              <Text style={bodyStyles.metricLabel}>FFMI</Text>
+              <Text style={[bodyStyles.metricValue, { color: COLORS.gold }]} numberOfLines={1}>{analysis.ffmiNormalized}</Text>
+              <Text style={bodyStyles.metricSub} numberOfLines={1}>{analysis.ffmiCategory}</Text>
+            </View>
+          </View>
+
+          {/* Row 2 — BMI */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: bmiColor }]}>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoLabel}>BMI</Text>
+              <Text style={[bodyStyles.infoValue, { color: bmiColor }]}>
+                {analysis.bmi}
+                {' — '}
+                {analysis.bmiCategory}
+              </Text>
+            </View>
+          </View>
+
+          {/* Row 3 — Navy BF% */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: COLORS.blue }]}>
+            <Text style={bodyStyles.infoLabel}>NAVY BODY FAT FORMULA</Text>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoSubLabel}>Navy Formula</Text>
+              <Text style={[bodyStyles.infoValue, { color: COLORS.blue }]}>
+                {analysis.navyBF}
+                {'%'}
+              </Text>
+            </View>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoSubLabel}>Self-reported</Text>
+              <Text style={bodyStyles.infoValue}>
+                {bf}
+                {'%'}
+              </Text>
+            </View>
+            <Text style={bodyStyles.infoNote}>Uses waist + neck measurements (+ hip for females)</Text>
+          </View>
+
+          {/* Row 4 — BMR & TDEE */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: COLORS.gold }]}>
+            <Text style={bodyStyles.infoLabel}>BMR & TDEE</Text>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoSubLabel}>Base Metabolic Rate</Text>
+              <Text style={[bodyStyles.infoValue, { color: COLORS.gold }]}>
+                {analysis.bmr}
+                {' kcal/day'}
+              </Text>
+            </View>
+            <View style={bodyStyles.divider} />
+            {tdeeEntries.map(([level, cals]) => (
+              <View key={level} style={bodyStyles.tdeeRow}>
+                <Text style={bodyStyles.tdeeLevel} numberOfLines={1}>{level}</Text>
+                <Text style={bodyStyles.tdeeCals}>
+                  {cals}
+                  {' kcal'}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Row 5 — Ideal weight */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: COLORS.green }]}>
+            <Text style={bodyStyles.infoLabel}>IDEAL WEIGHT RANGE</Text>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoSubLabel}>Devine Formula</Text>
+              <Text style={[bodyStyles.infoValue, { color: COLORS.green }]}>
+                {analysis.idealWeightLow}
+                {'–'}
+                {analysis.idealWeightHigh}
+                {' lbs'}
+              </Text>
+            </View>
+            <Text style={[bodyStyles.infoNote, { color: weightToGoalColor }]}>{weightToGoalText}</Text>
+          </View>
+
+          {/* Row 6 — Waist-to-height */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: wthColor }]}>
+            <View style={bodyStyles.infoRow}>
+              <Text style={bodyStyles.infoLabel}>WAIST-TO-HEIGHT RATIO</Text>
+              <Text style={[bodyStyles.infoValue, { color: wthColor }]}>
+                {analysis.waistToHeight}
+                {' — '}
+                {analysis.waistToHeightCategory}
+              </Text>
+            </View>
+          </View>
+
+          {/* Row 7 — FFMI reference table */}
+          <View style={[bodyStyles.infoCard, { borderLeftColor: COLORS.gold }]}>
+            <Text style={bodyStyles.infoLabel}>FFMI REFERENCE TABLE</Text>
+            {FFMI_TIERS.map((tier) => {
+              const isCurrentTier = tier.label === analysis.ffmiCategory;
+              return (
+                <View
+                  key={tier.label}
+                  style={[bodyStyles.ffmiRow, isCurrentTier && bodyStyles.ffmiRowActive]}
+                >
+                  <Text style={[bodyStyles.ffmiTierLabel, isCurrentTier && { color: COLORS.gold }]} numberOfLines={1}>{tier.label}</Text>
+                  <Text style={[bodyStyles.ffmiTierRange, isCurrentTier && { color: COLORS.goldBright }]}>{tier.range}</Text>
+                  {isCurrentTier ? <Text style={bodyStyles.ffmiYou}>YOU</Text> : null}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Update button */}
+          <TouchableOpacity style={bodyStyles.updateBtn} onPress={handleUpdateMeasurements} activeOpacity={0.8}>
+            <Text style={bodyStyles.updateBtnText}>📏 Update Measurements</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const bodyStyles = StyleSheet.create({
+  promptCard: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  promptText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  metricCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 2,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  metricValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  metricSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  infoCard: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderLeftWidth: 3,
+    gap: 6,
+  },
+  infoLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  infoSubLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  infoNote: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: 4,
+  },
+  tdeeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  tdeeLevel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    flex: 1,
+    marginRight: 8,
+  },
+  tdeeCals: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  ffmiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 8,
+  },
+  ffmiRowActive: {
+    backgroundColor: `${COLORS.gold}15`,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    borderBottomWidth: 0,
+    marginHorizontal: -6,
+  },
+  ffmiTierLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  ffmiTierRange: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+    minWidth: 40,
+    textAlign: 'right',
+  },
+  ffmiYou: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: COLORS.gold,
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    letterSpacing: 1,
+  },
+  updateBtn: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    marginTop: 4,
+  },
+  updateBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 0.5,
+  },
+});
 
 // ─── Lifestyle Section ────────────────────────────────────────────────────────
 
