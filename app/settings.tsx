@@ -14,7 +14,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
-  const { isSubscribed, restorePurchases, mockNativePurchase } = useSubscription();
+  const { isSubscribed, restorePurchases, unlockWithPromo } = useSubscription();
   const { width } = useWindowDimensions();
   const [restoring, setRestoring] = useState(false);
 
@@ -31,9 +31,9 @@ export default function SettingsScreen() {
       try {
         const flag = await AsyncStorage.getItem(PROMO_KEY);
         if (flag === 'true') {
-          console.log('[Settings] Promo already redeemed — restoring mockNativePurchase');
+          console.log('[Settings] Promo already redeemed — restoring unlockWithPromo');
           setRedeemed(true);
-          await mockNativePurchase();
+          await unlockWithPromo();
         }
       } catch (e) {
         console.warn('[Settings] Failed to read promo flag:', e);
@@ -49,14 +49,14 @@ export default function SettingsScreen() {
     if (codeInput === VALID_CODE) {
       console.log('[Settings] Valid code entered — unlocking Pro');
       try {
-        await mockNativePurchase();
+        await unlockWithPromo();
         await AsyncStorage.setItem(PROMO_KEY, 'true');
         setRedeemed(true);
         setCodeInput('');
         setRedeemError('');
         showToast('✓ Unlocked', true);
       } catch (e) {
-        console.warn('[Settings] mockNativePurchase failed:', e);
+        console.warn('[Settings] unlockWithPromo failed:', e);
       }
     } else {
       console.log('[Settings] Invalid code entered');

@@ -372,7 +372,7 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.title}>Upgrade to Kong Pro</Text>
               <Text style={styles.subtitle}>
-                Unlock all 5 premium features for $7/month
+                Kong Pro — $7/month
               </Text>
             </View>
 
@@ -405,6 +405,9 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.glowUpAddonDesc}>
                 The most complete natural glow-up system ever built. Appearance, physique, height optimization, posture, skin, fascia, debloat, energy, and daily habits — all gamified with XP.
+              </Text>
+              <Text style={styles.glowUpBundleLine}>
+                Pro + Glow Up Bundle — $10/month
               </Text>
               <TouchableOpacity
                 style={styles.glowUpAddonBtn}
@@ -1241,6 +1244,12 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.85)",
     lineHeight: 19,
     marginBottom: 14,
+  },
+  glowUpBundleLine: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFD700',
+    marginBottom: 10,
   },
   glowUpAddonBtn: {
     backgroundColor: "#D4A017",

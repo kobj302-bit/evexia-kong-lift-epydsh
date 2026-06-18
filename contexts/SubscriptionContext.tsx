@@ -58,6 +58,8 @@ const MOCK_NATIVE_KEY = `rc_dev_native_${_PROJECT_SCOPE}`;
 const NATIVE_PURCHASE_KEY = `rc_subscribed_${_PROJECT_SCOPE}`;
 // Daily pass storage key — stores expiry timestamp
 const DAILY_PASS_STORAGE_KEY = `evexia_daily_pass_${_PROJECT_SCOPE}`;
+// Promo code unlock key — works on all platforms including production
+const PROMO_UNLOCK_KEY = 'evexia_promo_unlocked_v1';
 
 interface SubscriptionContextType {
   /** Whether the user has an active Kong Pro subscription */
@@ -86,6 +88,8 @@ interface SubscriptionContextType {
   mockWebPurchase: () => void;
   /** Dev-only: simulate a purchase in Expo Go — persists across reloads via expo-secure-store */
   mockNativePurchase: () => Promise<void>;
+  /** Unlock Pro via promo code — works on all platforms including production */
+  unlockWithPromo: () => Promise<void>;
   /** Whether the user has an active daily athlete pass (expires at midnight) */
   hasDailyPass: boolean;
   /** Purchase a daily athlete pass — grants access until end of today */
@@ -140,6 +144,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           if (typeof window !== "undefined" && localStorage.getItem(MOCK_PURCHASE_KEY) === "true") {
             setIsSubscribed(true);
           }
+          // Restore promo unlock (works on all platforms)
+          const promoFlagWeb = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
+          if (promoFlagWeb === 'true') {
+            setIsSubscribed(true);
+          }
           // Check daily pass expiry
           const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
           if (savedPass) {
@@ -166,6 +175,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             if (mockState === "true") {
               setIsSubscribed(true);
             }
+          }
+          // Restore promo unlock (works on all platforms, including production)
+          const promoFlag = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
+          if (promoFlag === 'true') {
+            setIsSubscribed(true);
           }
           // Check daily pass expiry
           const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
@@ -206,6 +220,12 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           if (cached === "true") {
             setIsSubscribed(true);
           }
+        }
+
+        // Restore promo unlock (works on all platforms, including production)
+        const promoFlagNative = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
+        if (promoFlagNative === 'true') {
+          setIsSubscribed(true);
         }
 
         // Check daily pass expiry
@@ -416,6 +436,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     setIsSubscribed(true);
   };
 
+  // Unlock Pro via promo code — works on ALL platforms including production.
+  // No __DEV__ or isWeb guard.
+  const unlockWithPromo = async (): Promise<void> => {
+    await AsyncStorage.setItem(PROMO_UNLOCK_KEY, 'true').catch(() => {});
+    setIsSubscribed(true);
+  };
+
   return (
     <SubscriptionContext.Provider
       value={{
@@ -432,6 +459,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         checkSubscription,
         mockWebPurchase,
         mockNativePurchase,
+        unlockWithPromo,
         hasDailyPass,
         purchaseDailyPass,
       }}
