@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import FloatingTabBar from '@/components/FloatingTabBar';
 import { useApp } from '@/contexts/AppContext';
@@ -73,7 +73,7 @@ function AppHeader() {
 export default function TabLayout() {
   const { toast } = useApp();
 
-  const screenWidth = 420;
+  const { width: screenWidth } = Dimensions.get('window');
   const tabBarWidth = Math.min(screenWidth * 0.96, 420);
 
   return (

@@ -131,7 +131,7 @@ export default function TrackerTab() {
       console.log('[Tracker] Shield refill triggered — new Monday');
       updateState({ streakShields: 1, lastShieldRefill: new Date().toISOString() });
     }
-  }, [isSubscribed]);
+  }, [isSubscribed, state.lastShieldRefill, updateState]);
 
   const addExercise = () => {
     if (!newExercise.trim()) return;

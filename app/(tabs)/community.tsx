@@ -73,7 +73,7 @@ export default function CommunityTab() {
   const rank = getRank(state.xp);
 
   // Calculate user's total tonnage
-  const userTonnage = state.history.reduce((sum, h) =>
+  const userTonnage = (state.history || []).reduce((sum, h) =>
     sum + h.exercises.reduce((s2, ex) =>
       s2 + ex.sets.reduce((s3, set) =>
         s3 + (parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0), 0), 0), 0);

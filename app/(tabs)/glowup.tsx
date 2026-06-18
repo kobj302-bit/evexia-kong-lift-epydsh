@@ -30,12 +30,10 @@ function getTodayStr(): string {
 }
 
 function getISOWeek(): string {
-  const d = new Date();
-  const jan4 = new Date(d.getFullYear(), 0, 4);
-  const weekNum = Math.ceil(
-    ((d.getTime() - jan4.getTime()) / 86400000 + jan4.getDay() + 1) / 7,
-  );
-  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
 }
 
 function getDayOfWeek(): number {
@@ -54,7 +52,7 @@ function getMonthDay(): string {
 }
 
 function getDaysSince(dateStr: string | null): number {
-  if (!dateStr) return 1;
+  if (!dateStr) return 0;
   const start = new Date(dateStr);
   const now = new Date();
   const diff = Math.floor((now.getTime() - start.getTime()) / 86400000);
@@ -300,7 +298,7 @@ const GROCERY_CATEGORIES: { name: string; items: string[] }[] = [
   { name: 'Skincare & Tools', items: ['Natural cleanser', 'Beef tallow or beeswax honey moisturizer', 'Bamboo mouth tape', 'Magnesium body spray', 'Essential oil'] },
 ];
 
-const ALL_GROCERY_ITEMS = GROCERY_CATEGORIES.flatMap((c) => c.items);
+const ALL_GROCERY_ITEMS = GROCERY_CATEGORIES.flatMap((c) => c.items ?? []);
 
 const GLOW_LEVELS = [
   { label: 'Dormant', emoji: '🪨', min: 0, max: 500, color: '#6B7280', description: 'Your journey begins. Most never start.' },
@@ -1017,7 +1015,7 @@ export default function GlowUpScreen() {
       prevGlowLevelRef.current = current.label;
       setRankCelebration(current);
     }
-  }, [state.xp]);
+  }, [state.xp, setRankCelebration]);
 
   // ── Dead hang modal ──
   const [hangModalVisible, setHangModalVisible] = useState(false);
@@ -1131,7 +1129,7 @@ export default function GlowUpScreen() {
           </View>
           <Text style={styles.heroDayCounter}>
             {'DAY '}
-            {daysSince}
+            {daysSince === 0 ? '—' : daysSince}
             {' OF YOUR ASCENSION'}
           </Text>
 

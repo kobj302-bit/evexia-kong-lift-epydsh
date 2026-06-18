@@ -98,6 +98,12 @@ export default function SettingsScreen() {
               joinedChallenges: [],
               disclaimerAck: false,
               proTheme: false,
+              glowUpAckDisclaimer: false,
+              glowUpHabits: {},
+              glowUpGrocery: {},
+              glowUpGroceryWeek: null,
+              glowUpStreakShield: false,
+              glowUpStartDate: null,
               streakShields: 1,
               lastShieldRefill: null,
               profile: {
