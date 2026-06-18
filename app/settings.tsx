@@ -7,14 +7,40 @@ import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { COLORS } from '@/constants/data';
+import { useColors } from '@/hooks/useColors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetOnboarding } from '@/utils/onboardingStorage';
+
+// ─── Theme definitions ────────────────────────────────────────────────────────
+interface Theme {
+  id: string;
+  name: string;
+  emoji: string;
+  primary: string;
+  bg: string;
+  surface: string;
+  border: string;
+  description: string;
+  isPro: boolean;
+}
+
+const THEMES: Theme[] = [
+  { id: 'gold',     name: 'Dark Gold',  emoji: '👑', primary: '#C9A84C', bg: '#0A0A0A', surface: '#111108', border: '#2A2510', description: 'Classic Kong',    isPro: false },
+  { id: 'platinum', name: 'Platinum',   emoji: '🪙', primary: '#E8E8E8', bg: '#0A0A0A', surface: '#111111', border: '#252525', description: 'Clean & Elite',   isPro: true  },
+  { id: 'crimson',  name: 'Crimson',    emoji: '🔴', primary: '#E53935', bg: '#0A0505', surface: '#130808', border: '#2A1010', description: 'Warrior Blood',   isPro: true  },
+  { id: 'emerald',  name: 'Emerald',    emoji: '💚', primary: '#00C853', bg: '#050A05', surface: '#081308', border: '#102510', description: "Nature's Power",  isPro: true  },
+  { id: 'cobalt',   name: 'Cobalt',     emoji: '💙', primary: '#2979FF', bg: '#050510', surface: '#080813', border: '#101030', description: 'Ice Cold Focus',  isPro: true  },
+  { id: 'violet',   name: 'Violet',     emoji: '💜', primary: '#AA00FF', bg: '#080510', surface: '#0D0813', border: '#1A1030', description: 'Ascendant',       isPro: true  },
+  { id: 'rose',     name: 'Rose Gold',  emoji: '🌸', primary: '#FF4081', bg: '#0A0508', surface: '#130810', border: '#2A1020', description: 'Prestige',        isPro: true  },
+  { id: 'arctic',   name: 'Arctic',     emoji: '🧊', primary: '#00E5FF', bg: '#050A0A', surface: '#081313', border: '#102525', description: 'Cryo Mode',       isPro: true  },
+];
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
   const { isSubscribed, restorePurchases, unlockWithPromo } = useSubscription();
+  const C = useColors();
   const { width } = useWindowDimensions();
   const [restoring, setRestoring] = useState(false);
 
@@ -65,6 +91,7 @@ export default function SettingsScreen() {
       errorTimerRef.current = setTimeout(() => setRedeemError(''), 2000);
     }
   };
+
   // On narrow screens, stat cards go 1-column
   const statMinWidth = width < 360 ? '100%' : '45%';
 
@@ -123,7 +150,6 @@ export default function SettingsScreen() {
             console.log('[Settings] Reset all data confirmed');
             await AsyncStorage.removeItem('evexia_state_v1');
             await resetOnboarding();
-            // Reset in-memory state to default (view: splash triggers re-navigation)
             updateState({
               view: 'splash',
               xp: 0,
@@ -146,6 +172,8 @@ export default function SettingsScreen() {
               joinedChallenges: [],
               disclaimerAck: false,
               proTheme: false,
+              accentColor: '#C9A84C',
+              themeName: 'gold',
               glowUpAckDisclaimer: false,
               glowUpHabits: {},
               glowUpGrocery: {},
@@ -185,13 +213,27 @@ export default function SettingsScreen() {
   };
 
   const handleProThemeToggle = (value: boolean) => {
-    console.log('[Settings] Pro theme toggled:', value);
+    console.log('[Settings] Dark background tint toggled:', value);
     updateState({ proTheme: value });
   };
 
+  const handleThemeSelect = (theme: Theme) => {
+    console.log('[Settings] Theme tile pressed:', theme.id);
+    if (theme.isPro && !isSubscribed) {
+      console.log('[Settings] Pro theme selected without subscription — navigating to paywall');
+      router.push('/paywall' as any);
+      return;
+    }
+    console.log('[Settings] Applying theme:', theme.id, theme.primary);
+    updateState({ accentColor: theme.primary, themeName: theme.id });
+  };
+
+  const activeTheme = THEMES.find((t) => t.id === state.themeName) ?? THEMES[0];
+  const selectedLabel = activeTheme.name + ' ' + activeTheme.emoji;
+
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: C.bg }]}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
       showsVerticalScrollIndicator={false}
     >
@@ -199,14 +241,14 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚡ Kong Pro</Text>
         {isSubscribed ? (
-          <View style={[styles.card, styles.proActiveCard]}>
+          <View style={[styles.card, { borderColor: C.gold, borderWidth: 1.5 }]}>
             <View style={styles.proActiveRow}>
               <Text style={styles.proActiveCrown}>👑</Text>
               <View style={styles.proActiveInfo}>
-                <Text style={styles.proActiveTitle}>Kong Pro Active</Text>
+                <Text style={[styles.proActiveTitle, { color: C.gold }]}>Kong Pro Active</Text>
                 <Text style={styles.proActiveDesc}>You have full access to all premium features</Text>
               </View>
-              <View style={styles.proActiveBadge}>
+              <View style={[styles.proActiveBadge, { backgroundColor: C.gold }]}>
                 <Text style={styles.proActiveBadgeText}>PRO</Text>
               </View>
             </View>
@@ -215,10 +257,10 @@ export default function SettingsScreen() {
             </AnimatedPressable>
           </View>
         ) : (
-          <View style={[styles.card, styles.proCard]}>
-            <Text style={styles.proCardTitle}>Unlock Your Full Potential 🦍</Text>
+          <View style={[styles.card, { borderColor: C.gold, borderWidth: 1.5, gap: 12 }]}>
+            <Text style={[styles.proCardTitle, { color: C.gold }]}>Unlock Your Full Potential 🦍</Text>
             <Text style={styles.proCardDesc}>AI coaching, advanced analytics, 2x XP, and elite programs — everything a serious lifter needs.</Text>
-            <AnimatedPressable onPress={handleUpgradePro} style={styles.proUpgradeBtn}>
+            <AnimatedPressable onPress={handleUpgradePro} style={[styles.proUpgradeBtn, { backgroundColor: C.gold }]}>
               <Text style={styles.proUpgradeBtnText}>Upgrade to Kong Pro 👑</Text>
             </AnimatedPressable>
             <AnimatedPressable onPress={handleRestorePurchase} style={styles.restoreBtn} disabled={restoring}>
@@ -228,42 +270,66 @@ export default function SettingsScreen() {
         )}
       </View>
 
-      {/* Kong Pro Theme — only for subscribers */}
-      {isSubscribed && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎨 Appearance</Text>
-          <View style={[styles.card, styles.proThemeCard]}>
-            <View style={styles.proThemeHeader}>
-              <View style={styles.proThemeTitleRow}>
-                <Text style={styles.proThemeTitle}>👑 Dark Gold Theme</Text>
-                <View style={styles.proExclusiveBadge}>
-                  <Text style={styles.proExclusiveBadgeText}>PRO</Text>
-                </View>
-              </View>
-              <Text style={styles.proThemeSubtitle}>Exclusive Pro color scheme</Text>
-            </View>
-            {/* Preview swatch */}
-            <View style={styles.themePreviewRow}>
-              <View style={[styles.themeSwatch, { backgroundColor: '#0A0A0A', borderColor: COLORS.border }]}>
-                <Text style={styles.themeSwatchLabel}>Default</Text>
-              </View>
-              <Text style={styles.themeArrow}>→</Text>
-              <View style={[styles.themeSwatch, { backgroundColor: '#0D0A00', borderColor: COLORS.gold }]}>
-                <Text style={[styles.themeSwatchLabel, { color: COLORS.gold }]}>Gold</Text>
-              </View>
-            </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Enable Dark Gold Theme</Text>
-              <Switch
-                value={state.proTheme}
-                onValueChange={handleProThemeToggle}
-                trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
-                thumbColor={state.proTheme ? COLORS.goldBright : COLORS.textSecondary}
-              />
-            </View>
+      {/* Appearance Section — always visible */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🎨 Appearance</Text>
+        <View style={[styles.card, styles.appearanceCard]}>
+          <View>
+            <Text style={styles.appearanceTitle}>Color Theme</Text>
+            <Text style={styles.appearanceSubtitle}>Personalize your Kong experience</Text>
+          </View>
+
+          {/* Theme grid */}
+          <View style={styles.themeGrid}>
+            {THEMES.map((theme) => {
+              const isSelected = state.themeName === theme.id;
+              const isProTheme = theme.isPro;
+              return (
+                <AnimatedPressable
+                  key={theme.id}
+                  style={styles.themeTile}
+                  onPress={() => handleThemeSelect(theme)}
+                >
+                  <View
+                    style={[
+                      styles.themeTileBox,
+                      {
+                        backgroundColor: theme.bg,
+                        borderColor: isSelected ? theme.primary : theme.border,
+                        borderWidth: isSelected ? 2.5 : 1.5,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.themeTileDot, { backgroundColor: theme.primary }]} />
+                    {isProTheme && !isSubscribed && (
+                      <Text style={styles.themeTileCrown}>👑</Text>
+                    )}
+                  </View>
+                  <Text style={styles.themeTileEmoji}>{theme.emoji}</Text>
+                  <Text style={styles.themeTileName} numberOfLines={1}>{theme.name}</Text>
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+
+          {/* Selected label */}
+          <Text style={[styles.themeSelectedLabel, { color: C.gold }]}>
+            {'Selected: '}
+            {selectedLabel}
+          </Text>
+
+          {/* Dark Background Tint toggle */}
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleLabel}>Dark Background Tint</Text>
+            <Switch
+              value={state.proTheme}
+              onValueChange={handleProThemeToggle}
+              trackColor={{ false: COLORS.surface2, true: C.gold }}
+              thumbColor={state.proTheme ? C.goldBright : COLORS.textSecondary}
+            />
           </View>
         </View>
-      )}
+      </View>
 
       {/* Profile Section */}
       <View style={styles.section}>
@@ -273,7 +339,8 @@ export default function SettingsScreen() {
             <Text style={styles.profileAvatar}>{state.profile.avatar}</Text>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{state.profile.username || 'KongLifter'}</Text>
-              <Text style={styles.profileSub}>{state.profile.exp} • {state.profile.goal}</Text>
+              <Text style={styles.profileSub}>{state.profile.exp}</Text>
+              <Text style={styles.profileSub}>{state.profile.goal}</Text>
             </View>
           </View>
         </View>
@@ -290,8 +357,8 @@ export default function SettingsScreen() {
                 console.log('[Settings] Expert mode toggled:', v);
                 updateState({ expertMode: v });
               }}
-              trackColor={{ false: COLORS.surface2, true: COLORS.gold }}
-              thumbColor={state.expertMode ? COLORS.goldBright : COLORS.textSecondary}
+              trackColor={{ false: COLORS.surface2, true: C.gold }}
+              thumbColor={state.expertMode ? C.goldBright : COLORS.textSecondary}
             />
           </View>
         </View>
@@ -359,7 +426,7 @@ export default function SettingsScreen() {
                   }}
                   style={styles.retakeSurveyBtn}
                 >
-                  <Text style={styles.retakeSurveyBtnText}>Edit Measurements</Text>
+                  <Text style={[styles.retakeSurveyBtnText, { color: C.gold }]}>Edit Measurements</Text>
                 </AnimatedPressable>
               </>
             );
@@ -372,19 +439,19 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>📊 Your Stats</Text>
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
-            <Text style={styles.statValue}>{state.xp.toLocaleString()}</Text>
+            <Text style={[styles.statValue, { color: C.gold }]}>{state.xp.toLocaleString()}</Text>
             <Text style={styles.statLabel}>Total XP ⚡</Text>
           </View>
           <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
-            <Text style={styles.statValue}>{state.totalWorkouts}</Text>
+            <Text style={[styles.statValue, { color: C.gold }]}>{state.totalWorkouts}</Text>
             <Text style={styles.statLabel}>Workouts 🏋️</Text>
           </View>
           <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
-            <Text style={styles.statValue}>{state.streak}</Text>
+            <Text style={[styles.statValue, { color: C.gold }]}>{state.streak}</Text>
             <Text style={styles.statLabel}>Streak 🔥</Text>
           </View>
           <View style={[styles.statCard, { minWidth: statMinWidth as any }]}>
-            <Text style={styles.statValue}>{state.prs.length}</Text>
+            <Text style={[styles.statValue, { color: C.gold }]}>{state.prs.length}</Text>
             <Text style={styles.statLabel}>PRs 🏆</Text>
           </View>
         </View>
@@ -394,7 +461,7 @@ export default function SettingsScreen() {
       <View style={styles.redeemSection}>
         <Text style={styles.redeemSectionTitle}>🎁 REDEEM CODE</Text>
         {redeemed ? (
-          <Text style={styles.redeemSuccess}>✓ Code redeemed</Text>
+          <Text style={[styles.redeemSuccess, { color: C.gold }]}>✓ Code redeemed</Text>
         ) : (
           <>
             <View style={styles.redeemRow}>
@@ -424,7 +491,7 @@ export default function SettingsScreen() {
           <Text style={styles.retakeSurveyTitle}>📝 Retake Survey</Text>
           <Text style={styles.retakeSurveyDesc}>Update your goals, equipment, and injuries</Text>
           <AnimatedPressable onPress={handleRetakeSurvey} style={styles.retakeSurveyBtn}>
-            <Text style={styles.retakeSurveyBtnText}>Retake Survey</Text>
+            <Text style={[styles.retakeSurveyBtnText, { color: C.gold }]}>Retake Survey</Text>
           </AnimatedPressable>
         </View>
         <View style={styles.dangerDivider} />
@@ -548,11 +615,6 @@ const styles = StyleSheet.create({
   appInfo: { alignItems: 'center', gap: 4, paddingVertical: 8 },
   appInfoText: { fontSize: 16, fontWeight: '800', color: COLORS.textSecondary },
   appInfoSub: { fontSize: 12, color: COLORS.textTertiary },
-  proCard: {
-    borderColor: COLORS.gold,
-    borderWidth: 1.5,
-    gap: 12,
-  },
   proCardTitle: { fontSize: 17, fontWeight: '900', color: COLORS.gold },
   proCardDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
   proUpgradeBtn: {
@@ -562,10 +624,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   proUpgradeBtnText: { fontSize: 15, fontWeight: '900', color: '#0A0A0A', letterSpacing: 0.5 },
-  proActiveCard: {
-    borderColor: COLORS.gold,
-    borderWidth: 1.5,
-  },
   proActiveRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   proActiveCrown: { fontSize: 32 },
   proActiveInfo: { flex: 1, gap: 2 },
@@ -578,35 +636,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   proActiveBadgeText: { fontSize: 12, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
-
-  // Pro Theme card
-  proThemeCard: {
-    borderColor: COLORS.border2,
-    borderWidth: 1.5,
-    gap: 14,
-  },
-  proThemeHeader: { gap: 4 },
-  proThemeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  proThemeTitle: { fontSize: 16, fontWeight: '800', color: COLORS.gold },
-  proExclusiveBadge: {
-    backgroundColor: COLORS.gold,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  proExclusiveBadgeText: { fontSize: 12, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
-  proThemeSubtitle: { fontSize: 12, color: COLORS.textSecondary },
-  themePreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  themeSwatch: {
-    flex: 1,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  themeSwatchLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
-  themeArrow: { fontSize: 18, color: COLORS.textSecondary },
 
   // Redeem code
   redeemSection: { marginBottom: 16 },
@@ -634,4 +663,17 @@ const styles = StyleSheet.create({
   redeemSuccess: { fontSize: 12, color: COLORS.gold, fontWeight: '700', marginTop: 6 },
   redeemError: { fontSize: 12, color: COLORS.red, marginTop: 6 },
   redeemSectionTitle: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '600', marginBottom: 8, letterSpacing: 0.5 },
+
+  // Appearance / theme picker
+  appearanceCard: { gap: 14 },
+  appearanceTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+  appearanceSubtitle: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
+  themeTile: { width: '22%', alignItems: 'center', gap: 4 },
+  themeTileBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  themeTileDot: { width: 20, height: 20, borderRadius: 10 },
+  themeTileEmoji: { fontSize: 14 },
+  themeTileName: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
+  themeTileCrown: { position: 'absolute', top: -4, right: -4, fontSize: 10 },
+  themeSelectedLabel: { fontSize: 13, fontWeight: '700', marginTop: 8, textAlign: 'center' },
 });

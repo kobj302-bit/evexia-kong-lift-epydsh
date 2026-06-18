@@ -108,6 +108,8 @@ export interface AppState {
   disclaimerAck: boolean;
   kongIdx: number;
   proTheme: boolean;
+  accentColor: string;
+  themeName: string;
   streakShields: number;
   lastShieldRefill: string | null;
   glowUpAckDisclaimer: boolean;
@@ -174,6 +176,8 @@ const DEFAULT_STATE: AppState = {
   disclaimerAck: false,
   kongIdx: 0,
   proTheme: false,
+  accentColor: '#C9A84C',
+  themeName: 'gold',
   streakShields: 1,
   lastShieldRefill: null,
   glowUpAckDisclaimer: false,
