@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions, TextInput } from 'react-native';
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,9 +14,57 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
-  const { isSubscribed, restorePurchases } = useSubscription();
+  const { isSubscribed, restorePurchases, mockNativePurchase } = useSubscription();
   const { width } = useWindowDimensions();
   const [restoring, setRestoring] = useState(false);
+
+  // Redeem code state
+  const VALID_CODE = 'DXYZFGHERTDS33oneseventeen';
+  const PROMO_KEY = 'promo_unlocked';
+  const [codeInput, setCodeInput] = useState('');
+  const [redeemed, setRedeemed] = useState(false);
+  const [redeemError, setRedeemError] = useState('');
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const flag = await AsyncStorage.getItem(PROMO_KEY);
+        if (flag === 'true') {
+          console.log('[Settings] Promo already redeemed — restoring mockNativePurchase');
+          setRedeemed(true);
+          await mockNativePurchase();
+        }
+      } catch (e) {
+        console.warn('[Settings] Failed to read promo flag:', e);
+      }
+    })();
+    return () => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  const handleRedeem = async () => {
+    console.log('[Settings] Redeem code pressed');
+    if (codeInput === VALID_CODE) {
+      console.log('[Settings] Valid code entered — unlocking Pro');
+      try {
+        await mockNativePurchase();
+        await AsyncStorage.setItem(PROMO_KEY, 'true');
+        setRedeemed(true);
+        setCodeInput('');
+        setRedeemError('');
+        showToast('✓ Unlocked', true);
+      } catch (e) {
+        console.warn('[Settings] mockNativePurchase failed:', e);
+      }
+    } else {
+      console.log('[Settings] Invalid code entered');
+      setRedeemError('Invalid code');
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => setRedeemError(''), 2000);
+    }
+  };
   // On narrow screens, stat cards go 1-column
   const statMinWidth = width < 360 ? '100%' : '45%';
 
@@ -342,6 +390,33 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Redeem Code */}
+      <View style={styles.redeemSection}>
+        <Text style={styles.redeemSectionTitle}>🎁 REDEEM CODE</Text>
+        {redeemed ? (
+          <Text style={styles.redeemSuccess}>✓ Code redeemed</Text>
+        ) : (
+          <>
+            <View style={styles.redeemRow}>
+              <TextInput
+                style={styles.redeemInput}
+                value={codeInput}
+                onChangeText={setCodeInput}
+                placeholder="Enter code"
+                placeholderTextColor={COLORS.textTertiary}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={false}
+              />
+              <AnimatedPressable style={styles.redeemBtn} onPress={handleRedeem}>
+                <Text style={styles.redeemBtnText}>Redeem</Text>
+              </AnimatedPressable>
+            </View>
+            {redeemError ? <Text style={styles.redeemError}>{redeemError}</Text> : null}
+          </>
+        )}
+      </View>
+
       {/* Danger Zone */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
@@ -532,4 +607,31 @@ const styles = StyleSheet.create({
   },
   themeSwatchLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   themeArrow: { fontSize: 18, color: COLORS.textSecondary },
+
+  // Redeem code
+  redeemSection: { marginBottom: 16 },
+  redeemRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  redeemInput: {
+    flex: 1,
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  redeemBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  redeemBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  redeemSuccess: { fontSize: 12, color: COLORS.gold, fontWeight: '700', marginTop: 6 },
+  redeemError: { fontSize: 12, color: COLORS.red, marginTop: 6 },
+  redeemSectionTitle: { fontSize: 12, color: COLORS.textTertiary, fontWeight: '600', marginBottom: 8, letterSpacing: 0.5 },
 });
