@@ -52,11 +52,13 @@ export const DIET_TYPES = [
 ];
 
 export const RANKS = [
-  { name: 'Resolutioner', emoji: '🧤', minXP: 0, color: '#808080', tagline: 'Every journey starts here' },
-  { name: 'Sleeper', emoji: '🎽', minXP: 100, color: '#4A90D9', tagline: 'Waking up to the grind' },
-  { name: 'Gym Rat', emoji: '🐀', minXP: 400, color: '#3DBE6C', tagline: 'Living in the iron temple' },
-  { name: 'Silverback', emoji: '🦍', minXP: 1200, color: '#D4A017', tagline: 'Commanding respect' },
-  { name: 'Final Boss', emoji: '👑', minXP: 3000, color: '#E84040', tagline: 'You ARE the gym' },
+  { name: 'Dormant', emoji: '🪨', minXP: 0, color: '#6B7280', tagline: 'Your journey begins. Most never start.' },
+  { name: 'Awakening', emoji: '🌱', minXP: 500, color: '#10B981', tagline: 'The body is listening. Keep going.' },
+  { name: 'Rising', emoji: '🔥', minXP: 1500, color: '#F59E0B', tagline: 'Momentum is building. You feel it.' },
+  { name: 'Forged', emoji: '⚡', minXP: 3500, color: '#3B82F6', tagline: 'Discipline is becoming identity.' },
+  { name: 'Ascendant', emoji: '🦅', minXP: 7000, color: '#8B5CF6', tagline: 'You operate at a level most cannot see.' },
+  { name: 'Sovereign', emoji: '👑', minXP: 15000, color: '#F59E0B', tagline: 'Rare. Optimized. Unstoppable.' },
+  { name: 'Transcendent', emoji: '✨', minXP: 30000, color: '#FFFFFF', tagline: 'You have become the standard.' },
 ];
 
 export const SPLITS = [
@@ -288,19 +290,19 @@ export const HOLIDAY_WODS = [
 ];
 
 export const FAKE_LEADERBOARD = [
-  { name: 'IronKing_88', avatar: '👑', xp: 4200, rank: 'Final Boss' },
-  { name: 'GainzGod', avatar: '🦍', xp: 3100, rank: 'Final Boss' },
-  { name: 'SteelPhoenix', avatar: '🔥', xp: 2800, rank: 'Silverback' },
-  { name: 'BarbellBeast', avatar: '💪', xp: 1900, rank: 'Silverback' },
-  { name: 'IronMaiden_X', avatar: '⚡', xp: 1400, rank: 'Silverback' },
+  { name: 'IronKing_88', avatar: '👑', xp: 16200, rank: 'Sovereign' },
+  { name: 'GainzGod', avatar: '🦍', xp: 8100, rank: 'Ascendant' },
+  { name: 'SteelPhoenix', avatar: '🔥', xp: 4800, rank: 'Forged' },
+  { name: 'BarbellBeast', avatar: '💪', xp: 2900, rank: 'Rising' },
+  { name: 'IronMaiden_X', avatar: '⚡', xp: 1400, rank: 'Awakening' },
 ];
 
 export const FAKE_FRIENDS = [
-  { name: 'BroScience_Bob', avatar: '🐺', xp: 850, rank: 'Gym Rat' },
-  { name: 'SwoleSister', avatar: '🦅', xp: 620, rank: 'Gym Rat' },
-  { name: 'DeadliftDave', avatar: '🏋️', xp: 1100, rank: 'Gym Rat' },
-  { name: 'CardioCarla', avatar: '🌊', xp: 340, rank: 'Sleeper' },
-  { name: 'PlatesMcGee', avatar: '🛡️', xp: 1500, rank: 'Silverback' },
+  { name: 'BroScience_Bob', avatar: '🐺', xp: 850, rank: 'Awakening' },
+  { name: 'SwoleSister', avatar: '🦅', xp: 620, rank: 'Awakening' },
+  { name: 'DeadliftDave', avatar: '🏋️', xp: 1100, rank: 'Awakening' },
+  { name: 'CardioCarla', avatar: '🌊', xp: 340, rank: 'Dormant' },
+  { name: 'PlatesMcGee', avatar: '🛡️', xp: 1500, rank: 'Rising' },
 ];
 
 export const STARTER_TEAMS = [

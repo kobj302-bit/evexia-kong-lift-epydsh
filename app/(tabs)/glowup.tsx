@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { COLORS } from '@/constants/data';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -146,6 +147,65 @@ const HEIGHT_FINISHER = [
   'Overhead wall reach: 5 x 20 sec',
 ];
 
+const HEIGHT_MORNING_PROTOCOL = [
+  'Inversion hang or dead hang: 3 x 60 sec',
+  'Cobra pose: 5 x 30 sec',
+  'Cat-cow spinal mobilization: 3 x 10 slow reps',
+  'Thoracic extension over foam roller: 2 min moving up spine',
+  "Child's pose: 3 x 45 sec",
+  'Overhead wall reach: 5 x 20 sec',
+  'Spinal twist: 30 sec each side',
+];
+
+const HEIGHT_MIDDAY_DECOMPRESSION = [
+  'Dead hang: 2 x 45 sec',
+  'Standing forward fold: 60 sec',
+  'Doorway chest opener: 30 sec',
+];
+
+const HEIGHT_EVENING_RESET = [
+  'Legs up the wall: 5 min',
+  'Supine spinal twist: 45 sec each side',
+  'Psoas release: 60 sec each side',
+  'Diaphragm breathing: 10 deep breaths',
+  'Inversion: knees to chest, rock gently 30 sec',
+];
+
+const FLAT_FOOT_EXERCISES = [
+  { name: 'Short Foot Exercise', sets: '3 x 30 sec each foot', instructions: 'Scrunch toes toward heel without curling them. Creates arch activation.' },
+  { name: 'Towel Scrunches', sets: '3 x 20 reps each foot', instructions: 'Place towel on floor, scrunch with toes.' },
+  { name: 'Calf Raises (single leg)', sets: '3 x 15 each', instructions: 'Slow eccentric (3 sec down). Builds arch support.' },
+  { name: 'Tibialis Anterior Raises', sets: '3 x 20', instructions: 'Stand with back to wall, lift toes up. Balances calf dominance.' },
+  { name: 'Arch Doming', sets: '3 x 10 each', instructions: 'Press big toe down, lift other toes, hold 5 sec.' },
+  { name: 'Intrinsic Foot Strengthening', sets: 'Daily', instructions: 'Walk barefoot on grass/sand 10 min daily.' },
+  { name: 'Plantar Fascia Stretch', sets: '3 x 30 sec each', instructions: 'Pull toes back toward shin.' },
+  { name: 'Tennis Ball Roll', sets: '60 sec each foot', instructions: 'Deep tissue release of plantar fascia.' },
+  { name: 'Ankle Inversion/Eversion', sets: '3 x 15 each direction', instructions: 'Use resistance band.' },
+  { name: 'Balance Board / Single Leg Stand', sets: '3 x 60 sec each foot', instructions: 'Builds proprioception and arch stability.' },
+];
+
+const FLAT_FOOT_TIPS = [
+  'Wear minimalist shoes or go barefoot at home',
+  'Avoid thick-soled shoes that weaken intrinsic muscles',
+  'Use arch support insoles only as a bridge, not a crutch',
+  'Walk with feet parallel, not turned out',
+];
+
+const FASCIAL_HYDRATION_TIPS = [
+  'Drink 500ml water immediately on waking',
+  'Drink 250ml every 2 hours throughout the day',
+  'Fascia is 70% water — dehydration compresses discs',
+  'Collagen-supporting foods: bone broth, eggs, citrus, berries, leafy greens',
+];
+
+const HGH_TIPS = [
+  'Sleep 8–9 hours — 90% of HGH releases during deep sleep',
+  'Sprint fasting 2–3x per week — highest natural HGH stimulus',
+  'No eating 2–3 hours before bed — fasted sleep maximizes overnight HGH pulse',
+  'Cold exposure: cold shower 2–3 min post-workout boosts HGH 200–300%',
+  'Zinc + Magnesium before bed — supports HGH release',
+];
+
 const FASCIAL_COOLDOWN = [
   'Foam roll full back: 90 sec',
   'Foam roll IT band: 60 sec each side',
@@ -243,12 +303,13 @@ const GROCERY_CATEGORIES: { name: string; items: string[] }[] = [
 const ALL_GROCERY_ITEMS = GROCERY_CATEGORIES.flatMap((c) => c.items);
 
 const GLOW_LEVELS = [
-  { label: 'Rookie', emoji: '🌱', min: 0, max: 500 },
-  { label: 'Ascending', emoji: '⬆️', min: 500, max: 1500 },
-  { label: 'Glowing', emoji: '✨', min: 1500, max: 3500 },
-  { label: 'Elite', emoji: '⚡', min: 3500, max: 7000 },
-  { label: 'Optimized', emoji: '🔥', min: 7000, max: 15000 },
-  { label: 'Ascended', emoji: '👑', min: 15000, max: Infinity },
+  { label: 'Dormant', emoji: '🪨', min: 0, max: 500, color: '#6B7280', description: 'Your journey begins. Most never start.' },
+  { label: 'Awakening', emoji: '🌱', min: 500, max: 1500, color: '#10B981', description: 'The body is listening. Keep going.' },
+  { label: 'Rising', emoji: '🔥', min: 1500, max: 3500, color: '#F59E0B', description: 'Momentum is building. You feel it.' },
+  { label: 'Forged', emoji: '⚡', min: 3500, max: 7000, color: '#3B82F6', description: 'Discipline is becoming identity.' },
+  { label: 'Ascendant', emoji: '🦅', min: 7000, max: 15000, color: '#8B5CF6', description: 'You operate at a level most cannot see.' },
+  { label: 'Sovereign', emoji: '👑', min: 15000, max: 30000, color: '#F59E0B', description: 'Rare. Optimized. Unstoppable.' },
+  { label: 'Transcendent', emoji: '✨', min: 30000, max: Infinity, color: '#FFFFFF', description: 'You have become the standard.' },
 ];
 
 const DAILY_MISSIONS: Record<number, { emoji: string; title: string; xp: number; habitId: string }> = {
@@ -804,6 +865,7 @@ function LockedScreen() {
 export default function GlowUpScreen() {
   const { state, updateState, addXP, showToast } = useApp();
   const { isSubscribed } = useSubscription();
+  const router = useRouter();
 
   const today = getTodayStr();
   const dow = getDayOfWeek();
@@ -945,6 +1007,18 @@ export default function GlowUpScreen() {
     updateState({ glowUpGroceryWeek: currentWeek, glowUpGrocery: {} });
   }, [currentWeek, updateState]);
 
+  // ── Rank celebration modal ──
+  const [rankCelebration, setRankCelebration] = useState<{ label: string; emoji: string; color: string; description: string } | null>(null);
+  const prevGlowLevelRef = useRef(getGlowLevel(state.xp).label);
+  useEffect(() => {
+    const current = getGlowLevel(state.xp);
+    if (current.label !== prevGlowLevelRef.current) {
+      console.log('[GlowUp] Rank ascension!', prevGlowLevelRef.current, '->', current.label);
+      prevGlowLevelRef.current = current.label;
+      setRankCelebration(current);
+    }
+  }, [state.xp]);
+
   // ── Dead hang modal ──
   const [hangModalVisible, setHangModalVisible] = useState(false);
 
@@ -1011,6 +1085,28 @@ export default function GlowUpScreen() {
         onComplete={handleHangComplete}
       />
 
+      {/* ── RANK CELEBRATION MODAL ── */}
+      <Modal visible={!!rankCelebration} transparent animationType="fade" onRequestClose={() => setRankCelebration(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { borderColor: rankCelebration?.color || COLORS.gold }]}>
+            <Text style={{ fontSize: 72, marginBottom: 12 }}>{rankCelebration?.emoji}</Text>
+            <Text style={styles.rankCelebTitle}>YOU'VE ASCENDED</Text>
+            <Text style={[styles.rankCelebRank, { color: rankCelebration?.color || COLORS.gold }]}>{rankCelebration?.label?.toUpperCase()}</Text>
+            <Text style={styles.rankCelebDesc}>{rankCelebration?.description}</Text>
+            <TouchableOpacity
+              style={[styles.modalStartBtn, { backgroundColor: rankCelebration?.color || COLORS.gold, marginTop: 20 }]}
+              onPress={() => {
+                console.log('[GlowUp] Rank celebration dismissed:', rankCelebration?.label);
+                setRankCelebration(null);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalStartText}>CONTINUE ASCENDING →</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -1036,7 +1132,7 @@ export default function GlowUpScreen() {
           <Text style={styles.heroDayCounter}>
             {'DAY '}
             {daysSince}
-            {' OF YOUR GLOW UP'}
+            {' OF YOUR ASCENSION'}
           </Text>
 
           <View style={styles.heroRings}>
@@ -1067,9 +1163,9 @@ export default function GlowUpScreen() {
           </View>
 
           <View style={styles.heroLevelRow}>
-            <View style={styles.heroLevelBadge}>
+            <View style={[styles.heroLevelBadge, { borderColor: glowLevel.color || COLORS.gold, backgroundColor: `${glowLevel.color || COLORS.gold}22` }]}>
               <Text style={styles.heroLevelEmoji}>{glowLevel.emoji}</Text>
-              <Text style={styles.heroLevelLabel}>{glowLevel.label.toUpperCase()}</Text>
+              <Text style={[styles.heroLevelLabel, { color: glowLevel.color || COLORS.gold }]}>{glowLevel.label.toUpperCase()}</Text>
             </View>
             {nextGlowLevel ? (
               <Text style={styles.heroLevelNext}>
@@ -1080,14 +1176,16 @@ export default function GlowUpScreen() {
           </View>
 
           <View style={styles.heroLevelTrack}>
-            <View style={[styles.heroLevelFill, { width: `${Math.round(levelProgress * 100)}%` }]} />
+            <View style={[styles.heroLevelFill, { width: `${Math.round(levelProgress * 100)}%`, backgroundColor: glowLevel.color || COLORS.gold }]} />
           </View>
           <Text style={styles.heroLevelXP}>
             {state.xp}
             {' / '}
             {nextGlowLevel ? nextGlowLevel.min : glowLevel.min}
-            {' XP'}
+            {' XP  •  '}
+            {nextGlowLevel ? (nextGlowLevel.min - state.xp) + ' XP to ' + nextGlowLevel.label : 'MAX RANK'}
           </Text>
+          <Text style={[styles.heroLevelXP, { fontStyle: 'italic', marginTop: 4, color: glowLevel.color || COLORS.textSecondary }]} numberOfLines={2}>{glowLevel.description}</Text>
 
           {isPerfectDayInReach ? (
             <Animated.View style={[styles.perfectBanner, { opacity: pulseAnim }]}>
@@ -1095,6 +1193,30 @@ export default function GlowUpScreen() {
             </Animated.View>
           ) : null}
         </View>
+
+        {/* ── FACIAL ANALYSIS BUTTON ── */}
+        <TouchableOpacity
+          style={styles.facialAnalysisCard}
+          onPress={() => {
+            console.log('[GlowUp] Facial Analysis button pressed');
+            router.push('/facial-analysis');
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={styles.facialAnalysisLeft}>
+            <Text style={styles.facialAnalysisEmoji}>🔬</Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={styles.facialAnalysisTitle}>Facial Analysis</Text>
+                <View style={styles.newBadge}>
+                  <Text style={styles.newBadgeText}>NEW</Text>
+                </View>
+              </View>
+              <Text style={styles.facialAnalysisSub} numberOfLines={1}>Symmetry • Jawline • Skin • Harmony</Text>
+            </View>
+          </View>
+          <Text style={styles.facialAnalysisArrow}>→</Text>
+        </TouchableOpacity>
 
         {/* ── SECTION 13: WEEKLY SCHEDULE ── */}
         <View style={styles.card}>
@@ -1242,6 +1364,26 @@ export default function GlowUpScreen() {
             style={[styles.logWorkoutBtn, getHabit('training_logged') && styles.logWorkoutBtnDone]}
             onPress={() => {
               console.log('[GlowUp] Log workout button pressed, day:', trainingDay.label);
+              if (!getHabit('training_logged') && trainingDay.type !== 'Rest' && trainingDay.type !== 'Recovery') {
+                const allExercises = trainingDay.blocks.flatMap((b) => b.exercises);
+                const parsed = allExercises
+                  .filter((ex) => ex.includes(':'))
+                  .map((ex) => {
+                    const name = ex.split(':')[0].trim();
+                    const setsMatch = ex.match(/(\d+)\s*x/i);
+                    const numSets = setsMatch ? parseInt(setsMatch[1], 10) : 3;
+                    return {
+                      exercise: name,
+                      sets: Array.from({ length: numSets }, () => ({ reps: '', weight: '' })),
+                    };
+                  });
+                if (parsed.length > 0) {
+                  console.log('[GlowUp] Pre-loading tracker with', parsed.length, 'exercises');
+                  updateState({ session: parsed });
+                  router.push('/(tabs)/tracker');
+                  return;
+                }
+              }
               toggleHabit('training_logged', 50, 'Workout Logged');
             }}
             activeOpacity={0.8}
@@ -1440,40 +1582,12 @@ export default function GlowUpScreen() {
         </SectionCard>
 
         {/* ── SECTION 9: HEIGHT MAXING ── */}
-        <SectionCard title="📏 HEIGHT MAXING DASHBOARD" defaultOpen={false} accentColor={COLORS.gold}>
-          {HEIGHT_HABITS.map((h) => (
-            <HabitRow
-              key={h.id}
-              label={h.label}
-              xp={h.xp}
-              checked={getHabit(h.id)}
-              onPress={() => toggleHabit(h.id, h.xp, h.label)}
-            />
-          ))}
-          <TouchableOpacity
-            style={styles.deadHangBtn}
-            onPress={() => {
-              console.log('[GlowUp] Dead hang timer button pressed');
-              setHangModalVisible(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.deadHangBtnText}>🏋️ DEAD HANG TIMER</Text>
-            <Text style={styles.deadHangBtnSub}>60 sec • +15 XP</Text>
-          </TouchableOpacity>
-
-          {(dow === 3 || dow === 6) ? (
-            <View style={styles.sprintCard}>
-              <Text style={styles.sprintTitle}>⚡ SPRINT FAST PROTOCOL</Text>
-              {['6 x 40m sprints at 90% effort', 'Rest 90 sec between sprints', 'Walk back to start each time'].map((line, i) => (
-                <Text key={i} style={styles.sprintLine} numberOfLines={2}>
-                  {'• '}
-                  {line}
-                </Text>
-              ))}
-            </View>
-          ) : null}
-        </SectionCard>
+        <HeightMaxingSection
+          getHabit={getHabit}
+          toggleHabit={toggleHabit}
+          setHangModalVisible={setHangModalVisible}
+          dow={dow}
+        />
 
         {/* ── SECTION 10: GROCERY LIST ── */}
         <SectionCard
@@ -1590,21 +1704,23 @@ export default function GlowUpScreen() {
             {GLOW_LEVELS.map((l) => {
               const isCurrentLevel = l.label === glowLevel.label;
               const isUnlocked = state.xp >= l.min;
+              const rankColor = l.color;
               return (
                 <View
                   key={l.label}
                   style={[
                     styles.levelPill,
-                    isCurrentLevel && styles.levelPillCurrent,
+                    isCurrentLevel && { borderColor: rankColor, backgroundColor: `${rankColor}22`, shadowColor: rankColor, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 4 },
                     !isUnlocked && styles.levelPillLocked,
                   ]}
                 >
                   <Text style={styles.levelPillEmoji}>{l.emoji}</Text>
-                  <Text style={[styles.levelPillLabel, isCurrentLevel && styles.levelPillLabelCurrent]} numberOfLines={1}>{l.label}</Text>
-                  <Text style={styles.levelPillXP}>
+                  <Text style={[styles.levelPillLabel, isCurrentLevel && { color: rankColor }]} numberOfLines={1}>{l.label}</Text>
+                  <Text style={[styles.levelPillXP, isUnlocked && { color: rankColor }]}>
                     {l.min}
                     {'+'}
                   </Text>
+                  {isCurrentLevel ? <Text style={{ fontSize: 8, color: rankColor, fontWeight: '800', marginTop: 2 }}>CURRENT</Text> : null}
                 </View>
               );
             })}
@@ -1746,6 +1862,9 @@ export default function GlowUpScreen() {
 
         {/* ── PRODUCTIVITY SYSTEM ── */}
         <ProductivitySection />
+
+        {/* ── LIFESTYLE INTELLIGENCE ── */}
+        <LifestyleIntelligenceSection />
 
         {/* ── RECOMMENDED PRODUCTS ── */}
         <RecommendedProductsSection />
@@ -1997,6 +2116,184 @@ function BodyCareSection() {
   );
 }
 
+// ─── Height Maxing Section ────────────────────────────────────────────────────
+
+function HeightMaxingSection({
+  getHabit,
+  toggleHabit,
+  setHangModalVisible,
+  dow,
+}: {
+  getHabit: (id: string) => boolean;
+  toggleHabit: (id: string, xp: number, label: string) => void;
+  setHangModalVisible: (v: boolean) => void;
+  dow: number;
+}) {
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Height sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => toggleSub('main')}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>📏 Height Maxing System</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{openSub['main'] ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {openSub['main'] && (
+        <View style={glowStyles.cardBody}>
+          {/* Daily habits */}
+          {HEIGHT_HABITS.map((h) => (
+            <TouchableOpacity
+              key={h.id}
+              style={[glowStyles.habitRowInline, getHabit(h.id) && glowStyles.habitRowInlineDone]}
+              onPress={() => {
+                console.log('[GlowUp] Height habit toggled:', h.label);
+                toggleHabit(h.id, h.xp, h.label);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[glowStyles.inlineCheck, getHabit(h.id) && glowStyles.inlineCheckDone]}>
+                {getHabit(h.id) ? <Text style={glowStyles.inlineCheckMark}>✓</Text> : null}
+              </View>
+              <Text style={[glowStyles.inlineLabel, getHabit(h.id) && glowStyles.inlineLabelDone]} numberOfLines={2}>{h.label}</Text>
+              {h.xp > 0 ? <Text style={glowStyles.inlineXP}>{'+' + h.xp}</Text> : null}
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity
+            style={glowStyles.deadHangBtn}
+            onPress={() => {
+              console.log('[GlowUp] Dead hang timer button pressed');
+              setHangModalVisible(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={glowStyles.deadHangBtnText}>🏋️ DEAD HANG TIMER</Text>
+            <Text style={glowStyles.deadHangBtnSub}>60 sec • +15 XP</Text>
+          </TouchableOpacity>
+
+          {/* Morning Protocol */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('morning')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>🌅 Morning Protocol (15 min)</Text>
+              <Text style={glowStyles.subChevron}>{openSub['morning'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['morning'] && (
+              <View style={glowStyles.subBody}>
+                {HEIGHT_MORNING_PROTOCOL.map((ex, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + ex}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Midday Decompression */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('midday')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>☀️ Midday Decompression (5 min)</Text>
+              <Text style={glowStyles.subChevron}>{openSub['midday'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['midday'] && (
+              <View style={glowStyles.subBody}>
+                {HEIGHT_MIDDAY_DECOMPRESSION.map((ex, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + ex}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Evening Reset */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('evening_height')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>🌙 Evening Spinal Reset (10 min)</Text>
+              <Text style={glowStyles.subChevron}>{openSub['evening_height'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['evening_height'] && (
+              <View style={glowStyles.subBody}>
+                {HEIGHT_EVENING_RESET.map((ex, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + ex}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Flat Foot Correction */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('flatfoot')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>🦶 Flat Foot & Arch Restoration</Text>
+              <Text style={glowStyles.subChevron}>{openSub['flatfoot'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['flatfoot'] && (
+              <View style={glowStyles.subBody}>
+                <Text style={glowStyles.tipHeading}>Flat feet compress your spine and steal 0.5–1 inch of visible height. Fix them.</Text>
+                {FLAT_FOOT_EXERCISES.map((ex, i) => (
+                  <View key={i} style={glowStyles.tipItem}>
+                    <Text style={glowStyles.tipHeading}>{ex.name} — {ex.sets}</Text>
+                    <Text style={glowStyles.tipBody}>{ex.instructions}</Text>
+                  </View>
+                ))}
+                <Text style={[glowStyles.tipHeading, { marginTop: 8 }]}>Lifestyle Tips</Text>
+                {FLAT_FOOT_TIPS.map((tip, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + tip}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Fascial Hydration */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('fascial_hydration')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>💧 Fascial Hydration Protocol</Text>
+              <Text style={glowStyles.subChevron}>{openSub['fascial_hydration'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['fascial_hydration'] && (
+              <View style={glowStyles.subBody}>
+                {FASCIAL_HYDRATION_TIPS.map((tip, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + tip}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* HGH Maximization */}
+          <View style={glowStyles.subCard}>
+            <TouchableOpacity style={glowStyles.subHeader} onPress={() => toggleSub('hgh')} activeOpacity={0.7}>
+              <Text style={glowStyles.subTitle}>⚡ HGH Maximization</Text>
+              <Text style={glowStyles.subChevron}>{openSub['hgh'] ? '▼' : '▶'}</Text>
+            </TouchableOpacity>
+            {openSub['hgh'] && (
+              <View style={glowStyles.subBody}>
+                {HGH_TIPS.map((tip, i) => (
+                  <Text key={i} style={glowStyles.tipBody}>{'• ' + tip}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {(dow === 3 || dow === 6) ? (
+            <View style={glowStyles.sprintCard}>
+              <Text style={glowStyles.sprintTitle}>⚡ SPRINT FAST PROTOCOL</Text>
+              {['6 x 40m sprints at 90% effort', 'Rest 90 sec between sprints', 'Walk back to start each time'].map((line, i) => (
+                <Text key={i} style={glowStyles.tipBody} numberOfLines={2}>{'• ' + line}</Text>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ─── Productivity Section ─────────────────────────────────────────────────────
 
 function ProductivitySection() {
@@ -2011,67 +2308,74 @@ function ProductivitySection() {
   const SUB_SECTIONS = [
     {
       key: 'time_blocking',
-      title: '🗓 Time Blocking',
+      title: '🗓 Time Blocking Mastery',
       items: [
-        { heading: 'Morning Power Block (6–9 AM)', body: 'Morning routine, workout, breakfast — non-negotiable.' },
-        { heading: 'Deep Work Block (9 AM–12 PM)', body: 'Most important task of the day, phone on Do Not Disturb.' },
-        { heading: 'Admin Block (1–3 PM)', body: 'Emails, calls, errands, low-cognitive tasks.' },
-        { heading: 'Creative/Learning Block (3–5 PM)', body: 'Skill building, reading, content creation.' },
-        { heading: 'Wind Down (8–10 PM)', body: 'No screens after 9 PM, prep for next day, sleep by 10 PM.' },
+        { heading: 'The MIT Method', body: 'Identify your 3 Most Important Tasks each morning before opening any app.' },
+        { heading: 'Daily Schedule', body: '6–8 AM: Morning protocol\n8–10 AM: Deep work block 1 (hardest task first)\n10–10:15 AM: Movement break\n10:15 AM–12 PM: Deep work block 2\n12–1 PM: Lunch + walk\n1–3 PM: Meetings, emails, admin\n3–5 PM: Creative or secondary work\n5–6 PM: Training\n6–8 PM: Wind-down, family, reading\n8–9 PM: Night protocol\n9:30 PM: Lights out' },
+        { heading: 'Rules', body: 'No phone first 60 min of day. No email before 10 AM. Batch all notifications to 2x per day.' },
+      ],
+    },
+    {
+      key: 'deep_focus',
+      title: '🎯 Deep Focus Protocol',
+      items: [
+        { heading: 'Pomodoro+ Method', body: '50 min deep work / 10 min break (better than 25/5 for complex tasks). During work: phone in another room, website blocker on, one task only. During break: walk, stretch, water — no phone. After 3 rounds: 30 min full rest.' },
+        { heading: 'Environment Design', body: 'Desk faces wall or window, not door. Temperature: 68–72°F. Lighting: bright white during work, dim warm in evening. Noise: brown noise or lo-fi for focus, silence for memorization. No clutter on desk — visual noise = cognitive load.' },
       ],
     },
     {
       key: 'weekly_review',
       title: '📋 Weekly Review System',
       items: [
-        { heading: 'Every Sunday', body: 'Review last week\'s wins and misses, plan next week\'s priorities.' },
-        { heading: '3 Non-Negotiable Goals', body: 'Set 3 non-negotiable goals for the week (write them down).' },
-        { heading: 'Review', body: 'Review finances, health metrics, relationships.' },
-        { heading: 'Prep', body: 'Prep meals and gym bag for Monday.' },
+        { heading: 'Every Sunday Evening (30 min)', body: '1. Brain dump: write everything on your mind\n2. Review last week: what got done, what didn\'t, why\n3. Identify wins: write 3 things you did well\n4. Identify gaps: write 1 thing to improve\n5. Set next week\'s top 3 priorities\n6. Schedule non-negotiables: training, sleep, deep work\n7. Clear inbox to zero\n8. Update goals tracker' },
+        { heading: 'Monthly Review (1st Sunday)', body: 'Review all goals progress. Adjust targets if needed. Celebrate milestones. Identify patterns in productivity data.' },
       ],
     },
     {
-      key: 'focus',
-      title: '🎯 Focus Protocols',
+      key: 'learning',
+      title: '📚 Learning Acceleration',
       items: [
-        { heading: 'Pomodoro', body: '25 min deep work, 5 min break, repeat 4x, then 30 min break.' },
-        { heading: 'Phone Rules', body: 'No phone first 30 min after waking, no phone 1 hr before bed.' },
-        { heading: 'Notification Audit', body: 'Turn off all non-essential notifications.' },
-        { heading: 'Single-Tasking', body: 'One task at a time, close all other tabs/apps.' },
-        { heading: 'Environment Design', body: 'Clean desk = clear mind. Remove all distractions before starting work.' },
+        { heading: 'The Feynman Technique', body: '1. Pick a concept to learn\n2. Explain it as if teaching a 12-year-old\n3. Identify gaps in your explanation\n4. Go back to source material for gaps\n5. Simplify and use analogies' },
+        { heading: 'Spaced Repetition', body: 'Review new material at: 1 day, 3 days, 7 days, 14 days, 30 days. Use Anki or physical flashcards. Study in 25-min focused sessions, not marathon cramming.' },
+        { heading: 'Active Recall', body: 'Close the book and write what you remember. Test yourself before re-reading. Teach the material to someone else.' },
+        { heading: 'Reading System', body: 'Read with a pen — underline, margin notes. After each chapter: write 3 key ideas from memory. Weekly: review all notes from that week\'s reading.' },
       ],
     },
     {
-      key: 'morning_routine',
-      title: '🌅 Morning Routine Optimization',
+      key: 'goal_architecture',
+      title: '🏆 Goal Architecture',
       items: [
-        { heading: 'Same Wake Time', body: 'Wake at the same time every day (even weekends) — regulates circadian rhythm.' },
-        { heading: 'No Snooze', body: 'No alarm snooze — place phone across the room.' },
-        { heading: 'First 5 Min', body: 'Water, light, movement — no phone.' },
-        { heading: 'Journal 5 Min', body: '3 things grateful for, 1 intention for the day.' },
-        { heading: 'Cold Exposure', body: '30–60 sec cold shower at end of shower — increases dopamine 250%.' },
+        { heading: 'The 3-Layer Goal System', body: 'Layer 1 — Identity goal: "I am someone who..."\nLayer 2 — Outcome goal: specific measurable result with deadline\nLayer 3 — Process goal: daily/weekly actions that guarantee the outcome' },
+        { heading: 'Example', body: 'Identity: I am someone who is physically elite\nOutcome: 185 lbs at 10% body fat by December 31\nProcess: Train 5x/week, hit 180g protein daily, sleep 8 hours' },
+        { heading: 'Anti-Goals', body: 'What you will NOT do to achieve this. What you will sacrifice. What you will protect at all costs. Review goals every Sunday. Adjust process, never abandon identity.' },
       ],
     },
     {
-      key: 'evening_routine',
-      title: '🌙 Evening Routine',
+      key: 'sleep_opt',
+      title: '😴 Sleep Optimization',
       items: [
-        { heading: 'Dim Lights After 8 PM', body: 'Signals melatonin production.' },
-        { heading: "Tomorrow's Top 3", body: "Write tomorrow's top 3 tasks tonight — reduces decision fatigue in the morning." },
-        { heading: 'Read Physical Book', body: '20–30 min — better sleep than screens.' },
-        { heading: 'Magnesium Glycinate', body: '30 min before bed — improves sleep quality.' },
-        { heading: 'Gratitude Practice', body: '3 things that went well today.' },
+        { heading: 'Pre-Sleep Protocol (60 min before bed)', body: 'Dim all lights — blue light suppresses melatonin for 3+ hours. No screens or use blue light glasses. Temperature: drop room to 65–68°F. Magnesium glycinate: 400mg. Bamboo mouth tape. Write tomorrow\'s top 3 tasks. 5 min body scan meditation.' },
+        { heading: 'Sleep Environment', body: 'Complete darkness — even small light sources disrupt deep sleep. White noise or silence. Back sleeping with thin or no pillow. No phone in bedroom.' },
+        { heading: 'What Destroys Sleep', body: 'Alcohol (fragments sleep architecture even in small amounts). Eating within 2 hours of bed. Inconsistent sleep/wake times. Caffeine after 2 PM. Intense exercise within 2 hours of bed.' },
+      ],
+    },
+    {
+      key: 'study_habits',
+      title: '📖 Study Habits & Academic Excellence',
+      items: [
+        { heading: 'Before Studying', body: 'Clear desk completely. Write the specific goal for this session. Set a timer — no open-ended study sessions. Water bottle on desk.' },
+        { heading: 'During Study', body: 'Active recall over passive re-reading. Cornell note method: main notes on right, key questions on left, summary at bottom. Every 25 min: stand, stretch, drink water. If stuck: skip and come back.' },
+        { heading: 'After Studying', body: 'Write 5 things you learned from memory. Identify 1 thing still unclear — research it tomorrow. Review flashcards for 5 min.' },
+        { heading: 'Test Preparation', body: 'Start 2 weeks before, not 2 days. Practice tests under real conditions (timed, no notes). Focus on weak areas, not comfortable material. Sleep the night before — cramming hurts performance.' },
       ],
     },
     {
       key: 'digital_minimalism',
-      title: '📵 Digital Minimalism',
+      title: '📵 Digital Minimalism & Mental Clarity',
       items: [
-        { heading: 'Social Media', body: 'Delete social media apps from phone, use only on desktop.' },
-        { heading: 'Grayscale Mode', body: 'Use grayscale mode on phone to reduce dopamine hits.' },
-        { heading: 'App Limits', body: '30 min max for entertainment apps.' },
-        { heading: 'Physical Planner', body: 'Use a physical planner or notebook for tasks — reduces screen time.' },
-        { heading: 'Weekly Digital Detox', body: '1 day per week with no social media.' },
+        { heading: 'Phone Rules', body: 'No phone first 60 min of day. No phone last 60 min of day. Phone in another room during deep work. Notifications off except calls and texts. Social media: 1 scheduled 20-min window per day max. Delete apps that don\'t serve your goals.' },
+        { heading: 'Mental Clarity Habits', body: 'Morning pages: 3 pages of stream-of-consciousness writing on waking. Daily brain dump: 5 min writing everything on your mind. Inbox zero: process email 2x per day. Single-tasking: one tab, one task, one focus. Weekly digital detox: 4+ hours with no screens on Sunday.' },
+        { heading: 'Information Diet', body: 'Unsubscribe from all newsletters that don\'t add value. Curate your feed ruthlessly — every account you follow programs your mind. Read books over articles — depth over breadth. Limit news to 10 min per day.' },
       ],
     },
   ];
@@ -2123,6 +2427,121 @@ function ProductivitySection() {
   );
 }
 
+// ─── Lifestyle Intelligence Section ──────────────────────────────────────────
+
+function LifestyleIntelligenceSection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Lifestyle Intelligence sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const SUB_SECTIONS = [
+    {
+      key: 'sleep_science',
+      title: '🧠 Sleep Science',
+      items: [
+        { heading: 'The 90-Minute Sleep Cycle', body: 'Sleep in 90-min multiples: 6h, 7.5h, or 9h — not 8h flat. Wake during light sleep phase = feel rested. Use a sleep calculator: bedtime = wake time minus 7.5 or 9 hours.' },
+        { heading: 'Deep Sleep Maximizers', body: 'Cold room (65–68°F). Complete darkness. Consistent wake time (even weekends). No alcohol — it blocks REM sleep. Magnesium glycinate 400mg before bed. Mouth tape for nasal breathing.' },
+        { heading: 'Things That Destroy Sleep Quality', body: 'Alcohol (even 1 drink fragments sleep architecture). Blue light within 2 hours of bed. Eating within 2 hours of bed. Inconsistent sleep schedule. Stress without a wind-down protocol.' },
+      ],
+    },
+    {
+      key: 'pre_bed',
+      title: '🌙 Pre-Bed Protocol',
+      items: [
+        { heading: '90 Min Before Bed', body: 'Dim all lights in home. Set room temperature to 65–68°F. No more food or alcohol. Blue light glasses if using screens.' },
+        { heading: '60 Min Before Bed', body: 'No screens (or blue light glasses strictly on). Magnesium glycinate. Light stretching or yoga. Read physical book.' },
+        { heading: '30 Min Before Bed', body: "Write tomorrow's top 3 tasks. 5-min body scan or breathing exercise. Bamboo mouth tape on. Lights out." },
+        { heading: 'Morning Quality Check', body: 'Rate sleep 1–10 each morning. Note how you feel at 10 AM (true indicator of sleep quality). Track patterns: what correlates with best sleep?' },
+      ],
+    },
+    {
+      key: 'study_habits_li',
+      title: '📖 Study Habits',
+      items: [
+        { heading: 'Before Studying', body: 'Clear desk completely. Write the specific goal for this session. Set a timer — no open-ended study sessions. Water bottle on desk.' },
+        { heading: 'During Study', body: 'Active recall over passive re-reading. Cornell note method: main notes on right, key questions on left, summary at bottom. Every 25 min: stand, stretch, drink water.' },
+        { heading: 'After Studying', body: 'Write 5 things you learned from memory. Identify 1 thing still unclear — research it tomorrow. Review flashcards for 5 min.' },
+        { heading: 'Test Preparation', body: 'Start 2 weeks before, not 2 days. Practice tests under real conditions (timed, no notes). Focus on weak areas, not comfortable material. Sleep the night before — cramming hurts performance.' },
+      ],
+    },
+    {
+      key: 'lifestyle_habits',
+      title: '🌿 Lifestyle Habits',
+      items: [
+        { heading: 'Non-Negotiable Daily Habits', body: 'Wake same time every day (even weekends). No phone first 60 min. Cold exposure: 2–3 min cold shower. Sunlight within 30 min of waking. Move your body before noon. Eat whole foods, avoid ultra-processed. Hydrate before caffeinating. Read 10 pages per day minimum. Reflect 5 min before bed.' },
+        { heading: 'Weekly Habits', body: 'Sunday meal prep. Weekly review (30 min). One full day without social media. Call or see someone you care about. Do something that scares you slightly.' },
+        { heading: 'Environment Design', body: 'Make good habits easy (water bottle on desk, gym bag by door). Make bad habits hard (delete apps, keep junk food out of house). Your environment shapes your behavior more than willpower.' },
+      ],
+    },
+    {
+      key: 'not_before_bed',
+      title: '❌ Things NOT to Do Before Bed',
+      items: [
+        { heading: 'Avoid These in the 2 Hours Before Sleep', body: '❌ Intense exercise (raises core temp and cortisol)\n❌ Alcohol (fragments sleep architecture, blocks REM)\n❌ Large meals (digestion disrupts sleep)\n❌ Bright overhead lights (suppresses melatonin)\n❌ Heated arguments or stressful conversations\n❌ Checking work email or messages\n❌ Scrolling social media (dopamine spike delays sleep onset)\n❌ Caffeine (half-life is 5–7 hours — 3 PM coffee = half still active at 10 PM)\n❌ Hot shower immediately before bed (wait 90 min after)\n❌ Sleeping with TV on (even with eyes closed, light and sound disrupt cycles)' },
+      ],
+    },
+    {
+      key: 'educational',
+      title: '🧬 Educational Insights',
+      items: [
+        { heading: 'Neuroscience of Habits', body: 'Habits form in the basal ganglia, not the prefrontal cortex. A habit loop: cue → routine → reward. To build a habit: stack it onto an existing one. To break a habit: change the environment, not the willpower. It takes 66 days on average to automate a behavior (not 21).' },
+        { heading: 'Hormones and Performance', body: 'Cortisol: peaks at 8–9 AM (use it for hard tasks), crashes at 3 PM. Testosterone: highest in morning — train in AM for best hormonal response. HGH: releases in pulses during deep sleep — protect sleep at all costs. Dopamine: released in anticipation, not just reward — use this for motivation. Serotonin: produced in gut (90%) — gut health = mood health.' },
+        { heading: 'The Compound Effect', body: '1% better every day = 37x better in one year. 1% worse every day = nearly zero in one year. Small consistent actions beat large inconsistent ones every time. The gap between who you are and who you want to be closes with daily reps.' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Lifestyle Intelligence section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>🌿 Lifestyle Intelligence</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {SUB_SECTIONS.map((sub) => (
+            <View key={sub.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(sub.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{sub.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[sub.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[sub.key] && (
+                <View style={glowStyles.subBody}>
+                  {sub.items.map((item, i) => (
+                    <View key={i} style={glowStyles.tipItem}>
+                      <Text style={glowStyles.tipHeading}>{item.heading}</Text>
+                      <Text style={glowStyles.tipBody}>{item.body}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ─── Recommended Products Section ────────────────────────────────────────────
 
 function RecommendedProductsSection() {
@@ -2139,74 +2558,102 @@ function RecommendedProductsSection() {
       key: 'supplements',
       title: '💊 Supplements',
       products: [
-        { name: 'Creatine Monohydrate', desc: 'Increases strength, muscle volume, and cognitive performance. Take 5g daily with water.' },
-        { name: 'Vitamin D3 + K2', desc: 'Supports testosterone, bone density, and immune function. Take 5,000 IU D3 with 100mcg K2 daily.' },
-        { name: 'Omega-3 Fish Oil', desc: 'Reduces inflammation, supports brain and heart health. Take 2–3g EPA/DHA daily with food.' },
-        { name: 'Magnesium Glycinate', desc: 'Improves sleep quality, reduces cortisol, supports muscle recovery. Take 400mg before bed.' },
-        { name: 'Zinc Carnosine', desc: 'Supports gut lining integrity, testosterone production, and immune health. Take with food.' },
-        { name: 'Probiotic (50B CFU)', desc: 'Restores gut microbiome diversity. Look for multi-strain formulas with Lactobacillus and Bifidobacterium.' },
-        { name: 'Electrolyte Packets', desc: 'Replenishes sodium, potassium, and magnesium lost through sweat. Use LMNT or Liquid IV.' },
+        { name: 'Creatine Monohydrate', desc: '5g daily, most researched performance supplement. Increases strength, muscle, and cognitive function.' },
+        { name: 'Vitamin D3 + K2', desc: 'Critical for testosterone, bone density, immune function. Most people are deficient.' },
+        { name: 'Omega-3 Fish Oil', desc: 'Reduces inflammation, supports brain health, improves skin quality.' },
+        { name: 'Magnesium Glycinate', desc: 'Best absorbed form. Improves sleep quality, reduces cortisol, supports HGH.' },
+        { name: 'Zinc Carnosine', desc: 'Gut lining repair, testosterone support, immune function.' },
+        { name: 'Probiotic (multi-strain)', desc: '50 billion CFU minimum. Gut health = mood, immunity, skin.' },
+        { name: 'Electrolyte Packets (LMNT or similar)', desc: 'Sodium, potassium, magnesium. Essential for hydration and performance.' },
+        { name: 'Collagen Peptides', desc: 'Supports fascia, joints, skin elasticity. Take with Vitamin C for absorption.' },
+        { name: 'Ashwagandha KSM-66', desc: 'Reduces cortisol 27%, improves sleep, supports testosterone.' },
+        { name: 'Tongkat Ali', desc: 'Natural testosterone support. Stack with zinc.' },
       ],
     },
     {
       key: 'skincare',
       title: '🧴 Skincare',
       products: [
-        { name: 'Beef Tallow Moisturizer', desc: 'Bioidentical to human sebum. Deeply nourishing without synthetic chemicals. Apply after cleansing.' },
-        { name: 'Natural Cleanser (Castile Soap)', desc: "Dr. Bronner's or similar. Gentle, no sulfates or synthetic fragrance." },
-        { name: 'Gua Sha Stone', desc: 'Rose quartz or jade. Used for facial lymph drainage and reducing puffiness. Use with facial oil.' },
-        { name: 'Red Light Therapy Device', desc: 'Joovv Go or Mito Red. Stimulates collagen production and skin rejuvenation. Use 10–15 min daily.' },
-        { name: 'Magnesium Body Spray', desc: 'Transdermal magnesium absorption. Spray on skin after shower for muscle relaxation and sleep support.' },
-        { name: 'Derma Roller 0.25mm', desc: 'Micro-needling stimulates collagen. Use once per week on clean skin, followed by serum.' },
-      ],
-    },
-    {
-      key: 'cleaning',
-      title: '🧺 Cleaning',
-      products: [
-        { name: 'Branch Basics Concentrate', desc: 'Non-toxic, plant-based all-purpose cleaner. One bottle replaces all household cleaners.' },
-        { name: "Molly's Suds Laundry Powder", desc: 'Fragrance-free, dye-free laundry detergent. Safe for sensitive skin and hormones.' },
-        { name: 'Wool Dryer Balls', desc: 'Replaces dryer sheets. Add a few drops of lavender essential oil for natural scent.' },
-        { name: 'Baking Soda + White Vinegar', desc: 'Natural drain cleaner and surface deodorizer. Safe, cheap, and effective.' },
-        { name: 'Microfiber Cloths', desc: 'Replaces paper towels. Reusable, more effective at trapping bacteria and dust.' },
-      ],
-    },
-    {
-      key: 'water',
-      title: '💧 Water',
-      products: [
-        { name: 'APEC ROES-50 Reverse Osmosis Filter', desc: '5-stage under-sink filter. Removes 99% of contaminants including fluoride, chlorine, and heavy metals.' },
-        { name: 'Clearly Filtered Pitcher', desc: 'Removes 365+ contaminants including fluoride. Best pitcher option for renters.' },
-        { name: 'Waterdrop D6 Countertop RO', desc: 'No installation needed. Great for apartments. Removes 99.9% of contaminants.' },
-        { name: 'TDS Meter', desc: 'Tests total dissolved solids in your tap water. Use before buying a filter to know what you need.' },
-        { name: 'Copper Cup', desc: 'Drinking from copper has antimicrobial properties and may support digestion. Use for morning water.' },
-        { name: 'Himalayan Salt (for remineralization)', desc: 'Add a pinch to RO water to restore essential minerals stripped by filtration.' },
+        { name: 'Beef Tallow Moisturizer', desc: 'Closest to human sebum. Non-comedogenic, deeply nourishing.' },
+        { name: 'Beeswax + Honey Blend', desc: 'Natural antibacterial, locks in moisture.' },
+        { name: 'Natural Cleanser (oil-based)', desc: 'Removes impurities without stripping skin barrier.' },
+        { name: 'Red Light Therapy Device', desc: '630–850nm wavelength. Reduces inflammation, boosts collagen, improves skin texture.' },
+        { name: 'Magnesium Body Spray', desc: 'Transdermal magnesium absorption. Reduces muscle tension and improves sleep.' },
+        { name: 'Bamboo Mouth Tape', desc: 'Promotes nasal breathing during sleep. Improves sleep quality and jaw development.' },
+        { name: 'Silk Pillowcase', desc: 'Reduces facial compression wrinkles, gentler on skin and hair.' },
+        { name: 'Copper Cup', desc: 'Antimicrobial properties, supports collagen synthesis.' },
+        { name: 'Gua Sha Tool (rose quartz or stainless)', desc: 'Lymphatic drainage, reduces puffiness, defines jawline.' },
+        { name: 'Jade Roller', desc: 'Reduces morning puffiness, improves product absorption.' },
       ],
     },
     {
       key: 'fitness',
-      title: '🏋️ Fitness',
+      title: '🏋️ Fitness Tools',
       products: [
-        { name: 'Pull-Up Bar (doorframe)', desc: 'Essential for dead hangs and pull-ups. Fits any doorframe, no installation required.' },
-        { name: 'Foam Roller', desc: 'For fascial release and muscle recovery. Use daily on posterior chain, IT band, and calves.' },
-        { name: 'Resistance Bands', desc: 'For warm-up activation (band pull-aparts, face pulls, clamshells). Lightweight and portable.' },
-        { name: 'Jump Rope', desc: 'Best low-impact cardio tool. 10 min = 30 min jogging in caloric burn. Great for sprint days.' },
-        { name: 'Lifting Belt', desc: 'Supports intra-abdominal pressure on heavy compound lifts. Use for squats and deadlifts above 80% 1RM.' },
-        { name: 'Wrist Wraps', desc: 'Stabilizes wrists on heavy pressing movements. Reduces injury risk on bench and overhead press.' },
+        { name: 'Foam Roller (high-density)', desc: 'Essential for fascial release and recovery.' },
+        { name: 'Lacrosse Ball', desc: 'Deep tissue trigger point release.' },
+        { name: 'Resistance Bands (set)', desc: 'Posture activation, warm-ups, travel training.' },
+        { name: 'Pull-Up Bar (doorframe)', desc: 'Dead hangs, pull-ups, spinal decompression.' },
+        { name: 'Jump Rope', desc: 'Sprint alternative, coordination, cardiovascular conditioning.' },
+        { name: 'Gymnastic Rings', desc: 'Upper body strength, stability, fascial engagement.' },
+        { name: 'Inversion Table', desc: 'Spinal decompression, height maxing, back pain relief.' },
+        { name: 'Balance Board', desc: 'Flat foot correction, ankle stability, proprioception.' },
+        { name: 'Massage Gun', desc: 'Deep tissue recovery, fascial hydration.' },
+        { name: 'Cold Plunge Tub or Ice Bath', desc: 'HGH boost, inflammation reduction, mental toughness.' },
       ],
     },
     {
-      key: 'food',
-      title: '🥩 Food',
+      key: 'water_nutrition',
+      title: '💧 Water & Nutrition',
       products: [
-        { name: 'Grass-Fed Ground Beef', desc: 'Higher omega-3 and CLA content than conventional. Best protein source for testosterone and muscle.' },
-        { name: 'Pasture-Raised Eggs', desc: 'Higher vitamin D, omega-3, and choline than conventional eggs. Eat 3–5 daily.' },
-        { name: 'Raw Honey', desc: 'Antimicrobial, prebiotic, and antioxidant-rich. Use instead of refined sugar. Manuka or local preferred.' },
-        { name: 'Kefir', desc: 'Fermented dairy with 30+ probiotic strains. Supports gut health and immune function. Drink 1 cup daily.' },
-        { name: 'Bone Broth', desc: 'Rich in collagen, glycine, and minerals. Supports gut lining, joint health, and skin elasticity.' },
-        { name: 'Sauerkraut / Kimchi', desc: 'Fermented vegetables with live cultures. Eat 2–3 tbsp daily for gut microbiome diversity.' },
-        { name: 'Extra Virgin Olive Oil', desc: 'High in oleocanthal (anti-inflammatory). Use cold or at low heat. Avoid seed oils entirely.' },
-        { name: 'Sourdough Bread', desc: 'Long-fermented sourdough has lower glycemic index and is easier to digest than commercial bread.' },
+        { name: 'Reverse Osmosis Filter (APEC or iSpring)', desc: 'Removes 99% of contaminants including fluoride, chlorine, heavy metals.' },
+        { name: 'Glass Water Bottles', desc: 'No microplastic leaching vs plastic.' },
+        { name: 'Berkey Water Filter', desc: 'Gravity-fed, removes bacteria, viruses, heavy metals.' },
+        { name: 'Bone Broth (grass-fed)', desc: 'Collagen, glycine, gut healing, joint support.' },
+        { name: 'Raw Honey (local)', desc: 'Antimicrobial, antioxidant, supports gut microbiome.' },
+        { name: 'Grass-Fed Beef', desc: 'Higher omega-3, CLA, and micronutrient density vs conventional.' },
+        { name: 'Pasture-Raised Eggs', desc: 'Higher vitamin D, omega-3, and choline vs conventional.' },
+        { name: 'Sauerkraut (raw, unpasteurized)', desc: 'Live probiotics, gut health, immune support.' },
+      ],
+    },
+    {
+      key: 'clean_home',
+      title: '🏠 Clean Home',
+      products: [
+        { name: 'Branch Basics Concentrate', desc: 'Non-toxic, plant-based, replaces all household cleaners.' },
+        { name: 'Castile Soap (Dr. Bronner\'s)', desc: 'Biodegradable, multi-purpose, no synthetic fragrance.' },
+        { name: 'White Vinegar + Baking Soda', desc: 'Natural cleaning combo for most surfaces.' },
+        { name: 'HEPA Air Purifier', desc: 'Removes 99.97% of airborne particles, mold spores, allergens.' },
+        { name: 'Air-Filtering Plants', desc: 'Snake plant, pothos, peace lily, spider plant, rubber plant.' },
+        { name: 'Wool Dryer Balls', desc: 'Replace dryer sheets, reduce static, no synthetic fragrance.' },
+        { name: 'Fragrance-Free Laundry Detergent', desc: 'Synthetic fragrance is a hormone disruptor.' },
+        { name: 'Stainless Steel or Cast Iron Cookware', desc: 'No PFAS/Teflon off-gassing.' },
+      ],
+    },
+    {
+      key: 'body_care',
+      title: '🧼 Body Care',
+      products: [
+        { name: 'Tallow-Based Soap', desc: 'No synthetic detergents, supports skin microbiome.' },
+        { name: 'Charcoal Toothpaste or Tooth Powder', desc: 'Natural whitening, no fluoride.' },
+        { name: 'Tongue Scraper (copper)', desc: 'Removes bacteria, improves oral health and breath.' },
+        { name: 'Natural Deodorant (magnesium-based)', desc: 'No aluminum, no synthetic fragrance.' },
+        { name: 'Castor Oil', desc: 'Hair growth, skin healing, lymphatic support.' },
+        { name: 'Rosehip Seed Oil', desc: 'Vitamin C, retinol precursor, scar reduction.' },
+        { name: 'Jojoba Oil', desc: "Closest to skin's natural sebum, non-comedogenic." },
+        { name: 'Essential Oils (lavender, frankincense, tea tree)', desc: 'Skincare, sleep, antimicrobial.' },
+      ],
+    },
+    {
+      key: 'sleep_products',
+      title: '😴 Sleep',
+      products: [
+        { name: 'Blackout Curtains', desc: 'Complete darkness for deep sleep.' },
+        { name: 'White Noise Machine', desc: 'Masks disruptive sounds, improves sleep continuity.' },
+        { name: 'Blue Light Blocking Glasses', desc: 'Wear 2 hours before bed.' },
+        { name: 'Weighted Blanket (15–20 lbs)', desc: 'Reduces cortisol, improves sleep onset.' },
+        { name: 'Sunrise Alarm Clock', desc: 'Gradual light wake-up, gentler cortisol awakening.' },
+        { name: 'Cooling Mattress Pad', desc: 'Maintains 65–68°F optimal sleep temperature.' },
       ],
     },
   ];
@@ -2268,6 +2715,92 @@ const glowStyles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  habitRowInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  habitRowInlineDone: {
+    opacity: 0.7,
+  },
+  inlineCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: COLORS.border2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  inlineCheckDone: {
+    backgroundColor: COLORS.gold,
+    borderColor: COLORS.gold,
+  },
+  inlineCheckMark: {
+    fontSize: 11,
+    color: COLORS.bg,
+    fontWeight: '900',
+  },
+  inlineLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.text,
+    fontWeight: '500',
+  },
+  inlineLabelDone: {
+    color: COLORS.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  inlineXP: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.gold,
+  },
+  deadHangBtn: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  deadHangBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.gold,
+    letterSpacing: 0.5,
+  },
+  deadHangBtnSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  sprintCard: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.gold,
+  },
+  sprintTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.gold,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -3757,5 +4290,80 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'center',
+  },
+
+  // Rank Celebration Modal
+  rankCelebTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    letterSpacing: 3,
+    marginBottom: 6,
+  },
+  rankCelebRank: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 2,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  rankCelebDesc: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 22,
+    paddingHorizontal: 8,
+  },
+
+  // Facial Analysis Card
+  facialAnalysisCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  facialAnalysisLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  facialAnalysisEmoji: {
+    fontSize: 32,
+  },
+  facialAnalysisTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.text,
+    letterSpacing: 0.5,
+  },
+  facialAnalysisSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  facialAnalysisArrow: {
+    fontSize: 20,
+    color: COLORS.gold,
+    fontWeight: '800',
+    marginLeft: 8,
+  },
+  newBadge: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  newBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: COLORS.bg,
+    letterSpacing: 1,
   },
 });
