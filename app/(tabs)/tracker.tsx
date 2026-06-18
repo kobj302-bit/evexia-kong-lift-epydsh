@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
   },
   weekCheckDone: { backgroundColor: COLORS.green, borderColor: COLORS.green },
   weekCheckMark: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
-  weekDayLabel: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+  weekDayLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600', lineHeight: 16 },
 
   // Streak Shield
   shieldCard: {
@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  shieldCountText: { fontSize: 11, fontWeight: '900', color: '#0A0A0A' },
+  shieldCountText: { fontSize: 12, fontWeight: '900', color: '#0A0A0A' },
   shieldDesc: { fontSize: 13, color: COLORS.gold, lineHeight: 20 },
   shieldDescEmpty: { color: COLORS.textSecondary },
   shieldAutoNote: {
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     alignSelf: 'flex-start',
   },
-  shieldAutoNoteText: { fontSize: 11, fontWeight: '700', color: COLORS.gold },
+  shieldAutoNoteText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
 
   sessionCard: {
     backgroundColor: COLORS.surface,
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginBottom: 8,
   },
-  xpMultiplierText: { fontSize: 11, fontWeight: '800', color: COLORS.gold },
+  xpMultiplierText: { fontSize: 12, fontWeight: '800', color: COLORS.gold },
   sessionHeaderBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   routinesBtn: {
     backgroundColor: COLORS.goldMuted,
@@ -1032,12 +1032,12 @@ const styles = StyleSheet.create({
   },
   lastWeekChipText: { fontSize: 12, fontWeight: '600', color: COLORS.gold, flexShrink: 1 },
   lastWeekChipTextFirst: { color: COLORS.green },
-  lastWeekDate: { fontSize: 11, color: COLORS.textTertiary },
+  lastWeekDate: { fontSize: 12, color: COLORS.textTertiary },
 
   setHeader: { flexDirection: 'row', gap: 8 },
-  setHeaderText: { flex: 1, fontSize: 11, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  setHeaderText: { flex: 1, fontSize: 12, fontWeight: '700', color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 16 },
   setRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  setNum: { width: 24, fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
+  setNum: { width: 24, fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20 },
   setInput: {
     flex: 1,
     backgroundColor: COLORS.surface,
@@ -1052,7 +1052,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   setLastHint: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textTertiary,
     textAlign: 'right',
     marginTop: -4,
@@ -1109,11 +1109,11 @@ const styles = StyleSheet.create({
   analyticsLiftInfo: { flex: 1, gap: 2 },
   analyticsLiftName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
   analyticsLiftSub: { fontSize: 12, color: COLORS.gold },
-  analyticsLiftDate: { fontSize: 11, color: COLORS.textTertiary },
+  analyticsLiftDate: { fontSize: 12, color: COLORS.textTertiary },
   volBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 48 },
   volBarWrap: { alignItems: 'center', gap: 2 },
   volBar: { width: 12, backgroundColor: COLORS.gold, borderRadius: 3, minHeight: 4 },
-  volBarLabel: { fontSize: 9, color: COLORS.textTertiary },
+  volBarLabel: { fontSize: 12, color: COLORS.textTertiary },
   tonnageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
     gap: 6,
     alignItems: 'center',
   },
-  plateResultLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  plateResultLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
   plateResultValue: { fontSize: 18, fontWeight: '900', color: COLORS.gold, textAlign: 'center' },
 
   // Pro Celebration Modal
@@ -1281,7 +1281,7 @@ const styles = StyleSheet.create({
   },
   celebrationXPRow: { alignItems: 'center', gap: 2 },
   celebrationXP: { fontSize: 28, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
-  celebrationXPSub: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  celebrationXPSub: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   celebrationBtn: {
     backgroundColor: COLORS.gold,
     borderRadius: 14,

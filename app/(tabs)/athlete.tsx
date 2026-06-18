@@ -1364,7 +1364,7 @@ const styles = StyleSheet.create({
   surveyOffWarningText: { fontSize: 13, color: COLORS.red, lineHeight: 20 },
 
   section: { gap: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
+  sectionLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
   templateRow: { gap: 8, paddingRight: 16 },
   templateChip: {
     flexDirection: 'row',
@@ -1379,7 +1379,7 @@ const styles = StyleSheet.create({
   },
   templateChipActive: { backgroundColor: COLORS.goldMuted, borderColor: COLORS.gold },
   templateEmoji: { fontSize: 15 },
-  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, maxWidth: 120 },
+  templateLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, flex: 1 },
   templateLabelActive: { color: COLORS.gold },
 
   card: {
@@ -1390,8 +1390,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 12,
   },
-  label: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
-  subLabel: { fontSize: 10, fontWeight: '700', color: COLORS.textTertiary, letterSpacing: 1, textTransform: 'uppercase' },
+  label: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
+  subLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textTertiary, letterSpacing: 1, textTransform: 'uppercase' },
   helperText: { fontSize: 12, color: COLORS.textTertiary, lineHeight: 18 },
   textArea: {
     backgroundColor: COLORS.surface2,
@@ -1533,7 +1533,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border2,
   },
-  phaseBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.gold },
+  phaseBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
   levelBadge: {
     backgroundColor: `${COLORS.blue}22`,
     borderRadius: 6,
@@ -1542,7 +1542,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${COLORS.blue}50`,
   },
-  levelBadgeText: { fontSize: 11, fontWeight: '700', color: COLORS.blue },
+  levelBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.blue },
   inspirationBadge: {
     backgroundColor: COLORS.goldMuted,
     borderRadius: 8,
@@ -1564,7 +1564,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     gap: 6,
   },
-  weeklyLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  weeklyLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
   weeklyText: { fontSize: 13, color: COLORS.text, lineHeight: 20 },
 
   // Deload toggle
@@ -1580,8 +1580,8 @@ const styles = StyleSheet.create({
   },
   deloadInfo: { flex: 1, marginRight: 12 },
   deloadLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-  deloadHint: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2 },
-  deloadNote: { fontSize: 10, color: COLORS.gold, marginTop: 2, fontStyle: 'italic' },
+  deloadHint: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  deloadNote: { fontSize: 12, color: COLORS.gold, marginTop: 2, fontStyle: 'italic' },
   proLockPill: {
     backgroundColor: COLORS.goldMuted,
     borderRadius: 12,
@@ -1592,7 +1592,7 @@ const styles = StyleSheet.create({
   },
   proLockText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
 
-  sectionHeader: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase' },
+  sectionHeader: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.2, textTransform: 'uppercase', lineHeight: 18 },
 
   daysSection: { gap: 8 },
   dayCard: {
@@ -1618,9 +1618,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignSelf: 'flex-start',
   },
-  focusTagText: { fontSize: 10, fontWeight: '700', color: COLORS.gold },
-  durationBadge: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
-  chevron: { fontSize: 11, color: COLORS.textSecondary },
+  focusTagText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
+  durationBadge: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
+  chevron: { fontSize: 12, color: COLORS.textSecondary },
 
   exerciseTable: { borderTopWidth: 1, borderTopColor: COLORS.border },
   tableHeaderRow: {
@@ -1629,11 +1629,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: COLORS.bg,
   },
-  tableHeaderCell: { fontSize: 10, fontWeight: '800', color: COLORS.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
+  tableHeaderCell: { fontSize: 12, fontWeight: '800', color: COLORS.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
   tableRow: { flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10, alignItems: 'flex-start' },
   tableRowAlt: { backgroundColor: `${COLORS.surface}80` },
-  exName: { fontSize: 13, fontWeight: '600', color: COLORS.text, lineHeight: 18 },
-  exNotes: { fontSize: 11, color: COLORS.textTertiary, marginTop: 2, lineHeight: 16 },
+  exName: { fontSize: 13, fontWeight: '600', color: COLORS.text, lineHeight: 19 },
+  exNotes: { fontSize: 12, color: COLORS.textTertiary, marginTop: 2, lineHeight: 17 },
   exCell: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', fontVariant: ['tabular-nums'] },
   cardioNote: {
     backgroundColor: `${COLORS.green}15`,
@@ -1665,7 +1665,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  formTipLockText: { fontSize: 11 },
+  formTipLockText: { fontSize: 12 },
 
   // Diet
   dietSection: {
@@ -1685,7 +1685,7 @@ const styles = StyleSheet.create({
   dietPhilosophy: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
   calorieRow: { alignItems: 'center' },
   calorieBox: { alignItems: 'center' },
-  calorieLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  calorieLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
   calorieNum: { fontSize: 44, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   macroRow: { flexDirection: 'row', gap: 8 },
   macroPill: {
@@ -1696,10 +1696,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 2,
   },
-  macroPillLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+  macroPillLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
   macroPillVal: { fontSize: 16, fontWeight: '900', fontVariant: ['tabular-nums'] },
   mealsList: { gap: 8 },
-  subSectionLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 },
+  subSectionLabel: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 },
   mealItem: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   mealDot: { fontSize: 14, color: COLORS.gold, marginTop: 1 },
   mealText: { fontSize: 13, color: COLORS.text, lineHeight: 20, flex: 1 },
@@ -1749,7 +1749,7 @@ const styles = StyleSheet.create({
     borderColor: `${COLORS.red}30`,
     gap: 8,
   },
-  injuryModLabel: { fontSize: 11, fontWeight: '800', color: COLORS.red, letterSpacing: 1, textTransform: 'uppercase' },
+  injuryModLabel: { fontSize: 12, fontWeight: '800', color: COLORS.red, letterSpacing: 1, textTransform: 'uppercase' },
   injuryModText: { fontSize: 13, color: COLORS.red, lineHeight: 20, flex: 1 },
 
   // Add custom day button
@@ -1801,7 +1801,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  disclaimerFooterText: { fontSize: 11, color: COLORS.textTertiary, lineHeight: 17, textAlign: 'center' },
+  disclaimerFooterText: { fontSize: 12, color: COLORS.textTertiary, lineHeight: 18, textAlign: 'center' },
 
   // Empty State
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 14 },
@@ -1863,7 +1863,7 @@ const styles = StyleSheet.create({
 
   // Add day modal
   addDayFieldLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  addDayHint: { fontSize: 11, color: COLORS.textTertiary, marginTop: -6, marginBottom: 4 },
+  addDayHint: { fontSize: 12, color: COLORS.textTertiary, marginTop: -6, marginBottom: 4 },
   addDayInput: {
     backgroundColor: COLORS.surface2,
     borderRadius: 10,

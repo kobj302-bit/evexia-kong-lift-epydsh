@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
   headerKong: { fontSize: 20 },
   headerTitle: { fontSize: 18, fontWeight: '900', color: COLORS.gold, letterSpacing: 2 },
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
-  headerProg: { fontSize: 11, color: COLORS.gold, fontWeight: '700', maxWidth: 120 },
+  headerProg: { fontSize: 12, color: COLORS.gold, fontWeight: '700', flex: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerStat: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   headerStatText: { fontSize: 13 },
-  headerStatNum: { fontSize: 13, fontWeight: '800', color: COLORS.text, fontVariant: ['tabular-nums'] },
+  headerStatNum: { fontSize: 13, fontWeight: '800', color: COLORS.text, fontVariant: ['tabular-nums'], lineHeight: 18 },
   settingsBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   settingsIcon: { fontSize: 18 },
 });

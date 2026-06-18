@@ -3212,7 +3212,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   heroDayCounter: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 1.5,
@@ -3222,6 +3222,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 20,
+    alignItems: 'center',
   },
   heroLevelRow: {
     flexDirection: 'row',
@@ -3267,7 +3268,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   heroLevelXP: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'right',
     marginBottom: 8,
@@ -3331,12 +3332,12 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border2,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.gold,
   },
   chevron: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.gold,
   },
 
@@ -3360,7 +3361,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   weekPillDay: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
     color: COLORS.textSecondary,
     letterSpacing: 0.5,
@@ -3374,7 +3375,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   weekPillType: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
     marginBottom: 2,
@@ -3383,7 +3384,7 @@ const styles = StyleSheet.create({
     color: COLORS.goldBright,
   },
   weekPillXP: {
-    fontSize: 9,
+    fontSize: 12,
     color: COLORS.gold,
     fontWeight: '700',
   },
@@ -3402,7 +3403,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   missionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: COLORS.textSecondary,
     letterSpacing: 2,
@@ -3437,7 +3438,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   missionDow: {
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: '600',
     marginTop: 2,
@@ -3461,7 +3462,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   missionAlsoLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 1,

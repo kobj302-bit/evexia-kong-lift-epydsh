@@ -151,15 +151,17 @@ const photoStyles = StyleSheet.create({
     fontSize: 32,
   },
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
+    lineHeight: 18,
   },
   hint: {
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
 
@@ -250,12 +252,14 @@ const sliderStyles = StyleSheet.create({
     marginTop: 4,
   },
   labelMin: {
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.textSecondary,
+    lineHeight: 18,
   },
   labelMax: {
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.textSecondary,
+    lineHeight: 18,
   },
 });
 
@@ -592,11 +596,12 @@ const s = StyleSheet.create({
     borderColor: COLORS.border,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     color: COLORS.gold,
     letterSpacing: 2,
     marginBottom: 12,
+    lineHeight: 18,
   },
 
   // Photos
@@ -643,6 +648,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     marginBottom: 16,
+    lineHeight: 18,
   },
 
   // Buttons
@@ -741,10 +747,11 @@ const s = StyleSheet.create({
     gap: 2,
   },
   bodyContextLabel: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '800',
     color: COLORS.textSecondary,
     letterSpacing: 1.5,
+    lineHeight: 18,
   },
   bodyContextValue: {
     fontSize: 18,
@@ -752,10 +759,11 @@ const s = StyleSheet.create({
     color: COLORS.text,
   },
   bodyContextSub: {
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'center',
     fontWeight: '600',
+    lineHeight: 18,
   },
 
   // Ascension Plan
@@ -763,6 +771,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     marginBottom: 12,
+    lineHeight: 18,
   },
   tipCard: {
     backgroundColor: COLORS.surface2,
@@ -790,9 +799,10 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   tipNumberText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '900',
     color: COLORS.bg,
+    lineHeight: 18,
   },
   tipEmoji: {
     fontSize: 16,

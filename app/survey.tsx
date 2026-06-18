@@ -607,8 +607,8 @@ const styles = StyleSheet.create({
   stepSubtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: -12 },
   field: { gap: 8 },
   label: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
-  fieldHint: { fontSize: 11, color: COLORS.textSecondary, marginBottom: 6, lineHeight: 16 },
-  inputLabel: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 4, fontWeight: '600' },
+  fieldHint: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6, lineHeight: 18 },
+  inputLabel: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 4, fontWeight: '600', lineHeight: 18 },
   input: {
     backgroundColor: COLORS.surface,
     borderRadius: 12,

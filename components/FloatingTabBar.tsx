@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    height: 60,
+    height: 64,
     alignItems: 'center',
     paddingHorizontal: 4,
   },
@@ -354,17 +354,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   tabLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
+    lineHeight: 14,
   },
   // Modal overlay
   modalOverlay: {

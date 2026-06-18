@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   content: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
   section: { gap: 12 },
-  sectionTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', color: COLORS.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 19 },
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 24, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
   measureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  measureLabel: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
-  measureValue: { fontSize: 14, fontWeight: '800', color: COLORS.text },
+  measureLabel: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600', flex: 1, lineHeight: 20 },
+  measureValue: { fontSize: 14, fontWeight: '800', color: COLORS.text, flexShrink: 0, lineHeight: 20 },
   retakeSurveyTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   retakeSurveyDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
   retakeSurveyBtn: {
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  proActiveBadgeText: { fontSize: 11, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
+  proActiveBadgeText: { fontSize: 12, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
 
   // Pro Theme card
   proThemeCard: {
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  proExclusiveBadgeText: { fontSize: 10, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
+  proExclusiveBadgeText: { fontSize: 12, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
   proThemeSubtitle: { fontSize: 12, color: COLORS.textSecondary },
   themePreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   themeSwatch: {
