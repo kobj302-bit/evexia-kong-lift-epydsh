@@ -1,5 +1,5 @@
 import "react-native-reanimated";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,8 +10,8 @@ import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AppProvider, useApp } from "@/contexts/AppContext";
-import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { AppProvider } from "@/contexts/AppContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { isOnboardingComplete } from "@/utils/onboardingStorage";
 import { requestNotificationPermissions } from "@/utils/notifications";
 import * as Notifications from "expo-notifications";
@@ -37,29 +37,6 @@ export const unstable_settings = {
   initialRouteName: "index",
 };
 
-function DailyPassGuard() {
-  const { hasDailyPass } = useSubscription();
-  const { updateState, showToast } = useApp();
-  const prevHadPass = useRef(false);
-
-  useEffect(() => {
-    if (prevHadPass.current && !hasDailyPass) {
-      console.log('[DailyPassGuard] Daily pass expired — wiping Pro data');
-      updateState({
-        history: [],
-        dietResult: null,
-        savedDiet: null,
-        athleteResult: null,
-        savedRoutines: [],
-        session: [],
-      });
-      showToast('Your 1-day pass expired. Pro data cleared.', false);
-    }
-    prevHadPass.current = hasDailyPass;
-  }, [hasDailyPass, updateState, showToast]);
-
-  return null;
-}
 
 const KongDarkTheme = {
   ...DarkTheme,
@@ -108,7 +85,6 @@ export default function RootLayout() {
         <ThemeProvider value={KongDarkTheme}>
           <SafeAreaProvider>
             <AppProvider>
-              <DailyPassGuard />
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="onboarding" options={{ headerShown: false }} />

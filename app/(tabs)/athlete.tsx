@@ -180,7 +180,7 @@ export default function AthleteTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state, updateState, showToast } = useApp();
-  const { isSubscribed, hasDailyPass, purchaseDailyPass } = useSubscription();
+  const { isSubscribed } = useSubscription();
   const { width } = useWindowDimensions();
 
   // Existing state
@@ -462,23 +462,12 @@ export default function AthleteTab() {
 
   const savedRoutines = state.savedRoutines || [];
 
-  if (!isSubscribed && !hasDailyPass) {
-    const handleDailyPass = async () => {
-      console.log('[Athlete] Daily Pass button pressed');
-      try {
-        const success = await purchaseDailyPass();
-        if (success) showToast('⚡ Daily Pass activated! Good for today.', true);
-      } catch {
-        showToast('Purchase failed. Try again.');
-      }
-    };
+  if (!isSubscribed) {
     return (
       <ProGate
         feature="Athlete AI"
         icon="🤖"
         description="AI-generated routines from any athlete or style"
-        showDailyPass={true}
-        onDailyPass={handleDailyPass}
       />
     );
   }

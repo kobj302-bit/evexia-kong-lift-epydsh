@@ -18,8 +18,6 @@ interface ProGateProps {
   feature: string;
   icon: string;
   description: string;
-  showDailyPass?: boolean;
-  onDailyPass?: () => void;
   previewContent?: React.ReactNode;
 }
 
@@ -36,7 +34,7 @@ const INCLUDED_FEATURES = [
   { icon: '🔄', label: 'Deload Week Mode' },
 ];
 
-export function ProGate({ feature, icon, description, showDailyPass, onDailyPass, previewContent }: ProGateProps) {
+export function ProGate({ feature, icon, description, previewContent }: ProGateProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { restorePurchases } = useSubscription();
@@ -53,11 +51,6 @@ export function ProGate({ feature, icon, description, showDailyPass, onDailyPass
     } catch {
       // silently ignore
     }
-  };
-
-  const handleDailyPass = () => {
-    console.log('[ProGate] Daily Pass button pressed — feature:', feature);
-    onDailyPass?.();
   };
 
   const handleClose = () => {
@@ -146,19 +139,6 @@ export function ProGate({ feature, icon, description, showDailyPass, onDailyPass
             </View>
           ))}
         </View>
-
-        {/* Daily pass card (Athlete tab only) */}
-        {showDailyPass && (
-          <View style={styles.dailyPassCard}>
-            <Text style={styles.dailyPassTitle}>⚡ Try Today for $1</Text>
-            <Text style={styles.dailyPassSubtitle}>
-              One AI workout, expires at midnight. Buy again anytime.
-            </Text>
-            <AnimatedPressable onPress={handleDailyPass} style={styles.dailyPassBtn}>
-              <Text style={styles.dailyPassBtnText}>Get Daily Pass — $1</Text>
-            </AnimatedPressable>
-          </View>
-        )}
 
         {/* Main CTA */}
         <AnimatedPressable onPress={handleUnlock} style={styles.unlockBtn}>
@@ -278,43 +258,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
     fontWeight: '600',
-  },
-  dailyPassCard: {
-    backgroundColor: SURFACE,
-    borderRadius: 16,
-    padding: 18,
-    width: '100%',
-    borderWidth: 1.5,
-    borderColor: GOLD,
-    gap: 8,
-    alignItems: 'center',
-  },
-  dailyPassTitle: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: GOLD_LIGHT,
-    textAlign: 'center',
-  },
-  dailyPassSubtitle: {
-    fontSize: 13,
-    color: '#888888',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  dailyPassBtn: {
-    marginTop: 4,
-    borderWidth: 1.5,
-    borderColor: GOLD,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    width: '100%',
-  },
-  dailyPassBtnText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: GOLD_LIGHT,
   },
   unlockBtn: {
     backgroundColor: GOLD,
