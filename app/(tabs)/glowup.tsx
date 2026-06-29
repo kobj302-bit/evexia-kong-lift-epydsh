@@ -1884,6 +1884,9 @@ export default function GlowUpScreen() {
         {/* ── PRODUCTIVITY SYSTEM ── */}
         <ProductivitySection />
 
+        {/* ── LOOKSMAXING ── */}
+        <LooksmaxingSection />
+
         {/* ── LIFESTYLE INTELLIGENCE ── */}
         <LifestyleIntelligenceSection />
 
@@ -2838,6 +2841,145 @@ function ProductivitySection() {
 }
 
 // ─── Lifestyle Intelligence Section ──────────────────────────────────────────
+
+// ─── Looksmaxing Section ─────────────────────────────────────────────────────
+
+function LooksmaxingSection() {
+  const [open, setOpen] = useState(false);
+  const [openSub, setOpenSub] = useState<Record<string, boolean>>({});
+
+  const toggleSub = (key: string) => {
+    console.log('[GlowUp] Looksmaxing sub-section toggled:', key);
+    setOpenSub((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const SUB_SECTIONS = [
+    {
+      key: 'facial_asymmetry',
+      title: '🔄 Facial Asymmetry Correction',
+      items: [
+        {
+          heading: 'Understanding Facial Asymmetry',
+          body: 'All faces have some asymmetry — it\'s normal. The goal is to minimize functional asymmetry caused by habits, posture, and muscle imbalances.',
+        },
+        {
+          heading: 'Common Causes',
+          body: '• Sleeping on one side (compresses facial bones over time)\n• Chewing on one side only\n• Poor tongue posture (tongue not on roof of mouth)\n• Uneven jaw muscle development\n• Forward head posture pulling one side more',
+        },
+        {
+          heading: 'Correction Protocol',
+          body: '1. Mewing — tongue flat on roof of mouth, teeth lightly touching, lips sealed. Do this 24/7. This is the #1 intervention.\n2. Chew on both sides equally — alternate sides with every bite. Use mastic gum or falim gum for jaw development.\n3. Sleep on your back — use a cervical pillow. If you must side-sleep, alternate sides nightly.\n4. Facial massage — 5 min daily. Use upward strokes on the weaker/flatter side. Gua sha tool recommended.\n5. Jaw exercises — open mouth wide, move jaw left/right 10× each. Clench and release 20×. Do 2× daily.\n6. Neck stretches — tilt head to each side, hold 30 sec. Releases SCM tension that pulls the face asymmetrically.\n7. Posture correction — forward head posture causes asymmetric muscle tension. Fix your posture first.\n8. Unilateral chewing gum — chew on your weaker side for 10 min/day to build up underdeveloped masseter.',
+        },
+        {
+          heading: 'Timeline & Notes',
+          body: 'Noticeable improvement in 3–6 months with consistent mewing + sleep position + chewing habits.\n\nNote: Severe asymmetry (from injury, genetics, or bone structure) may require professional evaluation.',
+        },
+      ],
+    },
+    {
+      key: 'oil_pulling',
+      title: '🫙 Oil Pulling & Oral Health',
+      items: [
+        {
+          heading: 'What is Oil Pulling?',
+          body: 'Ancient Ayurvedic practice of swishing oil in the mouth for 10–20 minutes. Shown to reduce harmful bacteria, improve gum health, and whiten teeth naturally.',
+        },
+        {
+          heading: 'How to Do It',
+          body: '1. First thing in the morning, before eating or drinking\n2. Take 1 tablespoon of cold-pressed coconut oil (or sesame oil)\n3. Swish gently for 10–20 minutes — don\'t gargle, don\'t swallow\n4. Spit into trash (not sink — clogs pipes)\n5. Rinse with warm salt water\n6. Brush teeth normally',
+        },
+        {
+          heading: 'Benefits',
+          body: '• Reduces Streptococcus mutans (cavity-causing bacteria) by up to 20%\n• Reduces plaque and gingivitis\n• Freshens breath (kills anaerobic bacteria)\n• May reduce inflammation systemically\n• Whitens teeth over 2–4 weeks',
+        },
+        {
+          heading: 'Best Oils',
+          body: '• Coconut oil — most popular, antimicrobial lauric acid, pleasant taste\n• Sesame oil — traditional Ayurvedic choice, high in antioxidants\n• Sunflower oil — neutral taste, effective',
+        },
+        {
+          heading: 'Tips & Frequency',
+          body: '• Start with 5 minutes if 20 feels too long\n• Do while showering or getting ready to save time\n• Consistency matters more than duration — daily beats occasional 20-min sessions\n• Don\'t swallow — the oil contains pulled bacteria and toxins\n\nFrequency: Daily, ideally. Minimum 3–4× per week for results.',
+        },
+      ],
+    },
+    {
+      key: 'advanced_health',
+      title: '💎 Advanced Health Protocols',
+      items: [
+        {
+          heading: '🧊 Cold Exposure',
+          body: 'Cold shower protocol: 30 sec cold at end of shower → build to 2–3 min full cold\n\nBenefits: norepinephrine spike (+300%), dopamine increase (+250%), brown fat activation, improved mood and focus\n\nWim Hof method: 3 rounds of 30 deep breaths + breath hold + cold exposure\n\nBest time: morning for energy, post-workout for recovery\n\nDo NOT do cold immediately after strength training (blunts hypertrophy signal) — wait 4+ hours',
+        },
+        {
+          heading: '🌬️ Breathwork',
+          body: 'Box breathing: 4 sec inhale → 4 hold → 4 exhale → 4 hold. 4 rounds. Activates parasympathetic nervous system.\n\n4-7-8 breathing: 4 sec inhale → 7 hold → 8 exhale. Powerful for sleep and anxiety.\n\nPhysiological sigh: double inhale through nose + long exhale through mouth. Fastest stress reset (1 breath).\n\nNasal breathing only during exercise — improves VO2 max, nitric oxide production, and facial structure.',
+        },
+        {
+          heading: '🦷 Oral Microbiome Optimization',
+          body: '• Tongue scraping every morning (removes 75% of morning bacteria)\n• Xylitol gum after meals (starves S. mutans bacteria)\n• Avoid mouthwash with alcohol (kills beneficial bacteria)\n• Remineralizing toothpaste (nano-hydroxyapatite > fluoride for enamel repair)\n• Floss before brushing, not after\n• Water flosser (Waterpik) for gum health',
+        },
+        {
+          heading: '🧠 Cognitive Enhancement',
+          body: '• Morning sunlight within 30 min of waking (sets circadian rhythm, boosts cortisol at right time)\n• No caffeine for first 90 min after waking (let adenosine clear naturally)\n• Lion\'s mane mushroom (500–1000mg) — NGF stimulation, neuroplasticity\n• Omega-3 (2–3g EPA+DHA daily) — brain structure, anti-inflammatory\n• Magnesium glycinate before bed (400mg) — sleep quality, muscle relaxation\n• Cold exposure + exercise = BDNF spike (brain-derived neurotrophic factor)',
+        },
+        {
+          heading: '🩸 Circulation & Lymphatic Flow',
+          body: '• Dry brushing before shower (5 min, always toward heart) — lymphatic drainage\n• Rebounding (mini trampoline, 10 min) — most effective lymphatic exercise\n• Inversion (legs up wall, 5 min) — reverses lymph pooling in legs\n• Contrast shower: 1 min hot → 30 sec cold → repeat 3× — pumps lymph\n• Facial gua sha (upward strokes, 5 min) — reduces puffiness, improves circulation\n• Stay hydrated — lymph is 95% water',
+        },
+        {
+          heading: '🌿 Gut-Skin Axis',
+          body: 'The gut microbiome directly affects skin clarity, inflammation, and aging\n\n• Fermented foods daily: kefir, kimchi, sauerkraut, kombucha\n• Prebiotic fiber: garlic, onion, leeks, asparagus, green banana\n• Eliminate seed oils (linoleic acid → oxidative stress → skin aging)\n• L-glutamine (5g/day) — repairs gut lining, reduces leaky gut\n• Zinc (15–30mg) — critical for skin repair and testosterone\n• Avoid antibiotics unless necessary — devastates microbiome for 6–12 months',
+        },
+      ],
+    },
+  ];
+
+  return (
+    <View style={glowStyles.card}>
+      <TouchableOpacity
+        style={glowStyles.cardHeader}
+        onPress={() => {
+          console.log('[GlowUp] Looksmaxing section toggled');
+          setOpen((v) => !v);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={glowStyles.cardHeaderLeft}>
+          <View style={glowStyles.goldAccent} />
+          <Text style={glowStyles.cardTitle}>💎 Looksmaxing Protocols</Text>
+        </View>
+        <Text style={glowStyles.chevron}>{open ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+
+      {open && (
+        <View style={glowStyles.cardBody}>
+          {SUB_SECTIONS.map((sub) => (
+            <View key={sub.key} style={glowStyles.subCard}>
+              <TouchableOpacity
+                style={glowStyles.subHeader}
+                onPress={() => toggleSub(sub.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={glowStyles.subTitle}>{sub.title}</Text>
+                <Text style={glowStyles.subChevron}>{openSub[sub.key] ? '▼' : '▶'}</Text>
+              </TouchableOpacity>
+              {openSub[sub.key] && (
+                <View style={glowStyles.subBody}>
+                  {sub.items.map((item, i) => (
+                    <View key={i} style={glowStyles.tipItem}>
+                      <Text style={glowStyles.tipHeading}>{item.heading}</Text>
+                      <Text style={glowStyles.tipBody}>{item.body}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
 
 function LifestyleIntelligenceSection() {
   const [open, setOpen] = useState(false);

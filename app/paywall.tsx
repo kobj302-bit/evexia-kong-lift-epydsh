@@ -124,6 +124,8 @@ export default function PaywallScreen() {
 
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(activePackages[0] || null);
+  // UI-only plan selection for static yearly card
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [webMockState, setWebMockState] = useState<"idle" | "processing">("idle");
@@ -372,7 +374,7 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.title}>Upgrade to Kong Pro</Text>
               <Text style={styles.subtitle}>
-                Kong Pro — $7/month
+                $7/month or $60/year
               </Text>
             </View>
 
@@ -407,7 +409,7 @@ export default function PaywallScreen() {
                 The most complete natural glow-up system ever built. Appearance, physique, height optimization, posture, skin, fascia, debloat, energy, and daily habits — all gamified with XP.
               </Text>
               <Text style={styles.glowUpBundleLine}>
-                Pro + Glow Up Bundle — $10/month
+                Pro + Glow Up Bundle — $10/month or $72/year
               </Text>
               <TouchableOpacity
                 style={styles.glowUpAddonBtn}
@@ -423,47 +425,69 @@ export default function PaywallScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Package Selection */}
-            {activePackages.length > 0 && (
-              <View style={styles.packagesContainer}>
-                {activePackages.map((pkg) => {
-                  const isSelected = selectedPackage?.identifier === pkg.identifier;
-                  return (
-                    <TouchableOpacity
-                      key={pkg.identifier}
-                      style={[
-                        styles.packageCard,
-                        isSelected && styles.packageCardSelected,
-                      ]}
-                      onPress={() => {
-                        console.log("[Paywall] Package selected:", pkg.identifier);
-                        setSelectedPackage(pkg);
-                      }}
-                    >
-                      {isSelected && <View style={styles.selectedIndicator} />}
-                      <View style={styles.packageHeader}>
-                        <Text style={styles.packageTitle}>{pkg.product.title}</Text>
-                        {isSelected && (
-                          <View style={styles.checkmarkCircle}>
-                            <Text style={styles.checkmark}>✓</Text>
-                          </View>
-                        )}
-                      </View>
-                      {pkg.product.priceString ? (
-                        <Text style={styles.packagePrice}>
-                          {pkg.product.priceString}
-                        </Text>
-                      ) : null}
-                      {pkg.product.description && (
-                        <Text style={styles.packageDescription}>
-                          {pkg.product.description}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
+            {/* Static Plan Cards — always shown */}
+            <View style={styles.packagesContainer}>
+              {/* Yearly card — BEST VALUE */}
+              <TouchableOpacity
+                style={[
+                  styles.packageCard,
+                  selectedPlan === 'yearly' && styles.packageCardYearlySelected,
+                ]}
+                onPress={() => {
+                  console.log("[Paywall] Yearly plan selected");
+                  setSelectedPlan('yearly');
+                  setSelectedPackage(null);
+                }}
+                activeOpacity={0.8}
+              >
+                {selectedPlan === 'yearly' && <View style={styles.selectedIndicatorGold} />}
+                {/* BEST VALUE badge */}
+                <View style={styles.bestValueBadge}>
+                  <Text style={styles.bestValueBadgeText}>BEST VALUE</Text>
+                </View>
+                <View style={styles.packageHeader}>
+                  <Text style={styles.packageTitle}>Kong Pro — Yearly</Text>
+                  {selectedPlan === 'yearly' && (
+                    <View style={styles.checkmarkCircleGold}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.packagePrice}>$60 / year</Text>
+                <Text style={styles.packageDescription}>Save $24 vs monthly — best value 🏆</Text>
+              </TouchableOpacity>
+
+              {/* Monthly card */}
+              <TouchableOpacity
+                style={[
+                  styles.packageCard,
+                  selectedPlan === 'monthly' && styles.packageCardSelected,
+                ]}
+                onPress={() => {
+                  console.log("[Paywall] Monthly plan selected");
+                  setSelectedPlan('monthly');
+                  if (activePackages.length > 0) setSelectedPackage(activePackages[0]);
+                }}
+                activeOpacity={0.8}
+              >
+                {selectedPlan === 'monthly' && <View style={styles.selectedIndicator} />}
+                <View style={styles.packageHeader}>
+                  <Text style={styles.packageTitle}>Kong Pro — Monthly</Text>
+                  {selectedPlan === 'monthly' && (
+                    <View style={styles.checkmarkCircle}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.packagePrice}>$7 / month</Text>
+              </TouchableOpacity>
+
+              {/* RC packages (if loaded) */}
+              {activePackages.length > 0 && activePackages.map((pkg) => {
+                const isSelected = selectedPackage?.identifier === pkg.identifier && selectedPlan === 'monthly';
+                return null; // RC packages are represented by the monthly card above
+              })}
+            </View>
 
             {/* No packages available - only show on native */}
             {/* This appears in standard Expo Go because react-native-purchases */}
@@ -510,11 +534,7 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPackage
-                        ? selectedPackage.product.priceString
-                          ? `Subscribe for ${selectedPackage.product.priceString}`
-                          : "Subscribe for $7/month"
-                        : "Subscribe for $7/month"}
+                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $7/month'}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -569,11 +589,7 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPackage
-                        ? selectedPackage.product.priceString
-                          ? `Subscribe for ${selectedPackage.product.priceString}`
-                          : "Subscribe for $7/month"
-                        : "Subscribe for $7/month"}
+                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $7/month'}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -1262,5 +1278,41 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#0A0A0A",
     letterSpacing: 0.5,
+  },
+  packageCardYearlySelected: {
+    borderColor: "#D4A017",
+    borderWidth: 2,
+    backgroundColor: "rgba(212, 160, 23, 0.12)",
+  },
+  selectedIndicatorGold: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: "#D4A017",
+  },
+  bestValueBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#D4A017",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  bestValueBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: "#0A0A0A",
+    letterSpacing: 1,
+  },
+  checkmarkCircleGold: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(212, 160, 23, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
-  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity,
+  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity, KeyboardAvoidingView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -91,6 +91,56 @@ function getWeeklyVolume(history: WorkoutHistory[], exerciseName: string): numbe
   return weeks.reverse(); // oldest first
 }
 
+// Recommend working weight based on 1RM (percentage-based)
+function recommendWeight(oneRM: number, reps: number): number {
+  const pct = reps <= 1 ? 1.0 : reps <= 2 ? 0.95 : reps <= 3 ? 0.90 : reps <= 5 ? 0.85 : reps <= 6 ? 0.80 : reps <= 8 ? 0.75 : reps <= 10 ? 0.70 : reps <= 12 ? 0.67 : 0.65;
+  return Math.round((oneRM * pct) / 2.5) * 2.5;
+}
+
+function getRepPct(reps: number): number {
+  return reps <= 1 ? 1.0 : reps <= 2 ? 0.95 : reps <= 3 ? 0.90 : reps <= 5 ? 0.85 : reps <= 6 ? 0.80 : reps <= 8 ? 0.75 : reps <= 10 ? 0.70 : reps <= 12 ? 0.67 : 0.65;
+}
+
+// Get best estimated 1RM for an exercise from history
+function getBest1RM(history: WorkoutHistory[], prs: PR[], exerciseName: string): number | null {
+  const lower = exerciseName.toLowerCase();
+  const pr = prs.find(p => p.lift.toLowerCase() === lower);
+  let best = pr ? epley1RM(pr.weight, 1) : 0;
+  for (const h of history) {
+    const ex = h.exercises.find(e => e.exercise.toLowerCase() === lower);
+    if (ex) {
+      for (const s of ex.sets) {
+        const w = parseFloat(s.weight) || 0;
+        const r = parseFloat(s.reps) || 0;
+        if (w > 0 && r > 0) {
+          const est = epley1RM(w, r);
+          if (est > best) best = est;
+        }
+      }
+    }
+  }
+  return best > 0 ? best : null;
+}
+
+// Get strength tier for a lift relative to bodyweight
+function getStrengthTier(oneRM: number, bodyweight: number, liftName: string): { label: string; color: string } {
+  const bw = bodyweight > 0 ? bodyweight : 180;
+  const lower = liftName.toLowerCase();
+  const isUpperPush = lower.includes('bench') || lower.includes('press') || lower.includes('overhead');
+  const threshold = isUpperPush ? 0.75 : 1.0;
+  const ratio = oneRM / bw;
+  if (ratio < threshold) return { label: 'Beginner', color: '#808080' };
+  if (ratio < threshold * 1.5) return { label: 'Intermediate', color: '#4A90D9' };
+  if (ratio < threshold * 2.0) return { label: 'Advanced', color: '#D4A017' };
+  return { label: 'Elite', color: '#E84040' };
+}
+
+// Get next milestone weight (nearest 5 lb increment above current PR)
+function getNextMilestone(prWeight: number): number {
+  const milestones = [45, 95, 135, 185, 225, 275, 315, 365, 405, 455, 495, 545];
+  return milestones.find(m => m > prWeight) || Math.ceil((prWeight + 20) / 5) * 5;
+}
+
 // Check if it's a new week (Monday) since lastShieldRefill
 function isNewWeekSinceRefill(lastRefill: string | null): boolean {
   const now = new Date();
@@ -120,6 +170,51 @@ export default function TrackerTab() {
   const [showProCelebration, setShowProCelebration] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
   const [celebrationXP, setCelebrationXP] = useState(0);
+
+  // Max testing protocol modal state
+  const [showMaxModal, setShowMaxModal] = useState(false);
+  const [maxInputs, setMaxInputs] = useState<Record<string, string>>({});
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
+
+  const MAX_LIFTS = [
+    'Bench Press', 'Overhead Press', 'Squat', 'Deadlift',
+    'Barbell Row', 'Weighted Pull-Up', 'Romanian Deadlift',
+    'Incline DB Press', 'Barbell Curl', 'Close-Grip Bench',
+    'Leg Press', 'Power Clean',
+  ];
+
+  const MAX_PROTOCOL_DAYS = [
+    {
+      day: 1,
+      title: 'Day 1 — Upper Push Maxes',
+      exercises: ['Bench Press: Warm up to a heavy 3-rep max. Rest 3 min between sets.', 'Overhead Press: Same protocol — heavy 3RM.', 'Incline Dumbbell Press: Find your heaviest set of 8.'],
+      instructions: 'Work up in 10-20 lb jumps. Stop when form breaks. Log your best set below.',
+    },
+    {
+      day: 2,
+      title: 'Day 2 — Lower Body Maxes',
+      exercises: ['Squat: Heavy 3RM (use spotter or safety bars)', 'Romanian Deadlift: Heavy 5RM', 'Leg Press: Heavy 8RM'],
+      instructions: 'Prioritize depth and form. Never sacrifice technique for weight.',
+    },
+    {
+      day: 3,
+      title: 'Day 3 — Pull Maxes',
+      exercises: ['Deadlift: Heavy 3RM (conventional or sumo)', 'Barbell Row: Heavy 5RM', 'Weighted Pull-Up: Max reps with bodyweight, or add weight for 3-5 reps'],
+      instructions: 'Keep your back neutral on all pulls. Film yourself if possible.',
+    },
+    {
+      day: 4,
+      title: 'Day 4 — Arms & Shoulders',
+      exercises: ['Barbell Curl: Heavy 6RM', 'Close-Grip Bench: Heavy 6RM', 'Lateral Raise: Find your 12RM'],
+      instructions: 'Control the eccentric. No swinging.',
+    },
+    {
+      day: 5,
+      title: 'Day 5 — Full Body Benchmark',
+      exercises: ["Power Clean or Hang Clean: Heavy 3RM (if available)", "Farmer's Carry: Max distance with heaviest dumbbells", 'Plank: Max hold time'],
+      instructions: 'This day tests athleticism and grip. Rest well before this session.',
+    },
+  ];
 
   const session = state.session;
   const todayStr = new Date().toISOString().split('T')[0];
@@ -527,6 +622,13 @@ export default function TrackerTab() {
             ? `↑ Last week: ${lastSets!.length} × ${summaryReps} @ ${summaryWeight} lb`
             : 'First time — set the bar 🦍';
 
+          // Weight suggestion chip data
+          const best1RM = getBest1RM(state.history, state.prs, ex.exercise);
+          const lastSet = ex.sets[ex.sets.length - 1];
+          const lastSetReps = lastSet ? parseInt(lastSet.reps) || 0 : 0;
+          const suggPct = lastSetReps > 0 ? getRepPct(lastSetReps) : 0;
+          const suggWeight = best1RM && lastSetReps > 0 ? recommendWeight(best1RM, lastSetReps) : 0;
+
           return (
             <View key={exIdx} style={styles.exerciseBlock}>
               <View style={styles.exerciseHeader}>
@@ -545,6 +647,22 @@ export default function TrackerTab() {
                   <Text style={styles.lastWeekDate}>({lastDateStr})</Text>
                 ) : null}
               </View>
+
+              {/* Weight suggestion chip — Pro only */}
+              {isSubscribed && best1RM && (
+                <View style={styles.suggestionChip}>
+                  {lastSetReps > 0 ? (
+                    <Text style={styles.suggestionChipText}>
+                      {'💡 Suggested: ~'}{suggWeight}{' lbs for '}{lastSetReps}{' reps ('}{Math.round(suggPct * 100)}{'% of est. 1RM)'}
+                    </Text>
+                  ) : (
+                    <Text style={styles.suggestionChipText}>
+                      {'💡 Est. 1RM: ~'}{best1RM}{' lbs — enter reps for weight suggestion'}
+                    </Text>
+                  )}
+                  <Text style={styles.suggestionDisclaimer}>⚠️ AI-generated suggestion — always use safe, manageable weight</Text>
+                </View>
+              )}
 
               <View style={styles.setHeader}>
                 <Text style={styles.setHeaderText}>Set</Text>
@@ -607,52 +725,145 @@ export default function TrackerTab() {
       <View style={styles.analyticsCard}>
         <View style={styles.analyticsHeader}>
           <Text style={styles.sectionTitle}>📈 Pro Analytics</Text>
-          {!isSubscribed && (
-            <AnimatedPressable
-              onPress={() => {
-                console.log('[Tracker] Pro Analytics lock pressed');
-                router.push('/paywall');
-              }}
-              style={styles.proLockPill}
-            >
-              <Text style={styles.proLockText}>🔒 Unlock Pro</Text>
-            </AnimatedPressable>
-          )}
+          <View style={styles.analyticsHeaderRight}>
+            {isSubscribed && !state.maxTestComplete && (
+              <AnimatedPressable
+                onPress={() => {
+                  console.log('[Tracker] Max Testing Protocol button pressed');
+                  setMaxInputs(
+                    Object.fromEntries(
+                      Object.entries(state.userMaxes).map(([k, v]) => [k, String(v)])
+                    )
+                  );
+                  setShowMaxModal(true);
+                }}
+                style={styles.maxTestBtn}
+              >
+                <Text style={styles.maxTestBtnText}>🎯 Max Test</Text>
+              </AnimatedPressable>
+            )}
+            {!isSubscribed && (
+              <AnimatedPressable
+                onPress={() => {
+                  console.log('[Tracker] Pro Analytics lock pressed');
+                  router.push('/paywall');
+                }}
+                style={styles.proLockPill}
+              >
+                <Text style={styles.proLockText}>🔒 Unlock Pro</Text>
+              </AnimatedPressable>
+            )}
+          </View>
         </View>
 
         {isSubscribed ? (
           <View style={styles.analyticsContent}>
+            {/* Max test protocol banner */}
+            {!state.maxTestComplete && (
+              <TouchableOpacity
+                style={styles.maxTestBanner}
+                onPress={() => {
+                  console.log('[Tracker] Max test banner tapped');
+                  setMaxInputs(
+                    Object.fromEntries(
+                      Object.entries(state.userMaxes).map(([k, v]) => [k, String(v)])
+                    )
+                  );
+                  setShowMaxModal(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.maxTestBannerText}>🎯 Complete the Max Testing Protocol to unlock personalized weight recommendations →</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Section 1 — Strength Overview */}
             {state.prs.length === 0 ? (
               <Text style={styles.analyticsEmpty}>Complete workouts to see analytics</Text>
             ) : (
-              state.prs.slice(0, 5).map((pr, i) => {
-                const est1RM = epley1RM(pr.weight, 1);
-                const weeklyVols = getWeeklyVolume(state.history, pr.lift);
-                const maxVol = Math.max(...weeklyVols, 1);
-                const prDateStr = formatShortDate(pr.date);
-                return (
-                  <View key={i} style={styles.analyticsRow}>
-                    <View style={styles.analyticsLiftInfo}>
-                      <Text style={styles.analyticsLiftName}>{pr.lift}</Text>
-                      <Text style={styles.analyticsLiftSub}>PR: {pr.weight} lb • Est 1RM: {est1RM} lb</Text>
-                      <Text style={styles.analyticsLiftDate}>{prDateStr}</Text>
+              <>
+                <Text style={styles.analyticsSectionLabel}>STRENGTH OVERVIEW</Text>
+                {state.prs.slice(0, 8).map((pr, i) => {
+                  const est1RM = epley1RM(pr.weight, 1);
+                  const weeklyVols = getWeeklyVolume(state.history, pr.lift);
+                  const maxVol = Math.max(...weeklyVols, 1);
+                  const prDateStr = formatShortDate(pr.date);
+                  const tier = getStrengthTier(est1RM, state.profile.weight, pr.lift);
+                  const nextMilestone = getNextMilestone(pr.weight);
+                  const toGo = nextMilestone - pr.weight;
+                  return (
+                    <View key={i} style={styles.analyticsRow}>
+                      <View style={styles.analyticsLiftInfo}>
+                        <View style={styles.analyticsLiftNameRow}>
+                          <Text style={styles.analyticsLiftName}>{pr.lift}</Text>
+                          <View style={[styles.strengthTierBadge, { backgroundColor: `${tier.color}25`, borderColor: `${tier.color}60` }]}>
+                            <Text style={[styles.strengthTierText, { color: tier.color }]}>{tier.label}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.analyticsLiftSub}>PR: {pr.weight} lb • Est 1RM: {est1RM} lb</Text>
+                        <Text style={styles.analyticsLiftDate}>{prDateStr}</Text>
+                        <Text style={styles.nextMilestoneTxt}>Next: {nextMilestone} lbs (+{toGo} lbs to go)</Text>
+                      </View>
+                      {/* Volume trend bars */}
+                      <View style={styles.volBars}>
+                        {weeklyVols.map((v, wi) => {
+                          const barH = maxVol > 0 ? Math.max(4, Math.round((v / maxVol) * 40)) : 4;
+                          return (
+                            <View key={wi} style={styles.volBarWrap}>
+                              <View style={[styles.volBar, { height: barH }]} />
+                              <Text style={styles.volBarLabel}>W{wi + 1}</Text>
+                            </View>
+                          );
+                        })}
+                      </View>
                     </View>
-                    {/* Volume trend bars */}
-                    <View style={styles.volBars}>
-                      {weeklyVols.map((v, wi) => {
-                        const barH = maxVol > 0 ? Math.max(4, Math.round((v / maxVol) * 40)) : 4;
+                  );
+                })}
+              </>
+            )}
+
+            {/* Section 2 — Weight Recommendations Table */}
+            {Object.keys(state.userMaxes).length > 0 && (
+              <View style={styles.weightRecCard}>
+                <Text style={styles.weightRecTitle}>💡 Recommended Working Weights</Text>
+                <View style={styles.disclaimerBanner}>
+                  <Text style={styles.disclaimerText}>⚠️ These suggestions are AI-generated based on your logged maxes and standard percentage tables. Always use weight you can lift safely with good form. When in doubt, go lighter.</Text>
+                </View>
+                {Object.entries(state.userMaxes).map(([lift, maxVal]) => {
+                  const est1RM = epley1RM(maxVal, 1);
+                  const repsSchemes: { label: string; reps: number; pct: number }[] = [
+                    { label: '5×5', reps: 5, pct: 0.85 },
+                    { label: '4×6', reps: 6, pct: 0.80 },
+                    { label: '3×8', reps: 8, pct: 0.75 },
+                    { label: '3×10', reps: 10, pct: 0.70 },
+                    { label: '4×12', reps: 12, pct: 0.67 },
+                  ];
+                  return (
+                    <View key={lift} style={styles.weightRecTable}>
+                      <Text style={styles.weightRecMax}>{lift} — Max: {maxVal} lbs • Est 1RM: {est1RM} lbs</Text>
+                      <View style={styles.weightRecRow}>
+                        <Text style={[styles.weightRecCell, styles.weightRecHeader]}>Sets×Reps</Text>
+                        <Text style={[styles.weightRecCell, styles.weightRecHeader]}>% 1RM</Text>
+                        <Text style={[styles.weightRecCell, styles.weightRecHeader]}>Suggested</Text>
+                      </View>
+                      {repsSchemes.map((s) => {
+                        const suggested = Math.round((est1RM * s.pct) / 2.5) * 2.5;
+                        const pctDisplay = Math.round(s.pct * 100);
                         return (
-                          <View key={wi} style={styles.volBarWrap}>
-                            <View style={[styles.volBar, { height: barH }]} />
-                            <Text style={styles.volBarLabel}>W{wi + 1}</Text>
+                          <View key={s.label} style={styles.weightRecRow}>
+                            <Text style={styles.weightRecCell}>{s.label}</Text>
+                            <Text style={styles.weightRecCell}>{pctDisplay}{'%'}</Text>
+                            <Text style={[styles.weightRecCell, { color: COLORS.gold }]}>{suggested}{' lbs'}</Text>
                           </View>
                         );
                       })}
                     </View>
-                  </View>
-                );
-              })
+                  );
+                })}
+              </View>
             )}
+
+            {/* Section 3 — Total Tonnage */}
             {state.prs.length > 0 && (
               <View style={styles.tonnageRow}>
                 <Text style={styles.tonnageLabel}>Total Tonnage (all time)</Text>
@@ -663,6 +874,57 @@ export default function TrackerTab() {
                         s3 + (parseFloat(set.reps) || 0) * (parseFloat(set.weight) || 0), 0), 0), 0
                   ).toLocaleString()} lb
                 </Text>
+              </View>
+            )}
+
+            {/* Section 4 — 7-Day Frequency Heatmap */}
+            {(() => {
+              const now = new Date();
+              const days7: { label: string; active: boolean }[] = [];
+              for (let i = 6; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const dStr = d.toISOString().split('T')[0];
+                const label = d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2);
+                const active = state.history.some(h => h.date.split('T')[0] === dStr);
+                days7.push({ label, active });
+              }
+              return (
+                <View>
+                  <Text style={styles.analyticsSectionLabel}>LAST 7 DAYS</Text>
+                  <View style={styles.freqHeatmap}>
+                    {days7.map((d, i) => (
+                      <View key={i} style={styles.freqDayWrap}>
+                        <View style={[styles.freqDay, d.active && styles.freqDayActive]} />
+                        <Text style={styles.freqDayLabel}>{d.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Section 5 — PR Table */}
+            {state.prs.length > 0 && (
+              <View>
+                <Text style={styles.analyticsSectionLabel}>PERSONAL RECORDS</Text>
+                <View style={styles.prTable}>
+                  <View style={styles.prTableRow}>
+                    <Text style={[styles.prTableCell, styles.prTableHeader]}>Lift</Text>
+                    <Text style={[styles.prTableCell, styles.prTableHeader]}>Weight</Text>
+                    <Text style={[styles.prTableCell, styles.prTableHeader]}>Date</Text>
+                  </View>
+                  {state.prs.map((pr, i) => {
+                    const dateStr = new Date(pr.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+                    return (
+                      <View key={i} style={[styles.prTableRow, i % 2 === 1 && styles.prTableRowAlt]}>
+                        <Text style={styles.prTableCell} numberOfLines={1}>{pr.lift}</Text>
+                        <Text style={[styles.prTableCell, { color: COLORS.gold }]}>{pr.weight} lb</Text>
+                        <Text style={[styles.prTableCell, { color: COLORS.textTertiary }]}>{dateStr}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             )}
           </View>
@@ -787,6 +1049,121 @@ export default function TrackerTab() {
               </View>
             ) : null}
           </View>
+        </View>
+      </Modal>
+
+      {/* Max Testing Protocol Modal */}
+      <Modal
+        visible={showMaxModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMaxModal(false)}
+      >
+        <View style={styles.maxModalContainer}>
+          <View style={styles.maxModalHeader}>
+            <Text style={styles.maxModalTitle}>🎯 Find Your Maxes</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[Tracker] Close max testing modal');
+                setShowMaxModal(false);
+              }}
+              style={styles.maxModalClose}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 20, paddingBottom: 60, gap: 16 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.maxModalIntro}>
+                This 5-day protocol helps Kong understand your strength baseline so it can recommend the perfect weights for every set. Complete each day's test, log your best set, and Kong will personalize all future recommendations.
+              </Text>
+
+              {/* Protocol Days */}
+              {MAX_PROTOCOL_DAYS.map((day) => (
+                <TouchableOpacity
+                  key={day.day}
+                  style={styles.maxDayCard}
+                  onPress={() => {
+                    console.log('[Tracker] Max protocol day toggled:', day.day);
+                    setExpandedDay(expandedDay === day.day ? null : day.day);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.maxDayHeader}>
+                    <Text style={styles.maxDayTitle}>{day.title}</Text>
+                    <Text style={styles.modalCloseText}>{expandedDay === day.day ? '▲' : '▼'}</Text>
+                  </View>
+                  {expandedDay === day.day && (
+                    <View style={{ marginTop: 10, gap: 6 }}>
+                      {day.exercises.map((ex, i) => (
+                        <Text key={i} style={styles.maxDayExercise}>{'• '}{ex}</Text>
+                      ))}
+                      <Text style={styles.maxDayInstructions}>{day.instructions}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+
+              {/* Log Your Maxes */}
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Log Your Maxes</Text>
+              {MAX_LIFTS.map((lift) => (
+                <View key={lift} style={styles.maxInputRow}>
+                  <Text style={styles.maxInputLabel}>{lift}</Text>
+                  <TextInput
+                    style={styles.maxInput}
+                    value={maxInputs[lift] || ''}
+                    onChangeText={(v) => {
+                      setMaxInputs((prev) => ({ ...prev, [lift]: v }));
+                    }}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={COLORS.textTertiary}
+                  />
+                  <Text style={styles.maxInputUnit}>lbs</Text>
+                </View>
+              ))}
+
+              {/* Save button */}
+              <TouchableOpacity
+                style={styles.maxSaveBtn}
+                onPress={() => {
+                  console.log('[Tracker] Save maxes button pressed', maxInputs);
+                  const newMaxes: Record<string, number> = { ...state.userMaxes };
+                  Object.entries(maxInputs).forEach(([lift, val]) => {
+                    const n = parseFloat(val);
+                    if (!isNaN(n) && n > 0) newMaxes[lift] = n;
+                  });
+                  updateState({ userMaxes: newMaxes, maxTestComplete: true });
+                  setShowMaxModal(false);
+                  showToast('🎯 Maxes saved! Kong will now personalize your weight recommendations.', true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.maxSaveBtnText}>Save Maxes & Complete Protocol</Text>
+              </TouchableOpacity>
+
+              {/* Reset link */}
+              <TouchableOpacity
+                style={styles.maxResetLink}
+                onPress={() => {
+                  console.log('[Tracker] Reset max protocol pressed');
+                  updateState({ maxTestComplete: false, userMaxes: {} });
+                  setMaxInputs({});
+                  showToast('Protocol reset. Re-enter your maxes anytime.');
+                }}
+              >
+                <Text style={styles.maxResetText}>Reset Protocol</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1163,6 +1540,188 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   analyticsUnlockText: { fontSize: 14, fontWeight: '800', color: '#0A0A0A' },
+  analyticsHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  analyticsSectionLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textTertiary, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 4, marginBottom: 6 },
+  analyticsLiftNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+
+  // Strength tier badge
+  strengthTierBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+  },
+  strengthTierText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  nextMilestoneTxt: { fontSize: 11, color: COLORS.textTertiary, fontStyle: 'italic', marginTop: 1 },
+
+  // Weight recommendation card
+  weightRecCard: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 10,
+  },
+  weightRecTitle: { fontSize: 14, fontWeight: '800', color: COLORS.gold },
+  weightRecMax: { fontSize: 12, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+  weightRecTable: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 4,
+  },
+  weightRecRow: { flexDirection: 'row', gap: 4 },
+  weightRecCell: { flex: 1, fontSize: 12, color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 3 },
+  weightRecHeader: { fontWeight: '800', color: COLORS.textTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // Disclaimer banner
+  disclaimerBanner: {
+    backgroundColor: `${COLORS.gold}10`,
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.border2,
+  },
+  disclaimerText: { fontSize: 12, color: COLORS.gold, lineHeight: 18 },
+
+  // Max test banner
+  maxTestBanner: {
+    backgroundColor: `${COLORS.gold}15`,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  maxTestBannerText: { fontSize: 13, fontWeight: '600', color: COLORS.gold, lineHeight: 20 },
+  maxTestBtn: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+  },
+  maxTestBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
+
+  // Frequency heatmap
+  freqHeatmap: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+  freqDayWrap: { alignItems: 'center', gap: 4 },
+  freqDay: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  freqDayActive: { backgroundColor: COLORS.gold, borderColor: COLORS.gold },
+  freqDayLabel: { fontSize: 10, color: COLORS.textTertiary, fontWeight: '600' },
+
+  // PR Table
+  prTable: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  prTableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  prTableRowAlt: { backgroundColor: COLORS.surface2 },
+  prTableCell: { flex: 1, fontSize: 12, color: COLORS.text },
+  prTableHeader: { fontWeight: '800', color: COLORS.textTertiary, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // Suggestion chip
+  suggestionChip: {
+    backgroundColor: `${COLORS.gold}18`,
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    gap: 4,
+  },
+  suggestionChipText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
+  suggestionDisclaimer: { fontSize: 11, color: COLORS.textTertiary, fontStyle: 'italic' },
+
+  // Max Testing Modal
+  maxModalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  maxModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  maxModalTitle: { fontSize: 20, fontWeight: '900', color: COLORS.gold },
+  maxModalClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maxModalIntro: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  maxDayCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  maxDayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  maxDayTitle: { fontSize: 14, fontWeight: '800', color: COLORS.text, flex: 1 },
+  maxDayExercise: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
+  maxDayInstructions: {
+    fontSize: 12,
+    color: COLORS.gold,
+    fontStyle: 'italic',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  maxInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  maxInputLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.text },
+  maxInput: {
+    width: 70,
+    backgroundColor: COLORS.surface2,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 15,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  maxInputUnit: { fontSize: 13, color: COLORS.textTertiary, width: 28 },
+  maxSaveBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  maxSaveBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+  maxResetLink: { alignItems: 'center', paddingVertical: 12 },
+  maxResetText: { fontSize: 13, color: COLORS.textTertiary, textDecorationLine: 'underline' },
 
   // History
   historyCard: {

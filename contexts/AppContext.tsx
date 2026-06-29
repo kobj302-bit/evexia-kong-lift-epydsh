@@ -118,6 +118,8 @@ export interface AppState {
   glowUpGroceryWeek: string | null;
   glowUpStreakShield: boolean;
   glowUpStartDate: string | null;
+  userMaxes: Record<string, number>;
+  maxTestComplete: boolean;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -186,6 +188,8 @@ const DEFAULT_STATE: AppState = {
   glowUpGroceryWeek: null,
   glowUpStreakShield: false,
   glowUpStartDate: null,
+  userMaxes: {},
+  maxTestComplete: false,
 };
 
 interface AppContextType {
