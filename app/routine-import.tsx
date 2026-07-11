@@ -17,7 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 
-const BACKEND_URL = 'https://bu6g6s69j785bngkjuxy3cnwyg5dah4f.app.specular.dev';
+const BACKEND_URL = 'https://q8ww3axkrc2r5xmyptkj42uzs2pcj22k.app.specular.dev';
 
 type Mode = 'text' | 'image';
 type Status = 'idle' | 'loading' | 'result' | 'error';
