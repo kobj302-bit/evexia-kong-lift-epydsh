@@ -16,7 +16,7 @@
  *
  * SETUP:
  * 1. Wrap your app with <SubscriptionProvider>
- * 2. Run: pnpm install react-native-purchases && npx expo prebuild
+ * 2. Run (via the project's package runner — bunx for new projects, npx for legacy): expo install react-native-purchases && expo prebuild
  */
 
 import React, {
@@ -44,8 +44,6 @@ const ANDROID_API_KEY = extra.revenueCatApiKeyAndroid || "";
 const TEST_IOS_API_KEY = extra.revenueCatTestApiKeyIos || "";
 const TEST_ANDROID_API_KEY = extra.revenueCatTestApiKeyAndroid || "";
 const ENTITLEMENT_ID = extra.revenueCatEntitlementId || "pro";
-const ATHLETE_ENTITLEMENT_ID = "athlete_pro";
-const DAILY_PASS_ENTITLEMENT_ID = "daily_athlete_pass";
 
 // Check if running on web
 const isWeb = Platform.OS === "web";
@@ -56,24 +54,16 @@ const MOCK_PURCHASE_KEY = `rc_mock_purchased_${_PROJECT_SCOPE}`;
 const MOCK_NATIVE_KEY = `rc_dev_native_${_PROJECT_SCOPE}`;
 // Scoped native cache key — persists real subscription state for fast restore on bundle reload
 const NATIVE_PURCHASE_KEY = `rc_subscribed_${_PROJECT_SCOPE}`;
-// Daily pass storage key — stores expiry timestamp
-const DAILY_PASS_STORAGE_KEY = `evexia_daily_pass_${_PROJECT_SCOPE}`;
-// Promo code unlock key — works on all platforms including production
-const PROMO_UNLOCK_KEY = 'evexia_promo_unlocked_v1';
 
 interface SubscriptionContextType {
-  /** Whether the user has an active Kong Pro subscription */
+  /** Whether the user has an active subscription */
   isSubscribed: boolean;
-  /** Whether the user has an active Athlete Pro subscription */
-  isAthleteSubscribed: boolean;
   /** All offerings from RevenueCat */
   offerings: PurchasesOfferings | null;
   /** The current/default offering */
   currentOffering: PurchasesOffering | null;
-  /** Available packages in the current (Kong Pro) offering */
+  /** Available packages in the current offering */
   packages: PurchasesPackage[];
-  /** Available packages in the athlete offering */
-  athletePackages: PurchasesPackage[];
   /** Loading state during initialization */
   loading: boolean;
   /** Whether running on web (purchases not available) */
@@ -88,12 +78,8 @@ interface SubscriptionContextType {
   mockWebPurchase: () => void;
   /** Dev-only: simulate a purchase in Expo Go — persists across reloads via expo-secure-store */
   mockNativePurchase: () => Promise<void>;
-  /** Unlock Pro via promo code — works on all platforms including production */
+  /** Unlock Pro via a promo code — persists to AsyncStorage */
   unlockWithPromo: () => Promise<void>;
-  /** Whether the user has an active daily athlete pass (expires at midnight) */
-  hasDailyPass: boolean;
-  /** Purchase a daily athlete pass — grants access until end of today */
-  purchaseDailyPass: () => Promise<boolean>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
@@ -106,14 +92,11 @@ interface SubscriptionProviderProps {
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isAthleteSubscribed, setIsAthleteSubscribed] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [currentOffering, setCurrentOffering] =
     useState<PurchasesOffering | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  const [athletePackages, setAthletePackages] = useState<PurchasesPackage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasDailyPass, setHasDailyPass] = useState(false);
 
     // Fetch offerings via REST API for web platform
   const fetchOfferingsViaRest = async () => {
@@ -133,7 +116,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
   // Initialize RevenueCat on mount
   useEffect(() => {
-    let customerInfoListener: { remove: () => void } | null = null;
+    let customerInfoListener: { remove: () => void } | null | void = null;
 
     const initRevenueCat = async () => {
       try {
@@ -143,18 +126,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           // Restore mock purchase state persisted from a previous session
           if (typeof window !== "undefined" && localStorage.getItem(MOCK_PURCHASE_KEY) === "true") {
             setIsSubscribed(true);
-          }
-          // Restore promo unlock (works on all platforms)
-          const promoFlagWeb = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
-          if (promoFlagWeb === 'true') {
-            setIsSubscribed(true);
-          }
-          // Check daily pass expiry
-          const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
-          if (savedPass) {
-            const expiry = parseInt(savedPass, 10);
-            if (Date.now() < expiry) setHasDailyPass(true);
-            else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
           }
           setLoading(false);
           return;
@@ -175,18 +146,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
             if (mockState === "true") {
               setIsSubscribed(true);
             }
-          }
-          // Restore promo unlock (works on all platforms, including production)
-          const promoFlag = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
-          if (promoFlag === 'true') {
-            setIsSubscribed(true);
-          }
-          // Check daily pass expiry
-          const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
-          if (savedPass) {
-            const expiry = parseInt(savedPass, 10);
-            if (Date.now() < expiry) setHasDailyPass(true);
-            else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
           }
           setLoading(false);
           return;
@@ -222,47 +181,21 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           }
         }
 
-        // Restore promo unlock (works on all platforms, including production)
-        const promoFlagNative = await AsyncStorage.getItem(PROMO_UNLOCK_KEY).catch(() => null);
-        if (promoFlagNative === 'true') {
-          setIsSubscribed(true);
-        }
-
-        // Check daily pass expiry
-        const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
-        if (savedPass) {
-          const expiry = parseInt(savedPass, 10);
-          if (Date.now() < expiry) setHasDailyPass(true);
-          else await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
-        }
-
         await Purchases.configure({ apiKey });
 
         // Listen for real-time subscription changes (e.g., purchase from another device)
-        customerInfoListener = (Purchases.addCustomerInfoUpdateListener(
+        customerInfoListener = Purchases.addCustomerInfoUpdateListener(
           (customerInfo) => {
             const hasEntitlement =
               typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !==
-              "undefined";
-            const hasAthleteEntitlement =
-              typeof customerInfo.entitlements.active[ATHLETE_ENTITLEMENT_ID] !==
-              "undefined";
-            const hasDailyPassEntitlement =
-              typeof customerInfo.entitlements.active[DAILY_PASS_ENTITLEMENT_ID] !==
               "undefined";
             // In __DEV__: don't clear subscription state — RevenueCat test store purchases are
             // in-memory only and won't be known to RC after a configure() call on reload.
             if (hasEntitlement || !__DEV__) {
               setIsSubscribed(hasEntitlement);
             }
-            if (hasAthleteEntitlement || !__DEV__) {
-              setIsAthleteSubscribed(hasAthleteEntitlement);
-            }
-            if (hasDailyPassEntitlement) {
-              setHasDailyPass(true);
-            }
           }
-        ) as unknown as { remove: () => void } | null);
+        );
 
         // Fetch available products/packages
         await fetchOfferings();
@@ -280,7 +213,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
 
     // Cleanup listener on unmount
     return () => {
-      if (customerInfoListener) {
+      if (customerInfoListener && typeof customerInfoListener === 'object') {
         customerInfoListener.remove();
       }
     };
@@ -296,10 +229,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         setCurrentOffering(fetchedOfferings.current);
         setPackages(fetchedOfferings.current.availablePackages);
       }
-
-      // Load athlete offering packages
-      const athleteOffering = fetchedOfferings.all["athlete"];
-      setAthletePackages(athleteOffering?.availablePackages ?? []);
     } catch (error) {
       console.error("[RevenueCat] Failed to fetch offerings:", error);
     }
@@ -311,15 +240,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       const customerInfo = await Purchases.getCustomerInfo();
       const hasEntitlement =
         typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== "undefined";
-      const hasAthleteEntitlement =
-        typeof customerInfo.entitlements.active[ATHLETE_ENTITLEMENT_ID] !== "undefined";
       // In __DEV__: RC test store purchases don't survive configure(), so only update state
       // positively — mock/test purchase state persists across reloads via SecureStore cache.
       if (hasEntitlement || !__DEV__) {
         setIsSubscribed(hasEntitlement);
-      }
-      if (hasAthleteEntitlement || !__DEV__) {
-        setIsAthleteSubscribed(hasAthleteEntitlement);
       }
       if (hasEntitlement) {
         await SecureStore.setItemAsync(NATIVE_PURCHASE_KEY, "true").catch(() => {});
@@ -379,47 +303,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     }
   };
 
-  const purchaseDailyPass = async (): Promise<boolean> => {
-    if (isWeb) { console.warn("[RevenueCat] Purchases not available on web"); return false; }
-    try {
-      console.log("[RevenueCat] Purchasing daily athlete pass");
-      const fetchedOfferings = await Purchases.getOfferings();
-      const dailyOffering = fetchedOfferings.all["daily_pass"] ?? fetchedOfferings.current;
-      const pkg = dailyOffering?.availablePackages?.[0];
-      if (!pkg) { console.warn("[RevenueCat] No daily pass package found"); return false; }
-      const { customerInfo } = await Purchases.purchasePackage(pkg);
-      // Check entitlement OR grant access for the day (consumable fallback)
-      const _hasEntitlement = typeof customerInfo.entitlements.active[DAILY_PASS_ENTITLEMENT_ID] !== "undefined";
-      // Grant access until end of today regardless (consumable)
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      await AsyncStorage.setItem(DAILY_PASS_STORAGE_KEY, String(endOfDay.getTime())).catch(() => {});
-      setHasDailyPass(true);
-      console.log("[RevenueCat] Daily pass activated, expires:", endOfDay.toISOString());
-      return true;
-    } catch (error: any) {
-      if (!error.userCancelled) {
-        console.error("[RevenueCat] Daily pass purchase failed:", error);
-        throw error;
-      }
-      return false;
-    }
-  };
-
-  // Poll every 60 seconds while a daily pass is active to detect expiry
-  useEffect(() => {
-    if (!hasDailyPass) return;
-    const interval = setInterval(async () => {
-      const savedPass = await AsyncStorage.getItem(DAILY_PASS_STORAGE_KEY).catch(() => null);
-      if (!savedPass || Date.now() >= parseInt(savedPass, 10)) {
-        console.log('[RevenueCat] Daily pass expired — revoking access');
-        await AsyncStorage.removeItem(DAILY_PASS_STORAGE_KEY).catch(() => {});
-        setHasDailyPass(false);
-      }
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [hasDailyPass]);
-
   const mockWebPurchase = () => {
     if (!isWeb) return;
     if (typeof window !== "undefined") {
@@ -436,10 +319,13 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     setIsSubscribed(true);
   };
 
-  // Unlock Pro via promo code — works on ALL platforms including production.
-  // No __DEV__ or isWeb guard.
+  // Unlock Pro via a promo code — persists to AsyncStorage so it survives app restarts.
   const unlockWithPromo = async (): Promise<void> => {
-    await AsyncStorage.setItem(PROMO_UNLOCK_KEY, 'true').catch(() => {});
+    try {
+      await AsyncStorage.setItem("promo_unlocked", "true");
+    } catch (e) {
+      console.warn("[RevenueCat] Failed to persist promo unlock:", e);
+    }
     setIsSubscribed(true);
   };
 
@@ -447,11 +333,9 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     <SubscriptionContext.Provider
       value={{
         isSubscribed,
-        isAthleteSubscribed,
         offerings,
         currentOffering,
         packages,
-        athletePackages,
         loading,
         isWeb,
         purchasePackage,
@@ -460,8 +344,6 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         mockWebPurchase,
         mockNativePurchase,
         unlockWithPromo,
-        hasDailyPass,
-        purchaseDailyPass,
       }}
     >
       {children}
