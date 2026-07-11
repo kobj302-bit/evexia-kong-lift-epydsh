@@ -140,13 +140,40 @@ export default function PaywallScreen() {
 
   // Handle purchase
   const handlePurchase = async () => {
-    if (!selectedPackage) return;
-    console.log("[Paywall] Purchase button pressed", { packageId: selectedPackage.identifier, price: selectedPackage.product.priceString });
+    // Resolve the best available RC package for the selected plan
+    const yearlyPkg = activePackages.find(
+      (p) =>
+        p.identifier.toLowerCase().includes('annual') ||
+        p.identifier.toLowerCase().includes('year')
+    ) ?? activePackages[0] ?? null;
+
+    const pkgToUse =
+      selectedPlan === 'yearly' ? yearlyPkg : selectedPackage;
+
+    console.log("[Paywall] Purchase button pressed", {
+      plan: selectedPlan,
+      packageId: pkgToUse?.identifier ?? 'none',
+      price: pkgToUse?.product.priceString ?? 'N/A',
+    });
+
+    if (!pkgToUse && !isWeb) {
+      // No RC package available (Expo Go / RC not configured)
+      if (__DEV__) {
+        console.log("[Paywall] No RC package — using mock native purchase (dev)");
+        await mockNativePurchase();
+        router.replace('/(tabs)/home');
+      } else {
+        Alert.alert('Not Available', 'Purchases are not available in this build.');
+      }
+      return;
+    }
+
+    if (!pkgToUse) return;
 
     try {
       setPurchasing(true);
-      console.log("[Paywall] Initiating purchase for package:", selectedPackage.identifier);
-      const success = await purchasePackage(selectedPackage);
+      console.log("[Paywall] Initiating purchase for package:", pkgToUse.identifier);
+      const success = await purchasePackage(pkgToUse);
       if (success) {
         console.log("[Paywall] Purchase successful");
         Alert.alert("Welcome!", "Thank you for your purchase.", [
@@ -207,8 +234,10 @@ export default function PaywallScreen() {
   // Note: Alert.alert with multiple buttons silently fails on React Native Web,
   // so we use a custom View-based dialog overlay instead.
   const handleWebMockPurchase = async () => {
-    if (!selectedPackage) return;
-    console.log("[Paywall] Web mock purchase button pressed", { packageId: selectedPackage.identifier });
+    console.log("[Paywall] Web mock purchase button pressed", {
+      plan: selectedPlan,
+      packageId: selectedPackage?.identifier ?? 'none',
+    });
     setWebMockState("processing");
     await new Promise((resolve) => setTimeout(resolve, 400));
     setWebMockState("idle");
@@ -415,9 +444,7 @@ export default function PaywallScreen() {
                 style={styles.glowUpAddonBtn}
                 onPress={() => {
                   console.log("[Paywall] Unlock Glow Up button pressed");
-                  if (selectedPackage) {
-                    handlePurchase();
-                  }
+                  handlePurchase();
                 }}
                 activeOpacity={0.8}
               >
@@ -436,7 +463,13 @@ export default function PaywallScreen() {
                 onPress={() => {
                   console.log("[Paywall] Yearly plan selected");
                   setSelectedPlan('yearly');
-                  setSelectedPackage(null);
+                  const yearlyPkg =
+                    activePackages.find(
+                      (p) =>
+                        p.identifier.toLowerCase().includes('annual') ||
+                        p.identifier.toLowerCase().includes('year')
+                    ) ?? activePackages[0] ?? null;
+                  setSelectedPackage(yearlyPkg);
                 }}
                 activeOpacity={0.8}
               >
@@ -524,11 +557,10 @@ export default function PaywallScreen() {
                 <TouchableOpacity
                   style={[
                     styles.primaryButton,
-                    (!selectedPackage || webMockState === "processing") &&
-                      styles.buttonDisabled,
+                    webMockState === "processing" && styles.buttonDisabled,
                   ]}
                   onPress={handleWebMockPurchase}
-                  disabled={!selectedPackage || webMockState === "processing"}
+                  disabled={webMockState === "processing"}
                 >
                   {webMockState === "processing" ? (
                     <ActivityIndicator color="#764BA2" />
@@ -580,10 +612,10 @@ export default function PaywallScreen() {
                 <TouchableOpacity
                   style={[
                     styles.primaryButton,
-                    (!selectedPackage || purchasing) && styles.buttonDisabled,
+                    purchasing && styles.buttonDisabled,
                   ]}
                   onPress={handlePurchase}
-                  disabled={!selectedPackage || purchasing}
+                  disabled={purchasing}
                 >
                   {purchasing ? (
                     <ActivityIndicator color="#764BA2" />
@@ -648,9 +680,8 @@ export default function PaywallScreen() {
                 <Text style={styles.webDialogBody}>
                   {`⚠️ This is a test purchase and should only be used during development. In production, use an Apple/Google API key from RevenueCat.
 
-Package ID: ${selectedPackage?.identifier}
-Title: ${selectedPackage?.product.title}
-Price: ${selectedPackage?.product.priceString || "N/A"}`}
+Package: ${selectedPlan === 'yearly' ? 'Kong Pro — Yearly ($60/year)' : selectedPackage?.identifier ?? 'monthly'}
+Price: ${selectedPlan === 'yearly' ? '$60/year' : selectedPackage?.product.priceString ?? '$6/month'}`}
                 </Text>
                 <View style={styles.webDialogDivider} />
                 <TouchableOpacity
