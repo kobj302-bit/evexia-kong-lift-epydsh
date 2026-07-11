@@ -218,8 +218,8 @@ export default function PaywallScreen() {
   // Handle app store links for web
   const handleDownloadApp = () => {
     // TODO: Replace with your actual app store URLs
-    const iosUrl = "https://apps.apple.com/app/your-app-id";
-    const androidUrl = "https://play.google.com/store/apps/details?id=your.app.id";
+    const iosUrl = "https://apps.apple.com/app/id/com.evexia.konglift";
+    const androidUrl = "https://play.google.com/store/apps/details?id=com.evexia.konglift";
 
     // On web, we can't detect which device the user has, so show both options
     Alert.alert(

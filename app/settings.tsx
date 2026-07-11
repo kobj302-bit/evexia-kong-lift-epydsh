@@ -45,7 +45,6 @@ export default function SettingsScreen() {
   const [restoring, setRestoring] = useState(false);
 
   // Redeem code state
-  const VALID_CODE = 'DXYZFGHERTDS33oneseventeen';
   const PROMO_KEY = 'promo_unlocked';
   const [codeInput, setCodeInput] = useState('');
   const [redeemed, setRedeemed] = useState(false);
@@ -72,23 +71,35 @@ export default function SettingsScreen() {
 
   const handleRedeem = async () => {
     console.log('[Settings] Redeem code pressed');
-    if (codeInput === VALID_CODE) {
-      console.log('[Settings] Valid code entered — unlocking Pro');
-      try {
+    const trimmed = codeInput.trim();
+    if (!trimmed) return;
+    setRedeemError('');
+    try {
+      console.log('[Settings] Sending promo code to backend');
+      const res = await fetch('https://bu6g6s69j785bngkjuxy3cnwyg5dah4f.app.specular.dev/api/promo/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: trimmed }),
+      });
+      const data = await res.json();
+      console.log('[Settings] Promo redeem response:', data);
+      if (data.valid) {
+        console.log('[Settings] Valid code — unlocking Pro');
         await unlockWithPromo();
-        await AsyncStorage.setItem(PROMO_KEY, 'true');
         setRedeemed(true);
         setCodeInput('');
-        setRedeemError('');
-        showToast('✓ Unlocked', true);
-      } catch (e) {
-        console.warn('[Settings] unlockWithPromo failed:', e);
+        showToast('🎉 Kong Pro unlocked!', true);
+      } else {
+        console.log('[Settings] Invalid code:', data.error);
+        setRedeemError(data.error || 'Invalid code');
+        if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = setTimeout(() => setRedeemError(''), 3000);
       }
-    } else {
-      console.log('[Settings] Invalid code entered');
-      setRedeemError('Invalid code');
+    } catch {
+      console.log('[Settings] Network error during promo redeem');
+      setRedeemError('Network error — try again');
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => setRedeemError(''), 2000);
+      errorTimerRef.current = setTimeout(() => setRedeemError(''), 3000);
     }
   };
 
@@ -599,7 +610,7 @@ export default function SettingsScreen() {
             style={styles.legalRow}
             onPress={() => {
               console.log('[Settings] Privacy Policy link pressed');
-              Linking.openURL('https://newly.app/privacy');
+              Linking.openURL('https://kobj302-bit.github.io/evexia-kong-lift-epydsh/privacy.html');
             }}
           >
             <Text style={styles.legalLabel}>Privacy Policy</Text>
@@ -610,7 +621,7 @@ export default function SettingsScreen() {
             style={styles.legalRow}
             onPress={() => {
               console.log('[Settings] Terms of Service link pressed');
-              Linking.openURL('https://newly.app/terms');
+              Linking.openURL('https://kobj302-bit.github.io/evexia-kong-lift-epydsh/terms.html');
             }}
           >
             <Text style={styles.legalLabel}>Terms of Service</Text>
