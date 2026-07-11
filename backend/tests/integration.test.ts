@@ -758,4 +758,82 @@ describe("API Integration Tests", () => {
       });
     });
   });
+
+  describe("Promo Endpoints", () => {
+    describe("POST /api/promo/redeem", () => {
+      test("Redeem valid promo code", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "TESTPROMO2024",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.valid).toBeDefined();
+      });
+
+      test("Redeem promo code with valid structure returns response with valid field", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "SUMMER50",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(typeof data.valid === "boolean").toBe(true);
+      });
+
+      test("Redeem invalid promo code returns response with error or invalid flag", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "INVALIDCODE999",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.valid !== undefined || data.error !== undefined).toBe(true);
+      });
+
+      test("Redeem empty promo code", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.valid !== undefined || data.error !== undefined).toBe(true);
+      });
+
+      test("Redeem promo code with special characters", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "PROMO-2024@TEST",
+          }),
+        });
+        await expectStatus(res, 200);
+        const data = await res.json();
+        expect(data.valid !== undefined || data.error !== undefined).toBe(true);
+      });
+
+      test("Return 400 when missing required code field", async () => {
+        const res = await api("/api/promo/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        await expectStatus(res, 400);
+      });
+    });
+  });
 });
