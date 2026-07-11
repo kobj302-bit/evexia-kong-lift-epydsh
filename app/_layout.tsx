@@ -11,6 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider } from "@/contexts/AppContext";
+import { FocusLockOverlay } from "@/components/FocusLockOverlay";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { isOnboardingComplete } from "@/utils/onboardingStorage";
 import { requestNotificationPermissions } from "@/utils/notifications";
@@ -122,7 +123,19 @@ export default function RootLayout() {
                       headerTitleStyle: { fontWeight: '800', color: '#F5F5F0' },
                     }}
                   />
+                  <Stack.Screen
+                    name="camera-counter"
+                    options={{
+                      headerShown: false,
+                      presentation: 'modal',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="focus-lock"
+                    options={{ headerShown: false }}
+                  />
                 </Stack>
+                <FocusLockOverlay />
                 <SystemBars style="light" />
               </GestureHandlerRootView>
             </AppProvider>

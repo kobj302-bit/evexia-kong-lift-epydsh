@@ -120,6 +120,10 @@ export interface AppState {
   glowUpStartDate: string | null;
   userMaxes: Record<string, number>;
   maxTestComplete: boolean;
+  focusModeEnabled: boolean;
+  focusChallengeComplete: string | null;
+  focusChallengeTarget: number;
+  focusChallengeType: string;
 }
 
 const DEFAULT_STATE: AppState = {
@@ -190,6 +194,10 @@ const DEFAULT_STATE: AppState = {
   glowUpStartDate: null,
   userMaxes: {},
   maxTestComplete: false,
+  focusModeEnabled: false,
+  focusChallengeComplete: null,
+  focusChallengeTarget: 50,
+  focusChallengeType: 'Push-Ups',
 };
 
 interface AppContextType {

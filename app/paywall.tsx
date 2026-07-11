@@ -374,7 +374,7 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.title}>Upgrade to Kong Pro</Text>
               <Text style={styles.subtitle}>
-                $7/month or $60/year
+                Kong Pro — $6/month or $60/year
               </Text>
             </View>
 
@@ -402,14 +402,14 @@ export default function PaywallScreen() {
                 <Text style={styles.glowUpAddonIcon}>✨</Text>
                 <View style={styles.glowUpAddonTitleWrap}>
                   <Text style={styles.glowUpAddonTitle}>Glow Up Add-On</Text>
-                  <Text style={styles.glowUpAddonPrice}>+$3/month</Text>
+                  <Text style={styles.glowUpAddonPrice}>+$3/month or $24/year</Text>
                 </View>
               </View>
               <Text style={styles.glowUpAddonDesc}>
                 The most complete natural glow-up system ever built. Appearance, physique, height optimization, posture, skin, fascia, debloat, energy, and daily habits — all gamified with XP.
               </Text>
               <Text style={styles.glowUpBundleLine}>
-                Pro + Glow Up Bundle — $10/month or $72/year
+                Pro + Glow Up Bundle — $9/month or $84/year
               </Text>
               <TouchableOpacity
                 style={styles.glowUpAddonBtn}
@@ -479,7 +479,7 @@ export default function PaywallScreen() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.packagePrice}>$7 / month</Text>
+                <Text style={styles.packagePrice}>$6 / month</Text>
               </TouchableOpacity>
 
               {/* RC packages (if loaded) */}
@@ -534,7 +534,7 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $7/month'}
+                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -589,7 +589,7 @@ export default function PaywallScreen() {
                     <ActivityIndicator color="#764BA2" />
                   ) : (
                     <Text style={styles.primaryButtonText}>
-                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $7/month'}
+                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
                     </Text>
                   )}
                 </TouchableOpacity>

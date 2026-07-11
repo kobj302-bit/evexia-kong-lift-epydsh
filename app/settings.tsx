@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDimensions, TextInput, TouchableOpacity } from 'react-native';
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -484,6 +484,93 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      {/* Focus & Productivity Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🔒 Focus & Productivity</Text>
+        <View style={[styles.card, { gap: 14 }]}>
+          {/* Focus Mode toggle */}
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.toggleLabel}>🔒 Focus Mode</Text>
+              <Text style={styles.hint}>Lock app navigation until you complete your daily challenge</Text>
+            </View>
+            <Switch
+              value={state.focusModeEnabled}
+              onValueChange={(v) => {
+                console.log('[Settings] Focus Mode toggled:', v);
+                updateState({ focusModeEnabled: v });
+              }}
+              trackColor={{ false: COLORS.surface2, true: C.gold }}
+              thumbColor={state.focusModeEnabled ? C.goldBright : COLORS.textSecondary}
+            />
+          </View>
+
+          {state.focusModeEnabled && (
+            <>
+              {/* Challenge Type */}
+              <View style={{ gap: 8 }}>
+                <Text style={styles.toggleLabel}>Challenge Type</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {['Push-Ups', 'Sit-Ups', 'Squats', 'Pull-Ups'].map((type) => {
+                    const isSelected = state.focusChallengeType === type;
+                    return (
+                      <TouchableOpacity
+                        key={type}
+                        style={[
+                          focusStyles.typeChip,
+                          isSelected && { backgroundColor: `${C.gold}25`, borderColor: C.gold },
+                        ]}
+                        onPress={() => {
+                          console.log('[Settings] Focus challenge type selected:', type);
+                          updateState({ focusChallengeType: type });
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[focusStyles.typeChipText, isSelected && { color: C.gold }]}>
+                          {type}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Daily Target */}
+              <View style={{ gap: 6 }}>
+                <Text style={styles.toggleLabel}>Daily Target</Text>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                  {[20, 30, 50, 75, 100].map((n) => {
+                    const isSelected = state.focusChallengeTarget === n;
+                    return (
+                      <TouchableOpacity
+                        key={n}
+                        style={[
+                          focusStyles.typeChip,
+                          isSelected && { backgroundColor: `${C.gold}25`, borderColor: C.gold },
+                        ]}
+                        onPress={() => {
+                          console.log('[Settings] Focus challenge target selected:', n);
+                          updateState({ focusChallengeTarget: n });
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[focusStyles.typeChipText, isSelected && { color: C.gold }]}>
+                          {n}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <Text style={styles.hint}>
+                Use the AI camera counter to verify reps. The lock screen will appear until you complete your challenge.
+              </Text>
+            </>
+          )}
+        </View>
+      </View>
+
       {/* Danger Zone */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
@@ -676,4 +763,20 @@ const styles = StyleSheet.create({
   themeTileName: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, textAlign: 'center' },
   themeTileCrown: { position: 'absolute', top: -4, right: -4, fontSize: 10 },
   themeSelectedLabel: { fontSize: 13, fontWeight: '700', marginTop: 8, textAlign: 'center' },
+});
+
+const focusStyles = StyleSheet.create({
+  typeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface2,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  typeChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
 });

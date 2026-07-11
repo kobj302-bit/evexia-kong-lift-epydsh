@@ -1,6 +1,69 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
+export async function scheduleDailyTaskNotifications(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    console.log('[DailyNotifications] Scheduling daily task notifications...');
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (n.content.data?.dailyTask) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+    console.log('[DailyNotifications] Cleared existing daily task notifications');
+
+    const notifications = [
+      { hour: 6,  minute: 0,  title: '🌅 Morning routine time!', body: 'Water, sunlight & skincare await.', id: 'dt_morning' },
+      { hour: 7,  minute: 30, title: '💊 Don\'t forget your morning supplements!', body: 'Creatine, D3, Omega-3 — take them now.', id: 'dt_supps' },
+      { hour: 12, minute: 0,  title: '🥗 Midday check-in', body: 'How\'s your nutrition today?', id: 'dt_midday' },
+      { hour: 16, minute: 0,  title: '🏋️ Time to train!', body: 'Your workout is waiting.', id: 'dt_train' },
+      { hour: 20, minute: 0,  title: '🌙 Evening routine', body: 'Skincare, stretching & wind down.', id: 'dt_evening' },
+      { hour: 21, minute: 30, title: '📊 Log today\'s habits before bed', body: 'Keep your streak alive!', id: 'dt_log' },
+    ];
+
+    for (const n of notifications) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: n.id,
+        content: {
+          title: n.title,
+          body: n.body,
+          data: { dailyTask: true },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: n.hour,
+          minute: n.minute,
+        },
+      });
+      console.log('[DailyNotifications] Scheduled:', n.id, 'at', n.hour + ':' + String(n.minute).padStart(2, '0'));
+    }
+
+    console.log('[DailyNotifications] All', notifications.length, 'daily task notifications scheduled');
+  } catch (err) {
+    console.log('[DailyNotifications] Failed to schedule notifications:', err);
+  }
+}
+
+export async function scheduleFocusChallengeCompleteNotification(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    console.log('[DailyNotifications] Sending focus challenge complete notification');
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'focus_challenge_complete',
+      content: {
+        title: '🔥 Challenge complete!',
+        body: 'Apps unlocked. Kong is proud.',
+        data: { focusChallenge: true },
+      },
+      trigger: null,
+    });
+  } catch (err) {
+    console.log('[DailyNotifications] Failed to send focus challenge notification:', err);
+  }
+}
+
 export async function scheduleGlowUpNotifications(): Promise<void> {
   if (Platform.OS === 'web') return;
   try {

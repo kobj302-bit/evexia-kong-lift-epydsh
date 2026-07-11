@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
-  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity, KeyboardAvoidingView,
+  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity, KeyboardAvoidingView, Easing,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -141,6 +141,52 @@ function getNextMilestone(prWeight: number): number {
   return milestones.find(m => m > prWeight) || Math.ceil((prWeight + 20) / 5) * 5;
 }
 
+// Kong Rank system based on average strength tier
+const KONG_RANKS = [
+  { name: 'Iron Kong',     color: '#808080', minScore: 0   },
+  { name: 'Bronze Kong',   color: '#CD7F32', minScore: 1   },
+  { name: 'Silver Kong',   color: '#C0C0C0', minScore: 2   },
+  { name: 'Gold Kong',     color: '#D4A017', minScore: 3   },
+  { name: 'Platinum Kong', color: '#E5E4E2', minScore: 4   },
+  { name: 'Diamond Kong',  color: '#4A90D9', minScore: 5   },
+  { name: 'Kong Elite',    color: '#E84040', minScore: 6   },
+];
+
+function getTierScore(tier: string): number {
+  switch (tier) {
+    case 'Beginner':     return 0;
+    case 'Intermediate': return 1;
+    case 'Advanced':     return 2;
+    case 'Elite':        return 3;
+    default:             return 0;
+  }
+}
+
+function getKongRank(prs: PR[], bodyweight: number): { rank: typeof KONG_RANKS[0]; score: number; nextRank: typeof KONG_RANKS[0] | null; progress: number } {
+  if (prs.length === 0) return { rank: KONG_RANKS[0], score: 0, nextRank: KONG_RANKS[1], progress: 0 };
+  const scores = prs.map((pr) => {
+    const tier = getStrengthTier(epley1RM(pr.weight, 1), bodyweight, pr.lift);
+    return getTierScore(tier.label);
+  });
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const rankIdx = Math.min(Math.floor(avg * 2), KONG_RANKS.length - 1);
+  const rank = KONG_RANKS[rankIdx];
+  const nextRank = rankIdx < KONG_RANKS.length - 1 ? KONG_RANKS[rankIdx + 1] : null;
+  const progress = avg * 2 - Math.floor(avg * 2);
+  return { rank, score: avg, nextRank, progress };
+}
+
+function getStreakMotivation(streak: number): string {
+  if (streak >= 100) return 'LEGENDARY. You are unstoppable. 🏆';
+  if (streak >= 60)  return 'Two months of fire. Kong bows to you. 👑';
+  if (streak >= 30)  return 'A full month of consistency. Elite tier. 🔥';
+  if (streak >= 14)  return 'Two weeks strong. The habit is forming. 💪';
+  if (streak >= 7)   return 'One week down. You\'re building something real. ⚡';
+  if (streak >= 3)   return 'Three days in a row. Momentum is building. 🔥';
+  if (streak >= 2)   return 'Back to back. Keep the chain alive. 💪';
+  return 'First step taken. The journey begins. 🦍';
+}
+
 // Check if it's a new week (Monday) since lastShieldRefill
 function isNewWeekSinceRefill(lastRefill: string | null): boolean {
   const now = new Date();
@@ -175,6 +221,21 @@ export default function TrackerTab() {
   const [showMaxModal, setShowMaxModal] = useState(false);
   const [maxInputs, setMaxInputs] = useState<Record<string, string>>({});
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+
+  // Streak fire celebration modal state
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [pendingWorkoutData, setPendingWorkoutData] = useState<any>(null);
+  const [streakModalStreak, setStreakModalStreak] = useState(0);
+  const [streakModalXP, setStreakModalXP] = useState(0);
+  const [streakModalIsNewPR, setStreakModalIsNewPR] = useState(false);
+  const fireScaleAnim = useRef(new Animated.Value(0)).current;
+  const xpCountAnim = useRef(new Animated.Value(0)).current;
+  const [xpCountDisplay, setXpCountDisplay] = useState(0);
+
+  // Goal progress ring modal
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<any>(null);
+  const [goalEditValue, setGoalEditValue] = useState('');
 
   const MAX_LIFTS = [
     'Bench Press', 'Overhead Press', 'Squat', 'Deadlift',
@@ -295,7 +356,6 @@ export default function TrackerTab() {
       if (lastStr === yesterdayStr || lastStr === todayIso) {
         newStreak = lastStr === todayIso ? state.streak : state.streak + 1;
       } else {
-        // Missed a day — check for streak shield
         if (isSubscribed && state.streakShields > 0 && lastStr !== todayIso) {
           console.log('[Tracker] Streak shield activated! Protecting streak:', state.streak);
           newStreak = state.streak + 1;
@@ -349,6 +409,48 @@ export default function TrackerTab() {
       stateUpdate.streakShields = state.streakShields - 1;
     }
 
+    // Store pending data and show streak celebration modal
+    setPendingWorkoutData({ stateUpdate, xpEarned, shieldUsed, prNames });
+    setStreakModalStreak(newStreak);
+    setStreakModalXP(xpEarned);
+    setStreakModalIsNewPR(prNames.length > 0);
+    setXpCountDisplay(0);
+    xpCountAnim.setValue(0);
+    fireScaleAnim.setValue(0);
+
+    console.log('[Tracker] Showing streak celebration modal — streak:', newStreak, 'xp:', xpEarned);
+    setShowStreakModal(true);
+
+    // Animate fire emoji entrance
+    Animated.spring(fireScaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+
+    // Animate XP counter
+    Animated.timing(xpCountAnim, {
+      toValue: xpEarned,
+      duration: 1200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    xpCountAnim.addListener(({ value }) => {
+      setXpCountDisplay(Math.round(value));
+    });
+  };
+
+  const claimXP = () => {
+    if (!pendingWorkoutData) return;
+    const { stateUpdate, xpEarned, shieldUsed, prNames } = pendingWorkoutData;
+    console.log('[Tracker] Claim XP pressed — saving workout data');
+
+    xpCountAnim.removeAllListeners();
+    setShowStreakModal(false);
+    setPendingWorkoutData(null);
+
     updateState(stateUpdate);
     addXP(xpEarned);
 
@@ -357,15 +459,14 @@ export default function TrackerTab() {
     }
 
     if (isSubscribed) {
-      // Get coaching message before history is updated (pass current history)
-      const msg = getCoachingMessage(state.history, session, newStreak, state.totalWorkouts);
+      const msg = getCoachingMessage(state.history, session, streakModalStreak, state.totalWorkouts);
       console.log('[Tracker] Pro celebration — coaching message:', msg);
       setCelebrationMsg(msg);
       setCelebrationXP(xpEarned);
       setShowProCelebration(true);
     } else {
       if (prNames.length > 0) {
-        prNames.forEach((name) => triggerPR(name));
+        prNames.forEach((name: string) => triggerPR(name));
       } else {
         showToast(`💪 Workout done! +${xpEarned} XP`, true);
       }
@@ -556,6 +657,16 @@ export default function TrackerTab() {
             )}
           </View>
           <View style={styles.sessionHeaderBtns}>
+            {/* Rep Counter button */}
+            <AnimatedPressable
+              onPress={() => {
+                console.log('[Tracker] Rep Counter button pressed');
+                router.push('/camera-counter' as any);
+              }}
+              style={styles.routinesBtn}
+            >
+              <Text style={styles.routinesBtnText}>🎯 Reps</Text>
+            </AnimatedPressable>
             {/* My Routines button */}
             <AnimatedPressable
               onPress={() => {
@@ -758,6 +869,88 @@ export default function TrackerTab() {
 
         {isSubscribed ? (
           <View style={styles.analyticsContent}>
+            {/* KONG RANK Banner */}
+            {(() => {
+              const kongRankData = getKongRank(state.prs, state.profile.weight);
+              const rankProgressPct = Math.round(kongRankData.progress * 100);
+              return (
+                <View style={[styles.kongRankBanner, { borderColor: `${kongRankData.rank.color}50` }]}>
+                  <View style={styles.kongRankHeader}>
+                    <Text style={styles.kongRankLabel}>KONG RANK</Text>
+                    <View style={[styles.kongRankBadge, { backgroundColor: `${kongRankData.rank.color}20`, borderColor: `${kongRankData.rank.color}60` }]}>
+                      <Text style={[styles.kongRankName, { color: kongRankData.rank.color }]}>{kongRankData.rank.name}</Text>
+                    </View>
+                  </View>
+                  {kongRankData.nextRank && (
+                    <>
+                      <View style={styles.kongRankProgressBar}>
+                        <View style={[styles.kongRankProgressFill, { width: `${rankProgressPct}%` as any, backgroundColor: kongRankData.rank.color }]} />
+                      </View>
+                      <Text style={styles.kongRankNextLabel}>
+                        {'Next: '}
+                        {kongRankData.nextRank.name}
+                        {' — improve your lift tiers to rank up'}
+                      </Text>
+                    </>
+                  )}
+                  {!kongRankData.nextRank && (
+                    <Text style={[styles.kongRankNextLabel, { color: kongRankData.rank.color }]}>Maximum rank achieved. You are Kong Elite. 👑</Text>
+                  )}
+                </View>
+              );
+            })()}
+
+            {/* Goal Progress Rings */}
+            {state.goals.length > 0 && (
+              <View style={styles.goalRingsSection}>
+                <Text style={styles.analyticsSectionLabel}>GOAL PROGRESS</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.goalRingsScroll}>
+                  {state.goals.map((goal) => {
+                    const pct = goal.target > 0 ? Math.min(goal.current / goal.target, 1) : 0;
+                    const pctDisplay = Math.round(pct * 100);
+                    const ringColor = goal.achieved ? COLORS.gold : COLORS.blue;
+                    return (
+                      <TouchableOpacity
+                        key={goal.id}
+                        style={styles.goalRing}
+                        onPress={() => {
+                          console.log('[Tracker] Goal ring tapped:', goal.name);
+                          setEditingGoal(goal);
+                          setGoalEditValue(String(goal.current));
+                          setShowGoalModal(true);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        {/* Ring visual */}
+                        <View style={[styles.ringOuter, { borderColor: `${ringColor}30` }]}>
+                          <View style={[styles.ringFill, {
+                            borderColor: ringColor,
+                            borderTopColor: pct > 0.25 ? ringColor : 'transparent',
+                            borderRightColor: pct > 0.5 ? ringColor : 'transparent',
+                            borderBottomColor: pct > 0.75 ? ringColor : 'transparent',
+                          }]} />
+                          <View style={styles.ringInner}>
+                            <Text style={[styles.ringPct, { color: ringColor }]}>
+                              {pctDisplay}
+                              {'%'}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={styles.ringName} numberOfLines={2}>{goal.name}</Text>
+                        <Text style={styles.ringValues}>
+                          {goal.current}
+                          {'/'}
+                          {goal.target}
+                          {' '}
+                          {goal.unit}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
             {/* Max test protocol banner */}
             {!state.maxTestComplete && (
               <TouchableOpacity
@@ -827,7 +1020,7 @@ export default function TrackerTab() {
               <View style={styles.weightRecCard}>
                 <Text style={styles.weightRecTitle}>💡 Recommended Working Weights</Text>
                 <View style={styles.disclaimerBanner}>
-                  <Text style={styles.disclaimerText}>⚠️ These suggestions are AI-generated based on your logged maxes and standard percentage tables. Always use weight you can lift safely with good form. When in doubt, go lighter.</Text>
+                  <Text style={styles.disclaimerText}>⚠️ Weight suggestions are AI-generated estimates. Always use weight you can safely lift with proper form. Consult a trainer before attempting new maxes.</Text>
                 </View>
                 {Object.entries(state.userMaxes).map(([lift, maxVal]) => {
                   const est1RM = epley1RM(maxVal, 1);
@@ -1196,6 +1389,118 @@ export default function TrackerTab() {
               <Text style={styles.celebrationBtnText}>Let's Go! 🦍</Text>
             </AnimatedPressable>
           </View>
+        </View>
+      </Modal>
+
+      {/* Streak Fire Celebration Modal */}
+      <Modal
+        visible={showStreakModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {}}
+      >
+        <View style={styles.streakBackdrop}>
+          <View style={styles.streakCard}>
+            {/* New PR badge */}
+            {streakModalIsNewPR && (
+              <View style={styles.newPRBadge}>
+                <Text style={styles.newPRBadgeText}>💪 NEW PR!</Text>
+              </View>
+            )}
+
+            {/* Fire emoji */}
+            <Animated.Text style={[styles.streakFireEmoji, { transform: [{ scale: fireScaleAnim }] }]}>
+              🔥
+            </Animated.Text>
+
+            {/* Streak number */}
+            <Text style={styles.streakNumber}>
+              {streakModalStreak}
+              {' Day Streak!'}
+            </Text>
+
+            {/* Motivation message */}
+            <Text style={styles.streakMotivation}>{getStreakMotivation(streakModalStreak)}</Text>
+
+            {/* XP counter */}
+            <View style={styles.streakXPRow}>
+              <Text style={styles.streakXPLabel}>XP Earned</Text>
+              <Text style={styles.streakXPValue}>
+                {'+'}
+                {xpCountDisplay}
+                {' ⚡'}
+              </Text>
+            </View>
+
+            {/* Claim button */}
+            <AnimatedPressable onPress={claimXP} style={styles.claimXPBtn}>
+              <Text style={styles.claimXPBtnText}>CLAIM XP 🦍</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Goal Progress Edit Modal */}
+      <Modal
+        visible={showGoalModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowGoalModal(false)}
+      >
+        <View style={styles.goalModalContainer}>
+          <View style={styles.goalModalHeader}>
+            <Text style={styles.goalModalTitle}>Update Goal Progress</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('[Tracker] Close goal modal');
+                setShowGoalModal(false);
+              }}
+              style={styles.modalClose}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          {editingGoal && (
+            <View style={styles.goalModalContent}>
+              <Text style={styles.goalModalName}>{editingGoal.name}</Text>
+              <Text style={styles.goalModalSub}>
+                {'Target: '}
+                {editingGoal.target}
+                {' '}
+                {editingGoal.unit}
+              </Text>
+              <View style={styles.goalModalInputRow}>
+                <Text style={styles.goalModalInputLabel}>Current Value</Text>
+                <TextInput
+                  style={styles.goalModalInput}
+                  value={goalEditValue}
+                  onChangeText={setGoalEditValue}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={COLORS.textTertiary}
+                />
+                <Text style={styles.goalModalUnit}>{editingGoal.unit}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.goalModalSaveBtn}
+                onPress={() => {
+                  const newVal = parseFloat(goalEditValue) || 0;
+                  console.log('[Tracker] Goal updated:', editingGoal.name, '->', newVal);
+                  const newGoals = state.goals.map((g) =>
+                    g.id === editingGoal.id
+                      ? { ...g, current: newVal, achieved: newVal >= g.target }
+                      : g
+                  );
+                  updateState({ goals: newGoals });
+                  setShowGoalModal(false);
+                  showToast(`✅ Goal updated: ${editingGoal.name}`, true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.goalModalSaveBtnText}>Save Progress</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </Modal>
     </ScrollView>
@@ -1850,4 +2155,166 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   celebrationBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
+
+  // Kong Rank Banner
+  kongRankBanner: {
+    backgroundColor: COLORS.surface2,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 8,
+    marginBottom: 12,
+  },
+  kongRankHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  kongRankLabel: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary, letterSpacing: 1.5, textTransform: 'uppercase' },
+  kongRankBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  kongRankName: { fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
+  kongRankProgressBar: {
+    height: 6,
+    backgroundColor: COLORS.surface,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  kongRankProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  kongRankNextLabel: { fontSize: 11, color: COLORS.textSecondary, lineHeight: 16 },
+
+  // Goal Progress Rings
+  goalRingsSection: { marginBottom: 12 },
+  goalRingsScroll: { marginHorizontal: -4 },
+  goalRing: {
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 8,
+    width: 80,
+  },
+  ringOuter: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  ringFill: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 4,
+  },
+  ringInner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringPct: { fontSize: 12, fontWeight: '900' },
+  ringName: { fontSize: 11, fontWeight: '700', color: COLORS.text, textAlign: 'center', lineHeight: 14 },
+  ringValues: { fontSize: 10, color: COLORS.textSecondary, textAlign: 'center' },
+
+  // Streak Fire Modal
+  streakBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  streakCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border2,
+    width: '100%',
+    maxWidth: 360,
+  },
+  newPRBadge: {
+    backgroundColor: `${COLORS.red}20`,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: COLORS.red,
+  },
+  newPRBadgeText: { fontSize: 13, fontWeight: '900', color: COLORS.red, letterSpacing: 1 },
+  streakFireEmoji: { fontSize: 72, lineHeight: 80 },
+  streakNumber: { fontSize: 28, fontWeight: '900', color: COLORS.gold, textAlign: 'center' },
+  streakMotivation: { fontSize: 14, color: COLORS.text, textAlign: 'center', lineHeight: 22, fontStyle: 'italic' },
+  streakXPRow: {
+    backgroundColor: COLORS.goldMuted,
+    borderRadius: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border2,
+    width: '100%',
+  },
+  streakXPLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1, textTransform: 'uppercase' },
+  streakXPValue: { fontSize: 32, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
+  claimXPBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 4,
+  },
+  claimXPBtnText: { fontSize: 17, fontWeight: '900', color: '#0A0A0A', letterSpacing: 1 },
+
+  // Goal Modal
+  goalModalContainer: { flex: 1, backgroundColor: COLORS.bg },
+  goalModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  goalModalTitle: { fontSize: 18, fontWeight: '900', color: COLORS.text },
+  goalModalContent: { padding: 20, gap: 16 },
+  goalModalName: { fontSize: 20, fontWeight: '900', color: COLORS.gold },
+  goalModalSub: { fontSize: 14, color: COLORS.textSecondary },
+  goalModalInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  goalModalInputLabel: { flex: 1, fontSize: 14, fontWeight: '700', color: COLORS.text },
+  goalModalInput: {
+    width: 80,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 18,
+    color: COLORS.text,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  goalModalUnit: { fontSize: 14, color: COLORS.textSecondary, width: 40 },
+  goalModalSaveBtn: {
+    backgroundColor: COLORS.gold,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  goalModalSaveBtnText: { fontSize: 16, fontWeight: '900', color: '#0A0A0A' },
 });
