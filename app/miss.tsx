@@ -98,6 +98,7 @@ export default function MissScreen() {
 
     const timer = setTimeout(() => shake.start(), 800);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleImBack = () => {

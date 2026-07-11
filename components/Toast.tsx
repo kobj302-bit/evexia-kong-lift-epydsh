@@ -26,6 +26,7 @@ export function Toast({ visible, message, isGold = false }: ToastProps) {
         Animated.timing(translateY, { toValue: 20, duration: 200, useNativeDriver: true }),
       ]).start();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const bottomOffset = insets.bottom + 90;

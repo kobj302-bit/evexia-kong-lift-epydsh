@@ -67,6 +67,7 @@ export default function SettingsScreen() {
     return () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRedeem = async () => {

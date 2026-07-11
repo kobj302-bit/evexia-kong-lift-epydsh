@@ -21,7 +21,7 @@ import { useApp } from '@/contexts/AppContext';
 import { KongMascot } from '@/components/KongMascot';
 import { COLORS } from '@/constants/data';
 
-const EXCLUDED_ROUTES = ['/paywall', '/settings', '/survey', '/splash', '/miss', '/onboarding', '/index'];
+const EXCLUDED_ROUTES = ['/paywall', '/settings', '/survey', '/splash', '/miss', '/onboarding', '/index', '/camera-counter'];
 
 function getTodayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +51,7 @@ export function FocusLockOverlay() {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.8);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldShow]);
 
   const handleSkipToday = () => {

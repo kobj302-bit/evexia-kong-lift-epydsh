@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput,
-  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity, KeyboardAvoidingView, Easing,
+  Animated, LayoutAnimation, Platform, Modal, TouchableOpacity, KeyboardAvoidingView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -229,7 +229,6 @@ export default function TrackerTab() {
   const [streakModalXP, setStreakModalXP] = useState(0);
   const [streakModalIsNewPR, setStreakModalIsNewPR] = useState(false);
   const fireScaleAnim = useRef(new Animated.Value(0)).current;
-  const xpCountAnim = useRef(new Animated.Value(0)).current;
   const [xpCountDisplay, setXpCountDisplay] = useState(0);
 
   // Goal progress ring modal
@@ -415,7 +414,6 @@ export default function TrackerTab() {
     setStreakModalXP(xpEarned);
     setStreakModalIsNewPR(prNames.length > 0);
     setXpCountDisplay(0);
-    xpCountAnim.setValue(0);
     fireScaleAnim.setValue(0);
 
     console.log('[Tracker] Showing streak celebration modal — streak:', newStreak, 'xp:', xpEarned);
@@ -429,17 +427,14 @@ export default function TrackerTab() {
       useNativeDriver: true,
     }).start();
 
-    // Animate XP counter
-    Animated.timing(xpCountAnim, {
-      toValue: xpEarned,
-      duration: 1200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    xpCountAnim.addListener(({ value }) => {
-      setXpCountDisplay(Math.round(value));
-    });
+    // Count-up XP display using setInterval for reliable JS-driven animation
+    const step = Math.max(1, Math.ceil(xpEarned / 30));
+    let current = 0;
+    const interval = setInterval(() => {
+      current = Math.min(current + step, xpEarned);
+      setXpCountDisplay(current);
+      if (current >= xpEarned) clearInterval(interval);
+    }, 50);
   };
 
   const claimXP = () => {
@@ -447,7 +442,6 @@ export default function TrackerTab() {
     const { stateUpdate, xpEarned, shieldUsed, prNames } = pendingWorkoutData;
     console.log('[Tracker] Claim XP pressed — saving workout data');
 
-    xpCountAnim.removeAllListeners();
     setShowStreakModal(false);
     setPendingWorkoutData(null);
 
@@ -870,7 +864,7 @@ export default function TrackerTab() {
         {isSubscribed ? (
           <View style={styles.analyticsContent}>
             {/* KONG RANK Banner */}
-            {(() => {
+            {state.prs && state.prs.length > 0 && state.profile?.weight ? (() => {
               const kongRankData = getKongRank(state.prs, state.profile.weight);
               const rankProgressPct = Math.round(kongRankData.progress * 100);
               return (
@@ -898,10 +892,12 @@ export default function TrackerTab() {
                   )}
                 </View>
               );
-            })()}
+            })() : null}
 
             {/* Goal Progress Rings */}
-            {state.goals.length > 0 && (
+            {(!state.goals || state.goals.length === 0) ? (
+              <Text style={styles.emptyGoalsText}>No goals set yet</Text>
+            ) : (
               <View style={styles.goalRingsSection}>
                 <Text style={styles.analyticsSectionLabel}>GOAL PROGRESS</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.goalRingsScroll}>
@@ -1780,6 +1776,7 @@ const styles = StyleSheet.create({
   proLockText: { fontSize: 12, fontWeight: '700', color: COLORS.gold },
   analyticsContent: { gap: 12 },
   analyticsEmpty: { fontSize: 13, color: COLORS.textTertiary, textAlign: 'center', paddingVertical: 12 },
+  emptyGoalsText: { color: COLORS.textSecondary, fontSize: 13, fontStyle: 'italic', paddingVertical: 8 },
   analyticsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',

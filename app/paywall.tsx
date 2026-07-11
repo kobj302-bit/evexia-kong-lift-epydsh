@@ -148,7 +148,7 @@ export default function PaywallScreen() {
     ) ?? activePackages[0] ?? null;
 
     const pkgToUse =
-      selectedPlan === 'yearly' ? yearlyPkg : selectedPackage;
+      selectedPlan === 'yearly' ? (yearlyPkg ?? null) : selectedPackage;
 
     console.log("[Paywall] Purchase button pressed", {
       plan: selectedPlan,
@@ -156,19 +156,19 @@ export default function PaywallScreen() {
       price: pkgToUse?.product.priceString ?? 'N/A',
     });
 
-    if (!pkgToUse && !isWeb) {
-      // No RC package available (Expo Go / RC not configured)
-      if (__DEV__) {
-        console.log("[Paywall] No RC package — using mock native purchase (dev)");
-        await mockNativePurchase();
-        router.replace('/(tabs)/home');
-      } else {
-        Alert.alert('Not Available', 'Purchases are not available in this build.');
+    if (!pkgToUse) {
+      // No RC package available (Expo Go / RC not configured, or yearly pkg missing)
+      if (!isWeb) {
+        if (__DEV__) {
+          console.log("[Paywall] No RC package — using mock native purchase (dev)");
+          await mockNativePurchase();
+          router.replace('/(tabs)/home');
+        } else {
+          Alert.alert('Not Available', 'Purchases are not available in this build.');
+        }
       }
       return;
     }
-
-    if (!pkgToUse) return;
 
     try {
       setPurchasing(true);

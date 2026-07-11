@@ -6,7 +6,7 @@
  * When the target rep count is reached, marks the focus challenge as complete.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,15 +23,18 @@ import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 import { scheduleFocusChallengeCompleteNotification } from '@/utils/glowupNotifications';
 
-// Lazy imports for native-only modules
+// Native-only modules — resolved at runtime to avoid web crashes
 let CameraView: any = null;
 let Accelerometer: any = null;
 let Haptics: any = null;
 
 if (Platform.OS !== 'web') {
-  try { CameraView = require('expo-camera').CameraView; } catch {}
-  try { Accelerometer = require('expo-sensors').Accelerometer; } catch {}
-  try { Haptics = require('expo-haptics'); } catch {}
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  try { CameraView = require('expo-camera').CameraView; } catch (_) {}
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  try { Accelerometer = require('expo-sensors').Accelerometer; } catch (_) {}
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  try { Haptics = require('expo-haptics'); } catch (_) {}
 }
 
 const EXERCISE_CONFIG: Record<string, { axis: 'x' | 'y' | 'z'; threshold: number; label: string; emoji: string }> = {
@@ -153,6 +156,7 @@ export default function CameraCounterScreen() {
       console.log('[CameraCounter] Stopping accelerometer');
       subscription.remove();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, selectedExercise, config, target]);
 
   // Check for completion
@@ -177,6 +181,7 @@ export default function CameraCounterScreen() {
       updateState({ focusChallengeComplete: getTodayStr() });
       scheduleFocusChallengeCompleteNotification().catch(() => {});
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reps, target, completed]);
 
   const handleToggleActive = () => {

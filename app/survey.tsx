@@ -65,6 +65,7 @@ export default function SurveyScreen() {
     isOnboardingComplete().then((complete) => {
       if (complete) setIsEditing(true);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const progressAnim = useRef(new Animated.Value(1 / TOTAL_STEPS)).current;

@@ -18,6 +18,7 @@ export default function HomeTab() {
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
     updateState({ kongIdx: (state.kongIdx + 1) % KONG_MSGS.length });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rank = getRank(state.xp);

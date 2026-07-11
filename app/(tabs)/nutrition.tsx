@@ -76,6 +76,7 @@ export default function NutritionTab() {
       spinLoop.current?.stop();
       spinAnim.setValue(0);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
