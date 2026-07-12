@@ -517,125 +517,125 @@ export default function PaywallScreen() {
                 )}
               </View>
             )}
+
+            {/* Bottom Actions — inside ScrollView so Android can scroll past them */}
+            <View style={styles.bottomActions}>
+              {/* Web: mock test-store flow that mirrors Expo Go behavior */}
+              {isWeb ? (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      webMockState === "processing" && styles.buttonDisabled,
+                    ]}
+                    onPress={handleWebMockPurchase}
+                    disabled={webMockState === "processing"}
+                  >
+                    {webMockState === "processing" ? (
+                      <ActivityIndicator color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>
+                        {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={handleRestore}
+                    disabled={restoring}
+                  >
+                    {restoring ? (
+                      <ActivityIndicator size="small" color="#A0A0A0" />
+                    ) : (
+                      <Text style={styles.secondaryButtonText}>
+                        Restore Purchases
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.legalText}>
+                    Preview mode — purchases available in the mobile app. By subscribing in the app, you agree to the Terms of Service and acknowledge the Privacy Policy.
+                  </Text>
+                  <View style={styles.legalLinksRow}>
+                    <TouchableOpacity
+                      style={styles.legalLink}
+                      onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
+                      accessibilityRole="link"
+                      accessibilityLabel="Terms of Service"
+                    >
+                      <Text style={styles.legalLinkText}>Terms of Service</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.legalLinkDivider}>|</Text>
+                    <TouchableOpacity
+                      style={styles.legalLink}
+                      onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
+                      accessibilityRole="link"
+                      accessibilityLabel="Privacy Policy"
+                    >
+                      <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  {/* Native: Subscribe Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryButton,
+                      purchasing && styles.buttonDisabled,
+                    ]}
+                    onPress={handlePurchase}
+                    disabled={purchasing}
+                  >
+                    {purchasing ? (
+                      <ActivityIndicator color="#0A0A0A" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>
+                        {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Restore Button */}
+                  <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={handleRestore}
+                    disabled={restoring}
+                  >
+                    {restoring ? (
+                      <ActivityIndicator size="small" color="#A0A0A0" />
+                    ) : (
+                      <Text style={styles.secondaryButtonText}>Restore Purchases</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Legal Text - Required by Apple Guideline 3.1.2 */}
+                  <Text style={styles.legalText}>
+                    Payment will be charged to your{" "}
+                    {Platform.OS === "ios" ? "Apple ID" : "Google Play"} account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your account settings on the App Store after purchase.
+                  </Text>
+                  <View style={styles.legalLinksRow}>
+                    <TouchableOpacity
+                      style={styles.legalLink}
+                      onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
+                      accessibilityRole="link"
+                      accessibilityLabel="Terms of Service"
+                    >
+                      <Text style={styles.legalLinkText}>Terms of Service</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.legalLinkDivider}>|</Text>
+                    <TouchableOpacity
+                      style={styles.legalLink}
+                      onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
+                      accessibilityRole="link"
+                      accessibilityLabel="Privacy Policy"
+                    >
+                      <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
           </ScrollView>
-
-          {/* Bottom Actions */}
-          <View style={styles.bottomActions}>
-            {/* Web: mock test-store flow that mirrors Expo Go behavior */}
-            {isWeb ? (
-              <>
-                <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    webMockState === "processing" && styles.buttonDisabled,
-                  ]}
-                  onPress={handleWebMockPurchase}
-                  disabled={webMockState === "processing"}
-                >
-                  {webMockState === "processing" ? (
-                    <ActivityIndicator color="#0A0A0A" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>
-                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={handleRestore}
-                  disabled={restoring}
-                >
-                  {restoring ? (
-                    <ActivityIndicator size="small" color="#A0A0A0" />
-                  ) : (
-                    <Text style={styles.secondaryButtonText}>
-                      Restore Purchases
-                    </Text>
-                  )}
-                </TouchableOpacity>
-                <Text style={styles.legalText}>
-                  Preview mode — purchases available in the mobile app. By subscribing in the app, you agree to the Terms of Service and acknowledge the Privacy Policy.
-                </Text>
-                <View style={styles.legalLinksRow}>
-                  <TouchableOpacity
-                    style={styles.legalLink}
-                    onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
-                    accessibilityRole="link"
-                    accessibilityLabel="Terms of Service"
-                  >
-                    <Text style={styles.legalLinkText}>Terms of Service</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.legalLinkDivider}>|</Text>
-                  <TouchableOpacity
-                    style={styles.legalLink}
-                    onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
-                    accessibilityRole="link"
-                    accessibilityLabel="Privacy Policy"
-                  >
-                    <Text style={styles.legalLinkText}>Privacy Policy</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <>
-                {/* Native: Subscribe Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    purchasing && styles.buttonDisabled,
-                  ]}
-                  onPress={handlePurchase}
-                  disabled={purchasing}
-                >
-                  {purchasing ? (
-                    <ActivityIndicator color="#0A0A0A" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>
-                      {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                {/* Restore Button */}
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={handleRestore}
-                  disabled={restoring}
-                >
-                  {restoring ? (
-                    <ActivityIndicator size="small" color="#A0A0A0" />
-                  ) : (
-                    <Text style={styles.secondaryButtonText}>Restore Purchases</Text>
-                  )}
-                </TouchableOpacity>
-
-                {/* Legal Text - Required by Apple Guideline 3.1.2 */}
-                <Text style={styles.legalText}>
-                  Payment will be charged to your{" "}
-                  {Platform.OS === "ios" ? "Apple ID" : "Google Play"} account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your account settings on the App Store after purchase.
-                </Text>
-                <View style={styles.legalLinksRow}>
-                  <TouchableOpacity
-                    style={styles.legalLink}
-                    onPress={() => handleOpenLegalUrl(TERMS_OF_SERVICE_URL, "Terms of Service")}
-                    accessibilityRole="link"
-                    accessibilityLabel="Terms of Service"
-                  >
-                    <Text style={styles.legalLinkText}>Terms of Service</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.legalLinkDivider}>|</Text>
-                  <TouchableOpacity
-                    style={styles.legalLink}
-                    onPress={() => handleOpenLegalUrl(PRIVACY_POLICY_URL, "Privacy Policy")}
-                    accessibilityRole="link"
-                    accessibilityLabel="Privacy Policy"
-                  >
-                    <Text style={styles.legalLinkText}>Privacy Policy</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
         </SafeAreaView>
       </View>
 
@@ -745,6 +745,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 24,
     paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
@@ -909,11 +910,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   bottomActions: {
-    padding: 24,
-    paddingBottom: 32,
+    paddingTop: 24,
     gap: 12,
     width: "100%",
-    backgroundColor: "#0A0A0A",
   },
   primaryButton: {
     backgroundColor: "#D4A017",
