@@ -18,7 +18,7 @@ import {
   Linking,
   Dimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { PurchasesPackage } from "react-native-purchases";
 
@@ -105,6 +105,7 @@ const colors = {
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // Get subscription state and methods from context
   const {
@@ -268,7 +269,7 @@ export default function PaywallScreen() {
         <View style={styles.subscribedGradient}>
           <SafeAreaView edges={["top", "bottom"]} style={styles.subscribedSafeArea}>
             {/* Close button */}
-            <TouchableOpacity style={styles.subscribedCloseButton} onPress={handleClose}>
+            <TouchableOpacity style={[styles.subscribedCloseButton, { top: insets.top + 8 }]} onPress={handleClose}>
               <Text style={styles.subscribedCloseText}>✕</Text>
             </TouchableOpacity>
 
@@ -346,7 +347,7 @@ export default function PaywallScreen() {
         <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
           {/* X Close Button */}
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[styles.closeButton, { top: insets.top + 8 }]}
             onPress={() => {
               console.log("[Paywall] X close button pressed");
               if (router.canGoBack()) {
@@ -954,7 +955,6 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 16,
     right: 16,
     zIndex: 999,
     width: 32,
@@ -1066,7 +1066,6 @@ const styles = StyleSheet.create({
   },
   subscribedCloseButton: {
     position: "absolute",
-    top: 16,
     right: 20,
     zIndex: 10,
     width: 36,
