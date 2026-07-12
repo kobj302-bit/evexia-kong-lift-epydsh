@@ -82,7 +82,7 @@ export default function RootLayout() {
   return (
     <SubscriptionProvider>
       <DevErrorBoundary>
-        <StatusBar style="light" animated />
+        <StatusBar style="light" animated translucent={false} backgroundColor="#0A0A0A" />
         <ThemeProvider value={KongDarkTheme}>
           <SafeAreaProvider>
             <AppProvider>
@@ -136,7 +136,7 @@ export default function RootLayout() {
                   />
                 </Stack>
                 <FocusLockOverlay />
-                <SystemBars style="light" />
+                <SystemBars style="light" hidden={false} />
               </GestureHandlerRootView>
             </AppProvider>
           </SafeAreaProvider>

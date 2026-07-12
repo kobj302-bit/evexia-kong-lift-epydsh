@@ -26,7 +26,8 @@
         "backgroundColor": "#1A2814"
       },
       "package": "com.evexia.konglift",
-      "versionCode": 7
+      "versionCode": 7,
+      "statusBarTranslucent": false
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",

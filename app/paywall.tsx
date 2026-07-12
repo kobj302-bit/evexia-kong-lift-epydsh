@@ -330,7 +330,7 @@ export default function PaywallScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.gradientBackground}>
-          <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+          <SafeAreaView edges={[]} style={styles.safeArea}>
             <View style={styles.centeredContainer}>
               <ActivityIndicator size="large" color="#D4A017" />
               <Text style={styles.loadingText}>Loading...</Text>
@@ -364,6 +364,8 @@ export default function PaywallScreen() {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            bounces={false}
+            alwaysBounceVertical={false}
           >
             {/* Header */}
             <View style={styles.header}>
@@ -746,7 +748,7 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 60,
     paddingBottom: 40,
-  },
+  } as const,
   header: {
     alignItems: "center",
     marginBottom: 24,
