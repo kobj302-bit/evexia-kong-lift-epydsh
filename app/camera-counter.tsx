@@ -1,8 +1,8 @@
 /**
- * Camera Counter Screen
+ * Rep Counter Screen
  *
- * Uses the device camera for visual feedback and the accelerometer to detect
- * repetitive motion patterns (push-ups, sit-ups, squats, pull-ups).
+ * Uses the device accelerometer to detect repetitive motion patterns
+ * (push-ups, sit-ups, squats, pull-ups) and count reps.
  * When the target rep count is reached, marks the focus challenge as complete.
  */
 
@@ -24,24 +24,51 @@ import { COLORS } from '@/constants/data';
 import { scheduleFocusChallengeCompleteNotification } from '@/utils/glowupNotifications';
 
 // Native-only modules — resolved at runtime to avoid web crashes
-let CameraView: any = null;
 let Accelerometer: any = null;
 let Haptics: any = null;
 
 if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  try { CameraView = require('expo-camera').CameraView; } catch (_) {}
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   try { Accelerometer = require('expo-sensors').Accelerometer; } catch (_) {}
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   try { Haptics = require('expo-haptics'); } catch (_) {}
 }
 
-const EXERCISE_CONFIG: Record<string, { axis: 'x' | 'y' | 'z'; threshold: number; label: string; emoji: string }> = {
-  'Push-Ups':  { axis: 'z', threshold: 1.15, label: 'Push-Ups',  emoji: '💪' },
-  'Sit-Ups':   { axis: 'y', threshold: 1.10, label: 'Sit-Ups',   emoji: '🔥' },
-  'Squats':    { axis: 'y', threshold: 1.20, label: 'Squats',    emoji: '🦵' },
-  'Pull-Ups':  { axis: 'z', threshold: 1.15, label: 'Pull-Ups',  emoji: '🏋️' },
+const EXERCISE_CONFIG: Record<string, {
+  axis: 'x' | 'y' | 'z';
+  threshold: number;
+  label: string;
+  emoji: string;
+  placement: string;
+}> = {
+  'Push-Ups': {
+    axis: 'z',
+    threshold: 1.15,
+    label: 'Push-Ups',
+    emoji: '💪',
+    placement: 'Place phone flat on your upper back or chest',
+  },
+  'Sit-Ups': {
+    axis: 'y',
+    threshold: 1.10,
+    label: 'Sit-Ups',
+    emoji: '🔥',
+    placement: 'Hold phone on your chest with both hands',
+  },
+  'Squats': {
+    axis: 'y',
+    threshold: 1.20,
+    label: 'Squats',
+    emoji: '🦵',
+    placement: 'Hold phone in front of you or place in shirt pocket',
+  },
+  'Pull-Ups': {
+    axis: 'z',
+    threshold: 1.15,
+    label: 'Pull-Ups',
+    emoji: '🏋️',
+    placement: 'Clip phone to waistband or hold in one hand',
+  },
 };
 
 function getTodayStr(): string {
@@ -55,7 +82,6 @@ export default function CameraCounterScreen() {
 
   const [reps, setReps] = useState(0);
   const [isActive, setIsActive] = useState(false);
-  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
   const [selectedExercise, setSelectedExercise] = useState(state.focusChallengeType || 'Push-Ups');
   const [target] = useState(state.focusChallengeTarget || 50);
   const [completed, setCompleted] = useState(false);
@@ -67,6 +93,7 @@ export default function CameraCounterScreen() {
   const repScaleAnim = useRef(new Animated.Value(1)).current;
   const celebrationAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Rep detection state
   const lastPeak = useRef(false);
@@ -75,30 +102,29 @@ export default function CameraCounterScreen() {
 
   const config = EXERCISE_CONFIG[selectedExercise] || EXERCISE_CONFIG['Push-Ups'];
 
-  // Request camera permission
+  // Pulse animation when active
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      setCameraPermission(false);
-      return;
+    if (isActive) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.06, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => { pulse.stop(); };
+    } else {
+      pulseAnim.setValue(1);
+      return undefined;
     }
-    (async () => {
-      try {
-        const { Camera } = await import('expo-camera');
-        const { status } = await Camera.requestCameraPermissionsAsync();
-        console.log('[CameraCounter] Camera permission:', status);
-        setCameraPermission(status === 'granted');
-      } catch (e) {
-        console.log('[CameraCounter] Camera permission error:', e);
-        setCameraPermission(false);
-      }
-    })();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
 
   // Accelerometer subscription
   useEffect(() => {
     if (!isActive || Platform.OS === 'web' || !Accelerometer) return;
 
-    console.log('[CameraCounter] Starting accelerometer for exercise:', selectedExercise);
+    console.log('[RepCounter] Starting accelerometer for exercise:', selectedExercise);
     Accelerometer.setUpdateInterval(50); // 20 Hz
 
     const subscription = Accelerometer.addListener((data: { x: number; y: number; z: number }) => {
@@ -118,7 +144,7 @@ export default function CameraCounterScreen() {
 
         setReps((prev) => {
           const next = prev + 1;
-          console.log('[CameraCounter] Rep detected! Count:', next, '/', target);
+          console.log('[RepCounter] Rep detected! Count:', next, '/', target);
 
           // Haptic feedback
           if (Haptics) {
@@ -153,7 +179,7 @@ export default function CameraCounterScreen() {
     });
 
     return () => {
-      console.log('[CameraCounter] Stopping accelerometer');
+      console.log('[RepCounter] Stopping accelerometer');
       subscription.remove();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,7 +188,7 @@ export default function CameraCounterScreen() {
   // Check for completion
   useEffect(() => {
     if (reps >= target && !completed) {
-      console.log('[CameraCounter] Target reached! Marking challenge complete');
+      console.log('[RepCounter] Target reached! Marking challenge complete');
       setCompleted(true);
       setIsActive(false);
 
@@ -186,12 +212,12 @@ export default function CameraCounterScreen() {
 
   const handleToggleActive = () => {
     const next = !isActive;
-    console.log('[CameraCounter] Toggle active:', next);
+    console.log('[RepCounter] Toggle active:', next);
     setIsActive(next);
   };
 
   const handleManualRep = () => {
-    console.log('[CameraCounter] Manual rep added');
+    console.log('[RepCounter] Manual rep added');
     if (completed) return;
     setReps((prev) => prev + 1);
     Animated.sequence([
@@ -206,13 +232,14 @@ export default function CameraCounterScreen() {
   };
 
   const handleReset = () => {
-    console.log('[CameraCounter] Reset pressed');
+    console.log('[RepCounter] Reset pressed');
     Alert.alert('Reset Counter?', 'This will reset your rep count to 0.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Reset',
         style: 'destructive',
         onPress: () => {
+          console.log('[RepCounter] Counter reset confirmed');
           setReps(0);
           setCompleted(false);
           setIsActive(false);
@@ -224,7 +251,7 @@ export default function CameraCounterScreen() {
   };
 
   const handleDone = () => {
-    console.log('[CameraCounter] Done pressed — navigating back');
+    console.log('[RepCounter] Done pressed — navigating back');
     router.back();
   };
 
@@ -233,11 +260,19 @@ export default function CameraCounterScreen() {
     outputRange: ['0%', '100%'],
   });
 
+  const celebrationScale = celebrationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1],
+  });
+
   const repsDisplay = reps;
   const targetDisplay = target;
   const exerciseLabel = config.label;
   const exerciseEmoji = config.emoji;
+  const placementText = config.placement;
   const progressPct = Math.min(Math.round((reps / target) * 100), 100);
+  const startBtnText = isActive ? '⏸ Pause' : '▶ Start Counting';
+  const thresholdLabel = config.threshold + 'g';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -246,7 +281,7 @@ export default function CameraCounterScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
-            console.log('[CameraCounter] Back button pressed');
+            console.log('[RepCounter] Back button pressed');
             router.back();
           }}
           activeOpacity={0.7}
@@ -279,7 +314,7 @@ export default function CameraCounterScreen() {
               key={ex}
               style={[styles.exChip, isSelected && styles.exChipSelected]}
               onPress={() => {
-                console.log('[CameraCounter] Exercise selected:', ex);
+                console.log('[RepCounter] Exercise selected:', ex);
                 setSelectedExercise(ex);
                 setReps(0);
                 setIsActive(false);
@@ -297,37 +332,18 @@ export default function CameraCounterScreen() {
         })}
       </ScrollView>
 
-      {/* Camera preview */}
-      <View style={styles.cameraContainer}>
-        {cameraPermission && CameraView ? (
-          <CameraView style={styles.camera} facing="front" />
-        ) : (
-          <View style={styles.cameraPlaceholder}>
-            <Text style={styles.cameraPlaceholderEmoji}>📷</Text>
-            <Text style={styles.cameraPlaceholderText}>
-              {Platform.OS === 'web'
-                ? 'Camera not available on web'
-                : cameraPermission === false
-                ? 'Camera permission denied'
-                : 'Loading camera...'}
-            </Text>
-          </View>
-        )}
-
-        {/* Overlay instruction */}
-        {!isActive && !completed && (
-          <View style={styles.cameraOverlay}>
-            <Text style={styles.cameraInstruction}>
-              Position yourself so your full body is visible
-            </Text>
-          </View>
-        )}
-
-        {/* Active indicator */}
+      {/* Exercise hero card */}
+      <View style={styles.heroCard}>
+        <Animated.Text style={[styles.heroEmoji, { transform: [{ scale: pulseAnim }] }]}>
+          {exerciseEmoji}
+        </Animated.Text>
+        <Text style={styles.placementText}>
+          {placementText}
+        </Text>
         {isActive && (
           <View style={styles.activeIndicator}>
             <View style={styles.activeDot} />
-            <Text style={styles.activeText}>DETECTING</Text>
+            <Text style={styles.activeText}>DETECTING MOTION</Text>
           </View>
         )}
       </View>
@@ -362,7 +378,7 @@ export default function CameraCounterScreen() {
 
       {/* Motion graph */}
       <View style={styles.graphContainer}>
-        <Text style={styles.graphLabel}>Motion Signal</Text>
+        <Text style={styles.graphLabel}>MOTION SIGNAL</Text>
         <View style={styles.graph}>
           {motionData.map((v, i) => {
             const barH = Math.min(Math.max(v * 20, 2), 40);
@@ -381,8 +397,7 @@ export default function CameraCounterScreen() {
         </View>
         <Text style={styles.graphThresholdLabel}>
           {'Threshold: '}
-          {config.threshold}
-          {'g'}
+          {thresholdLabel}
         </Text>
       </View>
 
@@ -394,8 +409,8 @@ export default function CameraCounterScreen() {
             onPress={handleToggleActive}
             activeOpacity={0.85}
           >
-            <Text style={styles.startStopBtnText}>
-              {isActive ? '⏸ Pause' : '▶ Start Counting'}
+            <Text style={[styles.startStopBtnText, isActive && styles.stopBtnText]}>
+              {startBtnText}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.resetLink} onPress={handleReset} activeOpacity={0.7}>
@@ -408,7 +423,7 @@ export default function CameraCounterScreen() {
             styles.completionCard,
             {
               opacity: celebrationAnim,
-              transform: [{ scale: celebrationAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              transform: [{ scale: celebrationScale }],
             },
           ]}
         >
@@ -484,35 +499,32 @@ const styles = StyleSheet.create({
   },
   exChipText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
   exChipTextSelected: { color: COLORS.gold },
-  cameraContainer: {
+
+  // Hero card replaces camera
+  heroCard: {
     marginHorizontal: 16,
     marginTop: 12,
-    height: 200,
+    height: 160,
     borderRadius: 16,
-    overflow: 'hidden',
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  camera: { flex: 1 },
-  cameraPlaceholder: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
+    overflow: 'hidden',
   },
-  cameraPlaceholderEmoji: { fontSize: 40 },
-  cameraPlaceholderText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' },
-  cameraOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 10,
-    alignItems: 'center',
+  heroEmoji: {
+    fontSize: 56,
+    lineHeight: 68,
   },
-  cameraInstruction: { fontSize: 12, color: COLORS.text, textAlign: 'center' },
+  placementText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    fontWeight: '600',
+  },
   activeIndicator: {
     position: 'absolute',
     top: 10,
@@ -532,6 +544,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.red,
   },
   activeText: { fontSize: 10, fontWeight: '900', color: COLORS.text, letterSpacing: 1 },
+
   counterSection: {
     alignItems: 'center',
     paddingVertical: 16,
@@ -623,6 +636,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#0A0A0A',
     letterSpacing: 0.5,
+  },
+  stopBtnText: {
+    color: COLORS.text,
   },
   resetLink: { paddingVertical: 6 },
   resetLinkText: { fontSize: 13, color: COLORS.textSecondary, textDecorationLine: 'underline' },
