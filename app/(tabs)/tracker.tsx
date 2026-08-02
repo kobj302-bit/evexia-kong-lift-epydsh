@@ -1632,7 +1632,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   xpMultiplierText: { fontSize: 12, fontWeight: '800', color: COLORS.gold },
-  sessionHeaderBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  sessionHeaderBtns: { flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 },
   routinesBtn: {
     backgroundColor: COLORS.goldMuted,
     borderRadius: 10,
@@ -1642,7 +1642,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border2,
     marginBottom: 8,
   },
-  routinesBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.gold },
+  routinesBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.gold, flexShrink: 1 },
   plateBtn: {
     backgroundColor: COLORS.surface2,
     borderRadius: 10,
@@ -1652,7 +1652,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     marginBottom: 8,
   },
-  plateBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  plateBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary, flexShrink: 1 },
   addExRow: { flexDirection: 'row', gap: 8 },
   exInput: {
     flex: 1,
@@ -1786,7 +1786,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   analyticsLiftInfo: { flex: 1, gap: 2 },
-  analyticsLiftName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  analyticsLiftName: { fontSize: 14, fontWeight: '700', color: COLORS.text, flexShrink: 1 },
   analyticsLiftSub: { fontSize: 12, color: COLORS.gold },
   analyticsLiftDate: { fontSize: 12, color: COLORS.textTertiary },
   volBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 48 },
@@ -1852,6 +1852,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderWidth: 1,
+    flexShrink: 0,
   },
   strengthTierText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   nextMilestoneTxt: { fontSize: 11, color: COLORS.textTertiary, fontStyle: 'italic', marginTop: 1 },

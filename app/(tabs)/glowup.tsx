@@ -1097,7 +1097,7 @@ export default function GlowUpScreen() {
   const missionDone = getHabit(dailyMission.habitId);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <DeadHangModal
         visible={hangModalVisible}
         onClose={() => setHangModalVisible(false)}

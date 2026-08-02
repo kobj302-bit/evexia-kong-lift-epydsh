@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingTabBar from '@/components/FloatingTabBar';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -26,6 +27,7 @@ function AppHeader() {
   const { state } = useApp();
   const { isSubscribed } = useSubscription();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleSettings = () => {
     console.log('[Header] Settings pressed');
@@ -38,7 +40,7 @@ function AppHeader() {
   const headerBorderWidth = proThemeActive ? 1 : 1;
 
   return (
-    <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: headerBorderColor, borderBottomWidth: headerBorderWidth }]}>
+    <View style={[styles.header, { backgroundColor: headerBg, borderBottomColor: headerBorderColor, borderBottomWidth: headerBorderWidth, paddingTop: insets.top + 10, minHeight: 48 + insets.top }]}>
       <View style={styles.headerLeft}>
         <Text style={styles.headerKong}>🦍</Text>
         <Text style={styles.headerTitle}>EVEXIA</Text>
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingBottom: 10,
     borderBottomWidth: 1,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -132,10 +134,10 @@ const styles = StyleSheet.create({
   proBadgeText: { fontSize: 12, fontWeight: '900', color: COLORS.gold },
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   headerProg: { fontSize: 12, color: COLORS.gold, fontWeight: '700', flex: 1 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, maxWidth: '45%' },
   headerStat: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   headerStatText: { fontSize: 13 },
-  headerStatNum: { fontSize: 13, fontWeight: '800', color: COLORS.text, fontVariant: ['tabular-nums'], lineHeight: 18 },
+  headerStatNum: { fontSize: 13, fontWeight: '800', color: COLORS.text, fontVariant: ['tabular-nums'], lineHeight: 18, flexShrink: 1 },
   settingsBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   settingsIcon: { fontSize: 18 },
 });

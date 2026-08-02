@@ -73,7 +73,7 @@ export default function HomeTab() {
         </View>
         {!isSubscribed && (
           <TouchableOpacity style={styles.goPremiumPill} onPress={handleGoPremiumHeader}>
-            <Text style={styles.goPremiumPillText}>👑 Go Premium</Text>
+            <Text style={styles.goPremiumPillText} numberOfLines={1}>👑 Go Premium</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -211,6 +211,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     alignSelf: 'center',
+    flexShrink: 0,
+    maxWidth: 120,
   },
   goPremiumPillText: { fontSize: 12, fontWeight: '800', color: '#0A0A0A' },
   heroTitle: { fontSize: 32, fontWeight: '900', color: COLORS.gold, letterSpacing: 4 },
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  profileLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  profileLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   profileAvatar: { fontSize: 44 },
   profileInfo: { gap: 6 },
   profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -253,7 +255,7 @@ const styles = StyleSheet.create({
   proBadgeText: { fontSize: 11, fontWeight: '900', color: COLORS.gold },
   rankBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, flexDirection: 'row', gap: 4 },
   rankText: { fontSize: 12, fontWeight: '700' },
-  profileRight: { alignItems: 'flex-end' },
+  profileRight: { alignItems: 'flex-end', flexShrink: 0, maxWidth: 90 },
   xpNumber: { fontSize: 28, fontWeight: '900', color: COLORS.gold, fontVariant: ['tabular-nums'] },
   xpLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
   streakBadge: { fontSize: 12, color: COLORS.gold, fontWeight: '700', marginTop: 2 },
