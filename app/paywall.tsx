@@ -124,8 +124,8 @@ export default function PaywallScreen() {
 
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(activePackages[0] || null);
-  // UI-only plan selection for static yearly card
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  // UI-only plan selection for tier cards
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'diet' | 'looks'>('monthly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [webMockState, setWebMockState] = useState<"idle" | "processing">("idle");
@@ -147,8 +147,7 @@ export default function PaywallScreen() {
         p.identifier.toLowerCase().includes('year')
     ) ?? activePackages[0] ?? null;
 
-    const pkgToUse =
-      selectedPlan === 'yearly' ? (yearlyPkg ?? null) : selectedPackage;
+    const pkgToUse = selectedPackage ?? yearlyPkg ?? null;
 
     console.log("[Paywall] Purchase button pressed", {
       plan: selectedPlan,
@@ -375,7 +374,7 @@ export default function PaywallScreen() {
               </View>
               <Text style={styles.title}>Upgrade to Kong Pro</Text>
               <Text style={styles.subtitle}>
-                Kong Pro — $6/month or $60/year
+                Choose your plan below
               </Text>
             </View>
 
@@ -397,101 +396,162 @@ export default function PaywallScreen() {
               ))}
             </View>
 
-            {/* Glow Up Add-On Card */}
-            <View style={styles.glowUpAddonCard}>
-              <View style={styles.glowUpAddonHeader}>
-                <Text style={styles.glowUpAddonIcon}>✨</Text>
-                <View style={styles.glowUpAddonTitleWrap}>
-                  <Text style={styles.glowUpAddonTitle}>Glow Up Add-On</Text>
-                  <Text style={styles.glowUpAddonPrice}>+$3/month or $24/year</Text>
-                </View>
-              </View>
-              <Text style={styles.glowUpAddonDesc}>
-                The most complete natural glow-up system ever built. Appearance, physique, height optimization, posture, skin, fascia, debloat, energy, and daily habits — all gamified with XP.
-              </Text>
-              <Text style={styles.glowUpBundleLine}>
-                Pro + Glow Up Bundle — $9/month or $84/year
-              </Text>
-              <TouchableOpacity
-                style={styles.glowUpAddonBtn}
-                onPress={() => {
-                  console.log("[Paywall] Unlock Glow Up button pressed");
-                  handlePurchase();
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.glowUpAddonBtnText}>Unlock Glow Up →</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Static Plan Cards — always shown */}
+            {/* Tier Plan Cards */}
             <View style={styles.packagesContainer}>
-              {/* Yearly card — BEST VALUE */}
-              <TouchableOpacity
-                style={[
-                  styles.packageCard,
-                  selectedPlan === 'yearly' && styles.packageCardYearlySelected,
-                ]}
-                onPress={() => {
-                  console.log("[Paywall] Yearly plan selected");
-                  setSelectedPlan('yearly');
-                  const yearlyPkg =
-                    activePackages.find(
-                      (p) =>
-                        p.identifier.toLowerCase().includes('annual') ||
-                        p.identifier.toLowerCase().includes('year')
-                    ) ?? activePackages[0] ?? null;
-                  setSelectedPackage(yearlyPkg);
-                }}
-                activeOpacity={0.8}
-              >
-                {selectedPlan === 'yearly' && <View style={styles.selectedIndicatorGold} />}
-                {/* BEST VALUE badge */}
-                <View style={styles.bestValueBadge}>
-                  <Text style={styles.bestValueBadgeText}>BEST VALUE</Text>
-                </View>
-                <View style={styles.packageHeader}>
-                  <Text style={styles.packageTitle}>Kong Pro — Yearly</Text>
-                  {selectedPlan === 'yearly' && (
-                    <View style={styles.checkmarkCircleGold}>
-                      <Text style={styles.checkmark}>✓</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.packagePrice}>$60 / year</Text>
-                <Text style={styles.packageDescription}>Save $24 vs monthly — best value 🏆</Text>
-              </TouchableOpacity>
-
-              {/* Monthly card */}
+              {/* Card 1 — Kong Pro */}
               <TouchableOpacity
                 style={[
                   styles.packageCard,
                   selectedPlan === 'monthly' && styles.packageCardSelected,
                 ]}
                 onPress={() => {
-                  console.log("[Paywall] Monthly plan selected");
+                  console.log("[Paywall] Kong Pro plan selected");
                   setSelectedPlan('monthly');
                   if (activePackages.length > 0) setSelectedPackage(activePackages[0]);
                 }}
                 activeOpacity={0.8}
               >
-                {selectedPlan === 'monthly' && <View style={styles.selectedIndicator} />}
+                {selectedPlan === 'monthly' && <View style={styles.selectedIndicatorGold} />}
                 <View style={styles.packageHeader}>
-                  <Text style={styles.packageTitle}>Kong Pro — Monthly</Text>
+                  <Text style={styles.packageTitle}>Kong Pro</Text>
                   {selectedPlan === 'monthly' && (
-                    <View style={styles.checkmarkCircle}>
+                    <View style={styles.checkmarkCircleGold}>
                       <Text style={styles.checkmark}>✓</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.packagePrice}>$6 / month</Text>
+                <Text style={styles.packagePrice}>$3.99 / month</Text>
+                <View style={styles.tierFeatureList}>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>WODs & Hero Workouts</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>AI Athlete Routines</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Advanced Analytics & 1RM</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Plate Calculator</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>CSV Export</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Unlimited Saved Routines</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Deload Week Mode</Text>
+                  </View>
+                </View>
               </TouchableOpacity>
 
-              {/* RC packages (if loaded) */}
-              {activePackages.length > 0 && activePackages.map((pkg) => {
-                const isSelected = selectedPackage?.identifier === pkg.identifier && selectedPlan === 'monthly';
-                return null; // RC packages are represented by the monthly card above
-              })}
+              {/* Card 2 — Kong Pro + Diet (POPULAR) */}
+              <TouchableOpacity
+                style={[
+                  styles.packageCard,
+                  selectedPlan === 'diet' && styles.packageCardSelected,
+                ]}
+                onPress={() => {
+                  console.log("[Paywall] Kong Pro + Diet plan selected");
+                  setSelectedPlan('diet');
+                  if (activePackages.length > 0) setSelectedPackage(activePackages[0]);
+                }}
+                activeOpacity={0.8}
+              >
+                {selectedPlan === 'diet' && <View style={styles.selectedIndicatorGold} />}
+                <View style={styles.bestValueBadge}>
+                  <Text style={styles.bestValueBadgeText}>POPULAR</Text>
+                </View>
+                <View style={styles.packageHeader}>
+                  <Text style={styles.packageTitle}>Kong Pro + Diet</Text>
+                  {selectedPlan === 'diet' && (
+                    <View style={styles.checkmarkCircleGold}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.packagePrice}>$4.25 / month</Text>
+                <View style={styles.tierFeatureList}>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Everything in Kong Pro</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Diet & Meal Plans (8 styles)</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Nutrition Calculator & TDEE</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>AI Grocery List</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Card 3 — Looks Maxxing (BEST VALUE) */}
+              <TouchableOpacity
+                style={[
+                  styles.packageCard,
+                  selectedPlan === 'looks' && styles.packageCardYearlySelected,
+                ]}
+                onPress={() => {
+                  console.log("[Paywall] Looks Maxxing plan selected");
+                  setSelectedPlan('looks');
+                  if (activePackages.length > 0) setSelectedPackage(activePackages[0]);
+                }}
+                activeOpacity={0.8}
+              >
+                {selectedPlan === 'looks' && <View style={styles.selectedIndicatorGold} />}
+                <View style={styles.bestValueBadge}>
+                  <Text style={styles.bestValueBadgeText}>BEST VALUE</Text>
+                </View>
+                <View style={styles.packageHeader}>
+                  <Text style={styles.packageTitle}>Looks Maxxing</Text>
+                  {selectedPlan === 'looks' && (
+                    <View style={styles.checkmarkCircleGold}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.packagePrice}>$7.00 / month</Text>
+                <View style={styles.tierFeatureList}>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Everything in Pro + Diet</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Glow Up System ✨</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Appearance & Posture</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Skin & Fascia Protocols</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Height Optimization</Text>
+                  </View>
+                  <View style={styles.tierFeatureRow}>
+                    <Text style={styles.tierFeatureBullet}>✓</Text>
+                    <Text style={styles.tierFeatureText}>Daily Habit Gamification</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
             </View>
 
             {/* No packages available - only show on native */}
@@ -537,7 +597,7 @@ export default function PaywallScreen() {
                       <ActivityIndicator color="#0A0A0A" />
                     ) : (
                       <Text style={styles.primaryButtonText}>
-                        {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
+                        {selectedPlan === 'diet' ? 'Subscribe — $4.25/month' : selectedPlan === 'looks' ? 'Subscribe — $7.00/month' : 'Subscribe — $3.99/month'}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -592,7 +652,7 @@ export default function PaywallScreen() {
                       <ActivityIndicator color="#0A0A0A" />
                     ) : (
                       <Text style={styles.primaryButtonText}>
-                        {selectedPlan === 'yearly' ? 'Subscribe — $60/year' : 'Subscribe — $6/month'}
+                        {selectedPlan === 'diet' ? 'Subscribe — $4.25/month' : selectedPlan === 'looks' ? 'Subscribe — $7.00/month' : 'Subscribe — $3.99/month'}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -652,8 +712,8 @@ export default function PaywallScreen() {
                 <Text style={styles.webDialogBody}>
                   {`⚠️ This is a test purchase and should only be used during development. In production, use an Apple/Google API key from RevenueCat.
 
-Package: ${selectedPlan === 'yearly' ? 'Kong Pro — Yearly ($60/year)' : selectedPackage?.identifier ?? 'monthly'}
-Price: ${selectedPlan === 'yearly' ? '$60/year' : selectedPackage?.product.priceString ?? '$6/month'}`}
+Package: ${selectedPlan === 'diet' ? 'Kong Pro + Diet' : selectedPlan === 'looks' ? 'Looks Maxxing' : 'Kong Pro'}
+Price: ${selectedPlan === 'diet' ? '$4.25/month' : selectedPlan === 'looks' ? '$7.00/month' : '$3.99/month'}`}
                 </Text>
                 <View style={styles.webDialogDivider} />
                 <TouchableOpacity
@@ -1300,5 +1360,25 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(212, 160, 23, 0.3)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  tierFeatureList: {
+    marginTop: 12,
+    gap: 6,
+  },
+  tierFeatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tierFeatureBullet: {
+    fontSize: 12,
+    color: "#D4A017",
+    fontWeight: "700",
+    width: 14,
+  },
+  tierFeatureText: {
+    fontSize: 12,
+    color: "#A0A0A0",
+    flex: 1,
   },
 });
