@@ -77,7 +77,7 @@ export default function SettingsScreen() {
     setRedeemError('');
     try {
       console.log('[Settings] Sending promo code to backend');
-      const res = await fetch('https://m9fwqvdj73dxgnnrtavvyekttcwek968.app.specular.dev/api/promo/redeem', {
+      const res = await fetch('https://327ec5hhsu9vub3dvn8qhghzsjx85e6w.app.specular.dev/api/promo/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: trimmed }),
