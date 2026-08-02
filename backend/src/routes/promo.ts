@@ -2,16 +2,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { App } from '../index.js';
 
 interface RedeemPromoBody {
-  code: string;
+  code?: string;
 }
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-// In-memory rate limiting map: IP -> { count, resetAt }
-const rateLimitMap = new Map<string, RateLimitEntry>();
+const VALID_CODES = ['DXYZ7788foryoufree.co11111behavepleaseokay'];
 
 export function registerPromoRoutes(app: App, fastify: FastifyInstance) {
   fastify.post<{ Body: RedeemPromoBody }>(
@@ -36,52 +30,32 @@ export function registerPromoRoutes(app: App, fastify: FastifyInstance) {
               error: { type: 'string' },
             },
           },
+          400: {
+            description: 'Missing required field',
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+            },
+          },
         },
       },
     },
     async (request: FastifyRequest<{ Body: RedeemPromoBody }>, reply: FastifyReply) => {
       const { code } = request.body;
 
-      // Get IP address
-      const ip = request.ip || (request.headers['x-forwarded-for'] as string) || 'unknown';
+      app.logger.info({ code: code?.substring(0, 3) }, 'Promo redemption attempt');
 
-      app.logger.info({ ip, code: code?.substring(0, 3) }, 'Promo redemption attempt');
+      // Normalize and compare case-insensitively
+      const normalizedCode = code.trim().toLowerCase();
+      const isValid = VALID_CODES.some(validCode => validCode.toLowerCase() === normalizedCode);
 
-      // Check and update rate limit
-      const now = Date.now();
-      let rateLimitEntry = rateLimitMap.get(ip);
-
-      // Reset if past the reset time
-      if (rateLimitEntry && now > rateLimitEntry.resetAt) {
-        rateLimitEntry = undefined;
-      }
-
-      // Initialize or use existing entry
-      if (!rateLimitEntry) {
-        rateLimitEntry = { count: 0, resetAt: now + 3600000 }; // 1 hour from now
-      }
-
-      // Check if rate limit exceeded
-      if (rateLimitEntry.count >= 5) {
-        app.logger.warn({ ip }, 'Rate limit exceeded for promo redemption');
-        return { valid: false, error: 'Too many attempts. Please try again later.' };
-      }
-
-      // Increment count
-      rateLimitEntry.count += 1;
-      rateLimitMap.set(ip, rateLimitEntry);
-
-      // Validate promo code
-      const validCode = (process.env.PROMO_CODE || 'DXYZFGHERTDS33oneseventeen').toUpperCase();
-      const providedCode = code.trim().toUpperCase();
-
-      if (providedCode === validCode) {
-        app.logger.info({ ip }, 'Valid promo code redeemed');
+      if (isValid) {
+        app.logger.info({}, 'Valid promo code redeemed');
         return { valid: true };
       }
 
-      app.logger.info({ ip }, 'Invalid promo code attempt');
-      return { valid: false, error: 'Invalid or expired code' };
+      app.logger.info({}, 'Invalid promo code attempt');
+      return { valid: false, error: 'Invalid code' };
     }
   );
 }
