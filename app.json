@@ -3,7 +3,6 @@
     "name": "Evexia: Kong Lift",
     "slug": "evexia-kong-lift",
     "version": "1.0.9",
-    "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -12,6 +11,7 @@
       "backgroundColor": "#000000"
     },
     "ios": {
+      "orientation": "portrait",
       "supportsTablet": true,
       "bundleIdentifier": "com.evexia.konglift",
       "buildNumber": "2",
@@ -21,13 +21,13 @@
       }
     },
     "android": {
+      "orientation": "portrait",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/kong-icon-foreground.png",
         "backgroundColor": "#1A2814"
       },
       "package": "com.evexia.konglift",
-      "versionCode": 10,
-      "statusBarTranslucent": false
+      "versionCode": 10
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",
