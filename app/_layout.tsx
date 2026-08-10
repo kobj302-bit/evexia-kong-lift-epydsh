@@ -130,10 +130,6 @@ export default function RootLayout() {
                       presentation: 'modal',
                     }}
                   />
-                  <Stack.Screen
-                    name="focus-lock"
-                    options={{ headerShown: false }}
-                  />
                 </Stack>
                 <FocusLockOverlay />
                 <SystemBars style="light" hidden={false} />
