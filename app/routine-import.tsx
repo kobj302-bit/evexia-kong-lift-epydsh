@@ -18,7 +18,7 @@ import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 
-const BACKEND_URL = (Constants.expoConfig?.extra?.backendUrl as string) ?? 'https://xympdkzdue9mzen2uzukqrr4ea3u652x.app.specular.dev';
+const BACKEND_URL = (Constants.expoConfig?.extra?.backendUrl as string) ?? 'https://mdesvxpku848pw2kf627uemgb6mzbyjx.app.specular.dev';
 
 type Mode = 'text' | 'image';
 type Status = 'idle' | 'loading' | 'result' | 'error';
