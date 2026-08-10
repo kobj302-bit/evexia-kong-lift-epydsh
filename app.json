@@ -38,7 +38,10 @@
       "expo-router",
       "expo-web-browser",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-sensors"
     ],
     "scheme": "evexiakonglift",
     "experiments": {
@@ -47,8 +50,8 @@
     "extra": {
       "router": {},
       "backendUrl": "https://xympdkzdue9mzen2uzukqrr4ea3u652x.app.specular.dev",
-      "revenueCatTestApiKeyIos": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
-      "revenueCatTestApiKeyAndroid": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
+      "revenueCatApiKeyIos": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
+      "revenueCatApiKeyAndroid": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
       "revenueCatEntitlementId": "pro",
       "nativelyProjectId": "9ee93226-144b-408b-b3f4-15415e01c151"
     }

@@ -41,8 +41,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const extra = Constants.expoConfig?.extra || {};
 const IOS_API_KEY = extra.revenueCatApiKeyIos || "";
 const ANDROID_API_KEY = extra.revenueCatApiKeyAndroid || "";
-const TEST_IOS_API_KEY = extra.revenueCatTestApiKeyIos || "";
-const TEST_ANDROID_API_KEY = extra.revenueCatTestApiKeyAndroid || "";
+const TEST_IOS_API_KEY = extra.revenueCatApiKeyIos || "";
+const TEST_ANDROID_API_KEY = extra.revenueCatApiKeyAndroid || "";
 const ENTITLEMENT_ID = extra.revenueCatEntitlementId || "pro";
 
 // Check if running on web

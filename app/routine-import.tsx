@@ -13,11 +13,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { useApp } from '@/contexts/AppContext';
 import { COLORS } from '@/constants/data';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 
-const BACKEND_URL = 'https://327ec5hhsu9vub3dvn8qhghzsjx85e6w.app.specular.dev';
+const BACKEND_URL = (Constants.expoConfig?.extra?.backendUrl as string) ?? 'https://xympdkzdue9mzen2uzukqrr4ea3u652x.app.specular.dev';
 
 type Mode = 'text' | 'image';
 type Status = 'idle' | 'loading' | 'result' | 'error';

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Alert, Switch, Linking, useWindowDi
 import { ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { AnimatedPressable } from '@/components/AnimatedPressable';
 import { useApp } from '@/contexts/AppContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -77,7 +78,8 @@ export default function SettingsScreen() {
     setRedeemError('');
     try {
       console.log('[Settings] Sending promo code to backend');
-      const res = await fetch('https://327ec5hhsu9vub3dvn8qhghzsjx85e6w.app.specular.dev/api/promo/redeem', {
+      const backendUrl = (Constants.expoConfig?.extra?.backendUrl as string) ?? 'https://xympdkzdue9mzen2uzukqrr4ea3u652x.app.specular.dev';
+      const res = await fetch(`${backendUrl}/api/promo/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: trimmed }),
@@ -599,6 +601,22 @@ export default function SettingsScreen() {
           <Text style={styles.dangerDesc}>Permanently delete all progress, workouts, and settings. Resets the app to first launch. This supports your right to delete your data.</Text>
           <AnimatedPressable onPress={handleReset} style={styles.dangerBtn}>
             <Text style={styles.dangerBtnText}>Clear All Data</Text>
+          </AnimatedPressable>
+        </View>
+        <View style={styles.dangerDivider} />
+        <View style={[styles.card, styles.dangerCard]}>
+          <Text style={styles.dangerTitle}>Delete Account</Text>
+          <Text style={styles.dangerDesc}>
+            Request permanent deletion of your account and all associated data from our servers. This cannot be undone.
+          </Text>
+          <AnimatedPressable
+            onPress={() => {
+              console.log('[Settings] Request Account Deletion pressed');
+              Linking.openURL('mailto:support@evexia.app?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.');
+            }}
+            style={styles.dangerBtn}
+          >
+            <Text style={styles.dangerBtnText}>Request Account Deletion</Text>
           </AnimatedPressable>
         </View>
       </View>
