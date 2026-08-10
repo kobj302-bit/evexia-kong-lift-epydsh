@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Evexia: Kong Lift",
-    "slug": "evexia-kong-lift-epydsh",
+    "slug": "evexia-kong-lift",
     "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -46,7 +46,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://7332uu3k885bb4kyjj92evs92sgh6c8e.app.specular.dev",
+      "backendUrl": "https://b4s5t2watjzcstuaxk8ufksbvj3fkxj7.app.specular.dev",
       "revenueCatTestApiKeyIos": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
       "revenueCatTestApiKeyAndroid": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
       "revenueCatEntitlementId": "pro",
