@@ -265,7 +265,7 @@ export default function SurveyScreen() {
         {step === 2 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>📏 Body Composition</Text>
-            <Text style={styles.stepSubtitle}>Real data = real analysis. This powers your FFMI, TDEE, Navy BF%, and Glow Up scores.</Text>
+            <Text style={styles.stepSubtitle}>Real data = real analysis. This powers your FFMI, TDEE, Navy BF%, and Ascend scores.</Text>
 
             {/* Height unit toggle */}
             <View style={styles.field}>
@@ -354,7 +354,7 @@ export default function SurveyScreen() {
 
             <View style={[styles.field, { backgroundColor: COLORS.surface2, borderRadius: 12, padding: 14, marginTop: 8 }]}>
               <Text style={{ fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 }}>
-                💡 These measurements power your Navy Body Fat %, FFMI (Fat-Free Mass Index), TDEE, BMI, lean mass, and Glow Up facial/body analysis. You can update them anytime in Settings.
+                💡 These measurements power your Navy Body Fat %, FFMI (Fat-Free Mass Index), TDEE, BMI, lean mass, and Ascend facial/body analysis. You can update them anytime in Settings.
               </Text>
             </View>
           </View>

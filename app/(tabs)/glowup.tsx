@@ -814,10 +814,10 @@ function LockedScreen() {
       <ScrollView contentContainerStyle={styles.lockedScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.lockedHero}>
           <Text style={styles.lockedCrown}>👑</Text>
-          <Text style={styles.lockedTitle}>GLOW UP SYSTEM</Text>
+          <Text style={styles.lockedTitle}>ASCEND SYSTEM</Text>
           <Text style={styles.lockedSubtitle}>The most complete self-optimization protocol ever built into a mobile app.</Text>
           <View style={styles.lockedSocialProof}>
-            <Text style={styles.lockedSocialText}>Join 10,000+ members optimizing their glow up</Text>
+            <Text style={styles.lockedSocialText}>Join 10,000+ members on their ascension journey</Text>
           </View>
         </View>
 
@@ -851,7 +851,7 @@ function LockedScreen() {
         </View>
 
         <View style={styles.lockedCTA}>
-          <Text style={styles.lockedCTAText}>UNLOCK GLOW UP — KONG PRO</Text>
+          <Text style={styles.lockedCTAText}>UNLOCK ASCEND — KONG PRO</Text>
           <Text style={styles.lockedCTASub}>Available with Kong Pro subscription</Text>
         </View>
       </ScrollView>
@@ -1079,14 +1079,14 @@ export default function GlowUpScreen() {
           <Text style={styles.disclaimerEmoji}>⚠️</Text>
           <Text style={styles.disclaimerTitle}>BEFORE YOU BEGIN</Text>
           <Text style={styles.disclaimerBody}>
-            The Glow Up System is an educational wellness protocol for informational purposes only. It is not medical advice. Consult a qualified healthcare professional before starting any new exercise, nutrition, or supplement regimen. Results vary. Kong Lift is not responsible for any outcomes.
+            The Ascend System is an educational wellness protocol for informational purposes only. It is not medical advice. Consult a qualified healthcare professional before starting any new exercise, nutrition, or supplement regimen. Results vary. Kong Lift is not responsible for any outcomes.
           </Text>
           <TouchableOpacity
             style={styles.disclaimerBtn}
             onPress={handleAckDisclaimer}
             activeOpacity={0.8}
           >
-            <Text style={styles.disclaimerBtnText}>I UNDERSTAND — START MY GLOW UP</Text>
+            <Text style={styles.disclaimerBtnText}>I UNDERSTAND — START MY ASCENSION</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -1133,7 +1133,7 @@ export default function GlowUpScreen() {
       >
         {/* ── HEADER ── */}
         <View style={styles.screenHeader}>
-          <Text style={styles.screenTitle}>GLOW UP</Text>
+          <Text style={styles.screenTitle}>ASCEND</Text>
           <View style={styles.xpChip}>
             <Text style={styles.xpChipText}>
               {state.xp}
@@ -1661,7 +1661,7 @@ export default function GlowUpScreen() {
         </SectionCard>
 
         {/* ── SECTION 11: GLOW UP STREAK + LEVELS ── */}
-        <SectionCard title="🌟 GLOW UP STREAK + LEVELS" defaultOpen={false} accentColor={COLORS.gold}>
+        <SectionCard title="🌟 ASCEND STREAK + LEVELS" defaultOpen={false} accentColor={COLORS.gold}>
           <View style={styles.streakRow}>
             <Animated.Text style={[styles.streakFlame, { opacity: flameAnim }]}>🔥</Animated.Text>
             <View>

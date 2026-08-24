@@ -93,7 +93,7 @@ export default function TabLayout() {
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="glowup">
           <Icon sf="sparkles" />
-          <Label>Glow Up</Label>
+          <Label>Ascend</Label>
         </NativeTabs.Trigger>
       </NativeTabs>
       <Toast visible={toast.visible} message={toast.message} isGold={toast.isGold} />

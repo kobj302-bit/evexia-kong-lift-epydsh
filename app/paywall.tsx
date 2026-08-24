@@ -85,8 +85,8 @@ const FEATURES = [
   },
   {
     icon: "✨",
-    title: "Glow Up System (+$3/mo)",
-    description: "Complete natural glow-up: appearance, posture, height optimization, skin, fascia, daily habits, grocery list & XP gamification",
+    title: "Ascend System",
+    description: "Complete natural ascension: appearance, posture, height optimization, skin, fascia, daily habits, grocery list & XP gamification",
   },
 ];
 
@@ -532,7 +532,7 @@ export default function PaywallScreen() {
                   </View>
                   <View style={styles.tierFeatureRow}>
                     <Text style={styles.tierFeatureBullet}>✓</Text>
-                    <Text style={styles.tierFeatureText}>Glow Up System ✨</Text>
+                    <Text style={styles.tierFeatureText}>Ascend System ✨</Text>
                   </View>
                   <View style={styles.tierFeatureRow}>
                     <Text style={styles.tierFeatureBullet}>✓</Text>
