@@ -114,16 +114,6 @@ export default function RootLayout() {
                     }}
                   />
                   <Stack.Screen
-                    name="facial-analysis"
-                    options={{
-                      headerShown: true,
-                      title: '🔬 Facial Analysis',
-                      headerStyle: { backgroundColor: '#1E1E1E' },
-                      headerTintColor: '#F5F5F0',
-                      headerTitleStyle: { fontWeight: '800', color: '#F5F5F0' },
-                    }}
-                  />
-                  <Stack.Screen
                     name="camera-counter"
                     options={{
                       headerShown: false,

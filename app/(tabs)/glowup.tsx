@@ -1213,30 +1213,6 @@ export default function GlowUpScreen() {
           ) : null}
         </View>
 
-        {/* ── FACIAL ANALYSIS BUTTON ── */}
-        <TouchableOpacity
-          style={styles.facialAnalysisCard}
-          onPress={() => {
-            console.log('[GlowUp] Facial Analysis button pressed');
-            router.push('/facial-analysis');
-          }}
-          activeOpacity={0.85}
-        >
-          <View style={styles.facialAnalysisLeft}>
-            <Text style={styles.facialAnalysisEmoji}>🔬</Text>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={styles.facialAnalysisTitle}>Facial Analysis</Text>
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NEW</Text>
-                </View>
-              </View>
-              <Text style={styles.facialAnalysisSub} numberOfLines={1}>Symmetry • Jawline • Skin • Harmony</Text>
-            </View>
-          </View>
-          <Text style={styles.facialAnalysisArrow}>→</Text>
-        </TouchableOpacity>
-
         {/* ── BODY ANALYSIS ── */}
         <BodyAnalysisSection analysis={analysis} bf={state.profile?.bf || 15} router={router} />
 
@@ -4703,44 +4679,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 
-  // Facial Analysis Card
-  facialAnalysisCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border2,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  facialAnalysisLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  facialAnalysisEmoji: {
-    fontSize: 32,
-  },
-  facialAnalysisTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.text,
-    letterSpacing: 0.5,
-  },
-  facialAnalysisSub: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  facialAnalysisArrow: {
-    fontSize: 20,
-    color: COLORS.gold,
-    fontWeight: '800',
-    marginLeft: 8,
-  },
   newBadge: {
     backgroundColor: COLORS.gold,
     borderRadius: 6,
