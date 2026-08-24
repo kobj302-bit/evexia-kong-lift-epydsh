@@ -16,12 +16,12 @@ import {
   Animated,
   Alert,
 } from 'react-native';
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { KongMascot } from '@/components/KongMascot';
 import { COLORS } from '@/constants/data';
 
-const EXCLUDED_ROUTES = ['/paywall', '/settings', '/survey', '/splash', '/miss', '/onboarding', '/index', '/camera-counter'];
+const EXCLUDED_ROUTES = ['/paywall', '/settings', '/survey', '/splash', '/miss', '/onboarding', '/index'];
 
 function getTodayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -30,7 +30,6 @@ function getTodayStr(): string {
 export function FocusLockOverlay() {
   const { state, updateState } = useApp();
   const pathname = usePathname();
-  const router = useRouter();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -92,11 +91,6 @@ export function FocusLockOverlay() {
     );
   };
 
-  const handleStartChallenge = () => {
-    console.log('[FocusLock] Start Challenge pressed — navigating to camera-counter');
-    router.push('/camera-counter' as any);
-  };
-
   if (!shouldShow) return null;
 
   return (
@@ -124,13 +118,8 @@ export function FocusLockOverlay() {
               {' '}
               {state.focusChallengeType}
             </Text>
-            <Text style={styles.challengeSub}>Use the AI camera counter to verify your reps</Text>
+            <Text style={styles.challengeSub}>Complete your daily challenge to earn XP</Text>
           </View>
-
-          {/* Start button */}
-          <TouchableOpacity style={styles.startBtn} onPress={handleStartChallenge} activeOpacity={0.85}>
-            <Text style={styles.startBtnText}>🎯 Start Challenge</Text>
-          </TouchableOpacity>
 
           {/* Skip link */}
           <TouchableOpacity style={styles.skipLink} onPress={handleSkipToday} activeOpacity={0.7}>

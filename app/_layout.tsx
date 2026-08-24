@@ -113,13 +113,6 @@ export default function RootLayout() {
                       presentation: 'modal',
                     }}
                   />
-                  <Stack.Screen
-                    name="camera-counter"
-                    options={{
-                      headerShown: false,
-                      presentation: 'modal',
-                    }}
-                  />
                 </Stack>
                 <FocusLockOverlay />
                 <SystemBars style="light" hidden={false} />

@@ -651,16 +651,6 @@ export default function TrackerTab() {
             )}
           </View>
           <View style={styles.sessionHeaderBtns}>
-            {/* Rep Counter button */}
-            <AnimatedPressable
-              onPress={() => {
-                console.log('[Tracker] Rep Counter button pressed');
-                router.push('/camera-counter' as any);
-              }}
-              style={styles.routinesBtn}
-            >
-              <Text style={styles.routinesBtnText}>🎯 Reps</Text>
-            </AnimatedPressable>
             {/* My Routines button */}
             <AnimatedPressable
               onPress={() => {
