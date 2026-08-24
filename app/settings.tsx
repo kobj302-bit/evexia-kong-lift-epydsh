@@ -612,7 +612,7 @@ export default function SettingsScreen() {
           <AnimatedPressable
             onPress={() => {
               console.log('[Settings] Request Account Deletion pressed');
-              Linking.openURL('mailto:support@evexia.app?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.');
+              Linking.openURL('mailto:kobj302@gmail.com?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.');
             }}
             style={styles.dangerBtn}
           >
