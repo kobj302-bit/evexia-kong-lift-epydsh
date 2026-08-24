@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Evexia — Privacy Policy</title>
-<meta name="description" content="Evexia privacy policy. Local-only data, no accounts, no tracking, no ads.">
+<meta name="description" content="Evexia privacy policy. Local-first data, no accounts, no ads, no tracking.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -131,6 +131,29 @@ strong { color: var(--w); font-weight: 700; }
 a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gb); }
 a:hover { color: var(--gold2); border-color: var(--gold); }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  color: var(--w2);
+  vertical-align: top;
+}
+th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px solid var(--gb);
+}
+td strong { color: var(--w); }
+
 .footer {
   margin-top: 60px;
   padding-top: 30px;
@@ -149,90 +172,152 @@ a:hover { color: var(--gold2); border-color: var(--gold); }
   <div class="header">
     <div class="mark">🦍 EVEXIA</div>
     <h1>Privacy Policy</h1>
-    <div class="effective">Effective: May 14, 2026</div>
+    <div class="effective">Effective: August 24, 2026</div>
   </div>
 
   <div class="tldr">
     <div class="tldr-label">⚡ The Short Version</div>
-    <p><strong>We don't collect anything.</strong> Your data lives on your device. No accounts, no servers, no ads, no analytics, no tracking. The only data that ever leaves your phone is the prompts you send to Anthropic when you use AI features — and only if you choose to.</p>
+    <p><strong>Your training data stays on your device.</strong> There are no Evexia accounts and no Evexia servers holding your workouts. We don't run ads, sell data, or track you across apps. Three things do leave your phone: purchase records handled by our billing provider, a push token if you enable notifications, and the prompts you send when you use an AI feature.</p>
   </div>
 
   <section>
     <h2><span class="num">01</span>Who We Are</h2>
-    <p>Evexia ("the app," "we," "us") is a personal fitness companion app. This privacy policy explains how Evexia handles information when you use the app on your device.</p>
+    <p>Evexia ("the App," "we," "us") is a personal fitness companion app. This policy explains what happens to information when you use the App, what stays on your device, and what limited data is handled by our service providers.</p>
+    <p>This policy covers the Evexia mobile app on iOS and Android.</p>
   </section>
 
   <section>
-    <h2><span class="num">02</span>What We Collect</h2>
-    <p><strong>Nothing.</strong> Evexia has no user accounts, no backend servers, and no analytics. We do not collect, store, or transmit any personal information to ourselves or any third party.</p>
-
-    <h3>Data You Create Stays on Your Device</h3>
-    <p>The app stores the following information locally on your device using your browser's localStorage:</p>
+    <h2><span class="num">02</span>What Stays on Your Device</h2>
+    <p>Evexia is local-first. There are no Evexia user accounts, and we do not operate a server that stores your training data. The following is saved in your device's app storage and is not transmitted to us:</p>
     <ul>
-      <li>Your profile (username, avatar, age, weight, sex, body fat %, experience level, training goals, equipment access, injury notes)</li>
-      <li>Your workout history, sets, reps, weights, and personal records</li>
-      <li>Your streak count, XP, rank, completed workouts, and saved programs</li>
-      <li>Your saved diet plans, nutrition data, and custom goals</li>
-      <li>Your team affiliation and community challenge progress</li>
-      <li>Your Anthropic API key (if you choose to enable AI features)</li>
+      <li>Your profile: username, avatar, age, weight, height, sex, body fat percentage, training goal, and measurements you enter</li>
+      <li>Workout history, sets, reps, weights, personal records, and saved programs</li>
+      <li>Streaks, XP, rank, completed workouts, and goal progress</li>
+      <li>Saved meal plans, nutrition results, and grocery lists</li>
+      <li>Glow Up data: habits, daily missions, supplement stack, skincare routine, and body analysis results</li>
+      <li>App settings such as your selected theme and expert mode preference</li>
     </ul>
-    <p>This data is stored on your device only. We cannot see it, access it, or recover it. If you uninstall the app or clear your browser data, this information is permanently deleted.</p>
+    <p>We cannot see, access, or recover this data. If you uninstall the App, use "Clear all local data" in Settings, or lose your device, it is permanently gone. Evexia does not currently offer cloud backup or cross-device sync.</p>
   </section>
 
   <section>
-    <h2><span class="num">03</span>Third-Party Services</h2>
+    <h2><span class="num">03</span>What Leaves Your Device</h2>
 
-    <h3>Anthropic (AI Features Only)</h3>
-    <p>If you enable AI features (Athlete routines, Diet plans, Nutrition calculator), the app sends your prompts directly to the Anthropic API using an API key you provide. This is the only outbound data transmission Evexia makes.</p>
-    <p>When you use AI features, the following may be sent to Anthropic:</p>
+    <table>
+      <tr>
+        <th>Service</th>
+        <th>What is shared</th>
+        <th>Why</th>
+      </tr>
+      <tr>
+        <td><strong>RevenueCat</strong></td>
+        <td>A randomly generated anonymous ID, your subscription and purchase status, device platform, and app version</td>
+        <td>To manage subscriptions, verify entitlements, and restore purchases across devices</td>
+      </tr>
+      <tr>
+        <td><strong>Apple / Google</strong></td>
+        <td>Purchase and billing records, handled entirely by the store</td>
+        <td>To process payments, renewals, and refunds</td>
+      </tr>
+      <tr>
+        <td><strong>Anthropic</strong></td>
+        <td>Your prompt and the profile context relevant to that request</td>
+        <td>To generate AI routines, meal plans, and nutrition analyses</td>
+      </tr>
+      <tr>
+        <td><strong>Expo / push services</strong></td>
+        <td>A device push token, only if you enable notifications</td>
+        <td>To deliver reminders and streak notifications</td>
+      </tr>
+    </table>
+
+    <h3>Subscriptions and purchases (RevenueCat)</h3>
+    <p>We use RevenueCat to manage subscriptions and unlock paid features. RevenueCat assigns your install a random anonymous identifier that is not linked to your name or email, and records which products you own so entitlements can be restored. We do not send RevenueCat your workout data, profile details, or health information. See <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">RevenueCat's privacy policy</a>.</p>
+    <p>Payment itself is processed by Apple or Google. We never receive or store your card details.</p>
+
+    <h3>AI features (Anthropic)</h3>
+    <p>When you generate an AI routine, meal plan, or nutrition analysis, the App sends the request to the Anthropic Claude API. What is sent may include:</p>
     <ul>
-      <li>Your free-text prompt (e.g., "upper body routine, dumbbells only")</li>
-      <li>Profile context relevant to the request (e.g., experience level, goal, equipment)</li>
+      <li>Your free-text prompt, such as a coaching style, goal, or equipment note</li>
+      <li>Profile context relevant to the request, which may include age bracket, weight, sex, training goal, and experience level</li>
     </ul>
-    <p>Anthropic's handling of this data is governed by their privacy policy, available at <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">anthropic.com/legal/privacy</a>. We do not see or store these requests.</p>
-    <p>If you never enable AI features, no data ever leaves your device.</p>
+    <p>Because meal plans and nutrition calculations depend on body data, information you would reasonably consider health-related may be included in these requests. AI features are optional — if you never use them, nothing is sent. Anthropic's handling of this data is governed by their <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">privacy policy</a>. We do not store these requests or their responses on any server we control; generated plans are saved locally on your device.</p>
 
-    <h3>Google Fonts</h3>
-    <p>The app may load fonts from Google Fonts (fonts.googleapis.com). Google may log your IP address as part of standard CDN operation. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</p>
+    <h3>Push notifications</h3>
+    <p>If you allow notifications, your device is issued a push token used to deliver reminders. You can revoke this at any time in Settings in the App, or in your device's system settings. Revoking permission stops notifications and the token is no longer used.</p>
+
+    <h3>Community and leaderboards</h3>
+    <p>If you join a team or appear on a leaderboard, the username, avatar, and training statistics involved may be visible to other users of the App. Choose a username that does not reveal personal information you want kept private.</p>
+
+    <h3>Fonts and network requests</h3>
+    <p>Some screens may load fonts or assets from content delivery networks, which can log your IP address as part of normal operation. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a> where Google Fonts is used.</p>
   </section>
 
   <section>
     <h2><span class="num">04</span>What We Don't Do</h2>
     <ul>
       <li>We do not show advertising</li>
-      <li>We do not use analytics, tracking pixels, or fingerprinting</li>
-      <li>We do not have user accounts or require sign-up</li>
-      <li>We do not sell, share, or transmit your data to third parties (other than the Anthropic API calls you initiate)</li>
-      <li>We do not use cookies for tracking</li>
-      <li>We do not access your location, camera, contacts, microphone, or other device sensors</li>
+      <li>We do not sell or share your personal information, and we do not share it for cross-context behavioral advertising</li>
+      <li>We do not use third-party analytics SDKs, tracking pixels, or device fingerprinting</li>
+      <li>We do not require an Evexia account or sign-up</li>
+      <li>We do not access your location, camera, microphone, contacts, photos, or health app data</li>
+      <li>We do not use your data to train AI models</li>
     </ul>
   </section>
 
   <section>
-    <h2><span class="num">05</span>Children's Privacy</h2>
-    <p>Evexia is intended for users aged 13 and older. We do not knowingly collect information from children under 13. Because we collect no information from anyone, this is in practice impossible — but the app is not designed or marketed for younger users, and training programs in the app are intended for adults or supervised teens. Anyone under 18 should consult a parent, guardian, or coach before starting a new exercise or diet program.</p>
+    <h2><span class="num">05</span>Health and Fitness Information</h2>
+    <p>Evexia processes body and fitness information you enter, including weight, body fat percentage, measurements, and nutrition targets. This information is stored on your device. It is transmitted only when you choose to use an AI feature that requires it, as described in Section 3.</p>
+    <p>Evexia is not a healthcare provider and is not a covered entity under HIPAA. The App does not read from or write to Apple Health or Google Fit.</p>
   </section>
 
   <section>
-    <h2><span class="num">06</span>Your Rights</h2>
-    <p>Because Evexia does not collect or store your data on any server, traditional data rights (access, deletion, portability) are exercised directly by you on your device:</p>
+    <h2><span class="num">06</span>Children's Privacy</h2>
+    <p>Evexia is intended for users aged 13 and older, and is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided information through the App, contact us and we will address it.</p>
+    <p>Training programs and nutrition guidance in the App are intended for adults or supervised teens. Anyone under 18 should consult a parent, guardian, coach, or physician before starting a new exercise or diet program.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>Data Retention</h2>
+    <p>Data stored on your device is retained until you delete it, reset it from Settings, or uninstall the App. Purchase and entitlement records held by RevenueCat and by Apple or Google are retained according to those providers' own policies and their legal and tax obligations.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">08</span>Your Rights and Choices</h2>
+    <p>Because Evexia stores your training data on your device rather than on our servers, most data rights are exercised directly by you:</p>
     <ul>
-      <li><strong>Access:</strong> Your data is visible in the app at all times</li>
-      <li><strong>Deletion:</strong> Use the "Reset All Data" button in Settings, or uninstall the app, or clear your browser's local storage</li>
-      <li><strong>Portability:</strong> Since data is local, you control all copies</li>
-      <li><strong>Anthropic API requests:</strong> Contact Anthropic directly for any rights related to data you submit to their API</li>
+      <li><strong>Access:</strong> Your data is visible in the App at all times, and workout history can be exported to CSV</li>
+      <li><strong>Deletion:</strong> Use "Clear all local data" in Settings, or uninstall the App</li>
+      <li><strong>Portability:</strong> Export your workout history from the App; all other data is local and under your control</li>
+      <li><strong>Notifications:</strong> Toggle off in Settings or in your device's system settings</li>
     </ul>
+
+    <h3>Deleting your data held by providers</h3>
+    <p>To request deletion of the anonymous purchase record associated with your install, email <strong>support@evexia.app</strong> from the address associated with your purchase, or use the "Delete account" option in Settings, which opens a pre-addressed request. Requests are processed manually and completed within 30 days, and you will receive confirmation by email. Note that purchase and billing records held by Apple or Google cannot be deleted by us and are subject to their retention policies.</p>
+
+    <h3>Regional rights</h3>
+    <p>If you are in the EEA or UK, our lawful bases for the limited processing described above are performance of a contract for purchase and entitlement handling, and your consent for notifications and optional AI features. You may withdraw consent at any time. If you are in California, we do not sell or share personal information as those terms are defined under the CCPA, and we do not discriminate against users who exercise their rights. You may contact us at the address below to exercise any applicable right.</p>
   </section>
 
   <section>
-    <h2><span class="num">07</span>Changes to This Policy</h2>
-    <p>If we update this privacy policy, we will revise the "Effective" date at the top of this page. Material changes will also be reflected in the app's update notes. Continued use of the app after changes constitutes acceptance.</p>
+    <h2><span class="num">09</span>Security</h2>
+    <p>Data stored on your device is protected by your device's own security, including your passcode, biometrics, and operating system sandboxing. Network requests to our service providers use encrypted connections. No method of storage or transmission is completely secure, and we cannot guarantee absolute security.</p>
   </section>
 
   <section>
-    <h2><span class="num">08</span>Contact</h2>
+    <h2><span class="num">10</span>International Transfers</h2>
+    <p>Our service providers may process data in the United States and other countries where they operate. Where required, those providers use appropriate safeguards for international transfers.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">11</span>Changes to This Policy</h2>
+    <p>If we update this policy, we will revise the "Effective" date at the top of this page. Material changes will also be reflected in the App's update notes. Continued use of the App after changes take effect constitutes acceptance.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">12</span>Contact</h2>
     <p>Questions about this privacy policy or how Evexia handles data? Reach out:</p>
-    <p style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--gold);margin-top:8px">kobj302@gmail.com</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--gold);margin-top:8px">support@evexia.app</p>
   </section>
 
   <div class="footer">
