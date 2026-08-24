@@ -150,6 +150,32 @@ strong { color: var(--w); font-weight: 700; }
 a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gb); }
 a:hover { color: var(--gold2); border-color: var(--gold); }
 
+.tiers {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 20px;
+}
+.tier {
+  background: var(--bg2);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.tier-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--w);
+  margin-bottom: 2px;
+}
+.tier-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.tier p { font-size: 14px; margin-bottom: 0; }
+
 .footer {
   margin-top: 60px;
   padding-top: 30px;
@@ -169,18 +195,18 @@ a:hover { color: var(--gold2); border-color: var(--gold); }
   <div class="header">
     <div class="mark">🦍 EVEXIA</div>
     <h1>Terms of Service</h1>
-    <div class="effective">Effective: June 6, 2026</div>
+    <div class="effective">Effective: August 24, 2026</div>
   </div>
 
   <div class="tldr">
     <div class="tldr-label">⚡ The Short Version</div>
-    <p><strong>Evexia is a fitness app. Use it for fitness, not as a substitute for a doctor.</strong> The core app is free. Premium ($7/month) and the Athlete Day Pass ($1) are billed through Google Play. AI-generated routines are suggestions — not medical advice. Train smart, listen to your body, and consult a professional before changing your training or diet.</p>
+    <p><strong>Evexia is a fitness app. Use it for fitness, not as a substitute for a doctor.</strong> The core app is free. Three optional subscription tiers and a $1 Athlete Day Pass are billed through the Apple App Store or Google Play. AI-generated routines and meal plans are suggestions — not medical advice. Train smart, listen to your body, and consult a professional before changing your training or diet.</p>
   </div>
 
   <div class="warning">
     <div class="warning-label">⚠️ Important Health Notice</div>
-    <p><strong>Evexia is not a medical service.</strong> Workouts, diet plans, and nutrition data — including AI-generated content — are for general informational and educational purposes only. They are not medical advice and should not replace consultation with a licensed physician, registered dietitian, or certified trainer.</p>
-    <p>Consult your doctor before starting any new exercise or diet program, especially if you have any medical condition, are pregnant, are recovering from injury, or are under 18.</p>
+    <p><strong>Evexia is not a medical service.</strong> Workouts, diet plans, nutrition data, body-composition estimates, and supplement or skincare tracking — including all AI-generated content — are for general informational and educational purposes only. They are not medical advice and should not replace consultation with a licensed physician, registered dietitian, or certified trainer.</p>
+    <p>Consult your doctor before starting any new exercise or diet program, especially if you have any medical condition, are pregnant, are recovering from injury, have a history of disordered eating, or are under 18.</p>
   </div>
 
   <section>
@@ -196,62 +222,116 @@ a:hover { color: var(--gold2); border-color: var(--gold); }
 
   <section>
     <h2><span class="num">03</span>What Evexia Provides</h2>
-    <p>Evexia is a personal fitness companion that includes:</p>
+    <p>Evexia is a personal fitness companion. Depending on your tier, the App includes:</p>
+
+    <h3>Free features</h3>
     <ul>
-      <li>A workout tracker, programs, splits, and goal-setting tools</li>
-      <li>An XP and rank progression system</li>
-      <li>AI-generated workout routines, diet plans, and nutrition recommendations</li>
-      <li>Hero WOD libraries and community/team features</li>
-      <li>Kong, our animated coaching mascot</li>
+      <li>Workout tracker with sets, reps, weight logging, rest timer, and full session history</li>
+      <li>Plate calculator, estimated 1RM calculator, strength tier badges, and volume trend charts</li>
+      <li>Personal record (PR) tracking and previous-session comparison</li>
+      <li>Pre-built training split library with one-tap activation</li>
+      <li>Custom goals with progress tracking and XP rewards</li>
+      <li>XP, streak, and rank progression system with a full rank ladder</li>
+      <li>Monthly calendar view of training history</li>
+      <li>Kong, our coaching mascot, with rotating motivational content</li>
+      <li>Routine import and CSV export of your workout history</li>
     </ul>
-    <p>The core app (Tracker, Splits, Goals, Ranks, Streaks, Kong's coaching) is free. Some features require a paid subscription or purchase — see Section 5.</p>
+
+    <h3>Paid features</h3>
+    <ul>
+      <li>AI-generated training programs across multiple plan types, coaching styles, and training goals</li>
+      <li>AI-generated meal plans with macro breakdowns</li>
+      <li>TDEE and macro calculator, athlete presets, and sport-specific nutrition guidance</li>
+      <li>Hero WOD and holiday WOD libraries</li>
+      <li>Team leaderboards, global tonnage rankings, weekly challenges, and friends list</li>
+      <li>Glow Up: daily missions, habit rings, nutrition and supplement tracking, skincare routines, body analysis (BMI, FFMI, estimated body fat), posture and sleep sections</li>
+      <li>Premium app themes</li>
+    </ul>
+
+    <p>Features available at each tier are described in the App at the point of purchase. We may add, change, or remove features over time.</p>
   </section>
 
   <section>
-    <h2><span class="num">04</span>Your Data, Your Device</h2>
-    <p>Evexia does not have user accounts and does not store your data on any server we operate. Your profile, workouts, streaks, PRs, and goals are saved locally on your device. See our <a href="privacy.html">Privacy Policy</a> for details.</p>
-    <p>You are responsible for protecting your device and your data. If you uninstall the App, clear your browser storage, or lose your device, your data is permanently deleted. We cannot recover it.</p>
+    <h2><span class="num">04</span>Your Data and Your Device</h2>
+    <p>Evexia does not require you to create an account with us. Your profile, workouts, streaks, PRs, goals, and saved plans are stored locally on your device. See our <a href="privacy.html">Privacy Policy</a> for a full description of what is stored locally and what limited data is shared with our service providers.</p>
+    <p>You are responsible for protecting your device and your data. If you uninstall the App, reset your data from Settings, or lose your device, your locally stored data is permanently deleted and <strong>we cannot recover it</strong>. Evexia does not currently offer cloud backup or cross-device sync.</p>
+    <p>Your subscription entitlement is tied to your Apple or Google store account rather than to your device, and can be restored on a new device using the "Restore Purchases" option in Settings.</p>
   </section>
 
   <section>
-    <h2><span class="num">05</span>Subscriptions & Purchases</h2>
+    <h2><span class="num">05</span>Subscriptions and Purchases</h2>
 
-    <h3>Premium Subscription — $7/month</h3>
-    <p>Evexia Premium is an auto-renewing monthly subscription that unlocks all paid features (AI Athlete Routines, AI Diet Plans, AI Nutrition Calculator, Hero WODs, and Community). It renews automatically at the end of each billing period until canceled.</p>
+    <p>The core app is free. The following optional purchases are available:</p>
 
-    <h3>Athlete Day Pass — $1</h3>
-    <p>The Athlete Day Pass is a one-time, non-renewing purchase that unlocks one AI-generated Athlete routine, valid for the calendar day of purchase. Day Passes do not roll over. You may purchase additional Day Passes as often as you want.</p>
+    <div class="tiers">
+      <div class="tier">
+        <div class="tier-name">Kong Pro</div>
+        <div class="tier-price">$3.99 / month · auto-renewing</div>
+        <p>Unlocks AI Athlete routines, Hero WODs, Community and Teams, and premium themes.</p>
+      </div>
+      <div class="tier">
+        <div class="tier-name">Kong Pro + Diet</div>
+        <div class="tier-price">$4.25 / month · auto-renewing</div>
+        <p>Everything in Kong Pro, plus AI meal plans and the nutrition and TDEE calculator.</p>
+      </div>
+      <div class="tier">
+        <div class="tier-name">Looks Maxxing</div>
+        <div class="tier-price">$7.00 / month · auto-renewing</div>
+        <p>Everything in Kong Pro + Diet, plus the full Glow Up suite.</p>
+      </div>
+      <div class="tier">
+        <div class="tier-name">Athlete Day Pass</div>
+        <div class="tier-price">$1.00 · one-time, non-renewing</div>
+        <p>Unlocks one AI-generated Athlete routine, valid for the calendar day of purchase.</p>
+      </div>
+    </div>
+
+    <p>Prices are shown in U.S. dollars and may vary by region, currency, and applicable tax. The price shown in the App at the time of purchase is the price that applies.</p>
+
+    <h3>Auto-renewal</h3>
+    <p>Subscriptions renew automatically at the end of each billing period until canceled. Your store account is charged for renewal within 24 hours before the end of the current period unless you cancel before then.</p>
+
+    <h3>Day Passes</h3>
+    <p>The Athlete Day Pass is a one-time purchase that expires at the end of the calendar day it was purchased. Day Passes do not roll over or accumulate. You may purchase additional Day Passes at any time.</p>
 
     <h3>Billing</h3>
-    <p>All purchases are processed by <strong>Google Play Billing</strong>. By making a purchase you agree to <a href="https://play.google.com/about/play-terms/" target="_blank" rel="noopener">Google Play's Terms of Service</a>. We do not directly collect, store, or process your payment information.</p>
+    <p>All purchases are processed by <strong>Apple's App Store</strong> or <strong>Google Play Billing</strong>, depending on where you downloaded the App. By making a purchase you agree to <a href="https://www.apple.com/legal/internet-services/itunes/" target="_blank" rel="noopener">Apple's Media Services Terms</a> or <a href="https://play.google.com/about/play-terms/" target="_blank" rel="noopener">Google Play's Terms of Service</a> as applicable. We do not collect, store, or process your payment information.</p>
 
-    <h3>Managing or Canceling Your Subscription</h3>
-    <p>You can manage or cancel your Premium subscription at any time through the Google Play Store → Subscriptions on your Android device. Cancellation takes effect at the end of the current billing period; you retain access until then.</p>
+    <h3>Managing or canceling your subscription</h3>
+    <p>Cancel at any time through your store account: on iOS via Settings → Apple Account → Subscriptions, or on Android via the Google Play Store → Subscriptions. Cancellation takes effect at the end of the current billing period, and you keep access until then. Deleting the App does not cancel your subscription.</p>
 
     <h3>Refunds</h3>
-    <p>Refunds for subscriptions and purchases are handled according to <a href="https://support.google.com/googleplay/answer/2479637" target="_blank" rel="noopener">Google Play's refund policy</a>. We are not able to issue refunds directly. Day Passes, once redeemed (used to generate a routine), are generally non-refundable.</p>
+    <p>Refunds are handled by the store that processed your purchase, under <a href="https://support.apple.com/en-us/HT204084" target="_blank" rel="noopener">Apple's refund policy</a> or <a href="https://support.google.com/googleplay/answer/2479637" target="_blank" rel="noopener">Google Play's refund policy</a>. We are not able to issue refunds directly. Day Passes, once redeemed to generate a routine, are generally non-refundable.</p>
+
+    <h3>Promotional codes</h3>
+    <p>Promo codes redeemed in Settings are subject to their own terms, may expire, and may be limited to one per user. They have no cash value and cannot be exchanged or refunded.</p>
+
+    <h3>Price changes</h3>
+    <p>We may change subscription prices. Where required, you will be notified in advance through the App or by your store, and increases will not take effect until your next renewal after notice. If you do not accept a price change, cancel before it takes effect.</p>
   </section>
 
   <section>
     <h2><span class="num">06</span>AI-Generated Content</h2>
-    <p>Evexia uses third-party artificial intelligence (the Anthropic Claude API) to generate workout routines, diet plans, and nutritional analyses based on inputs you provide. You acknowledge that:</p>
+    <p>Evexia uses third-party artificial intelligence services to generate workout programs, meal plans, and nutritional analyses based on inputs you provide. Coaching styles named in the App describe a general training philosophy only — they are not endorsements by, affiliations with, or content authored by the individuals named. You acknowledge that:</p>
     <ul>
       <li>AI-generated outputs may be inaccurate, incomplete, or unsuitable for your specific situation</li>
-      <li>AI cannot replace evaluation from a qualified professional (physician, trainer, dietitian, etc.)</li>
+      <li>AI cannot replace evaluation from a qualified professional such as a physician, trainer, or dietitian</li>
+      <li>Calorie targets, macro splits, and body-composition estimates are approximations based on population formulas, not measurements of your body</li>
       <li>You use AI-generated content at your own risk and your own judgment</li>
-      <li>We do not guarantee any specific fitness, health, or body-composition outcome</li>
+      <li>We do not guarantee any specific fitness, health, aesthetic, or body-composition outcome</li>
     </ul>
-    <p>You are solely responsible for evaluating whether any AI-generated routine or diet is safe and appropriate for you.</p>
+    <p>You are solely responsible for evaluating whether any AI-generated routine or diet is safe and appropriate for you. If a generated plan seems extreme, contradicts guidance from your healthcare provider, or does not suit your circumstances, do not follow it.</p>
   </section>
 
   <section>
-    <h2><span class="num">07</span>Health, Fitness & Liability Disclaimer</h2>
-    <p><strong>Physical exercise carries inherent risks of injury.</strong> By using Evexia, you acknowledge and accept all risks associated with exercise, weight training, diet changes, and physical activity. You agree that:</p>
+    <h2><span class="num">07</span>Health, Fitness, and Liability Disclaimer</h2>
+    <p><strong>Physical exercise carries inherent risks of injury.</strong> By using Evexia, you acknowledge and accept all risks associated with exercise, weight training, diet changes, supplementation, and physical activity. You agree that:</p>
     <ul>
       <li>You are voluntarily participating in any physical activity suggested by the App</li>
       <li>You will discontinue any exercise that causes pain, dizziness, or discomfort</li>
       <li>You will not use the App as a substitute for medical advice, diagnosis, or treatment</li>
-      <li>You will consult a qualified healthcare provider before starting any new exercise or diet program</li>
+      <li>You will consult a qualified healthcare provider before starting any new exercise, diet, or supplement program</li>
+      <li>Streaks, ranks, XP, leaderboards, and daily missions are motivational features only, and you will not train through injury, illness, or exhaustion in order to maintain them</li>
     </ul>
     <p>Evexia and its creators are not liable for any injury, illness, or adverse outcome resulting from your use of routines, diet plans, or other content generated or distributed through the App.</p>
   </section>
@@ -264,51 +344,60 @@ a:hover { color: var(--gold2); border-color: var(--gold); }
       <li>Reverse-engineer, decompile, or attempt to extract source code from the App, except where permitted by law</li>
       <li>Resell, redistribute, or commercialize content generated by the App without permission</li>
       <li>Misuse the AI features to generate harmful, harassing, or inappropriate content</li>
+      <li>Submit false data to manipulate leaderboards, challenges, XP, or ranks</li>
+      <li>Harass, impersonate, or abuse other users through team, community, or username features</li>
       <li>Interfere with or disrupt the App's normal operation</li>
       <li>Use the App to harass, harm, or endanger yourself or others</li>
     </ul>
+    <p>We may remove content, reset leaderboard standings, or restrict access to community features if you violate this section.</p>
   </section>
 
   <section>
-    <h2><span class="num">09</span>Intellectual Property</h2>
+    <h2><span class="num">09</span>Community Features</h2>
+    <p>If you join or create a team, appear on a leaderboard, or participate in challenges, the username and avatar you choose, along with the training statistics involved, may be visible to other users. Do not use a username that contains personal information you would not want shared publicly, and do not include personal information in team names.</p>
+    <p>We do not moderate community content in real time and are not responsible for content submitted by other users.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">10</span>Intellectual Property</h2>
     <p>The Evexia name, logo, "Kong" mascot, app design, code, and marketing materials are owned by us. You may not copy, modify, distribute, or create derivative works from them without our written permission.</p>
-    <p>You retain ownership of any data you create within the App (workouts, notes, custom goals, personal records). AI-generated outputs are provided to you for personal use within the App.</p>
+    <p>You retain ownership of any data you create within the App, including workouts, notes, custom goals, and personal records. AI-generated outputs are provided to you for your personal, non-commercial use.</p>
   </section>
 
   <section>
-    <h2><span class="num">10</span>Disclaimers</h2>
+    <h2><span class="num">11</span>Disclaimers</h2>
     <p>THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR ACCURACY OF CONTENT.</p>
     <p>We do not warrant that the App will be uninterrupted, error-free, secure, or free of viruses or other harmful components. You use the App at your sole risk.</p>
   </section>
 
   <section>
-    <h2><span class="num">11</span>Limitation of Liability</h2>
+    <h2><span class="num">12</span>Limitation of Liability</h2>
     <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, EVEXIA AND ITS CREATORS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR GOODWILL ARISING OUT OF OR RELATED TO YOUR USE OF THE APP.</p>
     <p>Our total cumulative liability to you for any claim arising out of these Terms or your use of the App will not exceed the greater of (a) $50 USD, or (b) the total amount you paid us in the 12 months preceding the claim.</p>
     <p>Some jurisdictions do not allow the limitation of certain warranties or damages, so some of the above may not apply to you.</p>
   </section>
 
   <section>
-    <h2><span class="num">12</span>Termination</h2>
-    <p>You may stop using Evexia at any time by uninstalling it. We may suspend or terminate your access to the App at any time, with or without notice, if you violate these Terms or if we discontinue the App.</p>
-    <p>Sections on intellectual property, disclaimers, limitation of liability, and governing law survive termination.</p>
+    <h2><span class="num">13</span>Termination</h2>
+    <p>You may stop using Evexia at any time by uninstalling it. Uninstalling does not cancel an active subscription — cancel through your store account as described in Section 5.</p>
+    <p>We may suspend or terminate your access to the App at any time, with or without notice, if you violate these Terms or if we discontinue the App. Sections on intellectual property, disclaimers, limitation of liability, and governing law survive termination.</p>
   </section>
 
   <section>
-    <h2><span class="num">13</span>Changes to These Terms</h2>
+    <h2><span class="num">14</span>Changes to These Terms</h2>
     <p>We may update these Terms from time to time. When we do, we will update the "Effective" date at the top of this page. Material changes will also be communicated through the App or via update notes. Your continued use of the App after changes go into effect constitutes acceptance of the updated Terms.</p>
   </section>
 
   <section>
-    <h2><span class="num">14</span>Governing Law</h2>
+    <h2><span class="num">15</span>Governing Law</h2>
     <p>These Terms are governed by the laws of the State of Colorado, United States, without regard to its conflict-of-laws principles. Any disputes arising out of these Terms or your use of the App will be resolved in the state or federal courts located in Colorado, and you consent to their jurisdiction.</p>
-    <p>If you reside outside the United States, applicable mandatory local consumer protection laws may also apply.</p>
+    <p>If you reside outside the United States, applicable mandatory local consumer protection laws may also apply, and nothing in these Terms limits rights you cannot waive under those laws.</p>
   </section>
 
   <section>
-    <h2><span class="num">15</span>Contact</h2>
+    <h2><span class="num">16</span>Contact</h2>
     <p>Questions about these Terms? Reach out at:</p>
-    <p style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--gold);margin-top:8px">kobj302@gmail.com</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--gold);margin-top:8px">support@evexia.app</p>
   </section>
 
   <div class="footer">
