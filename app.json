@@ -54,6 +54,9 @@
       "revenueCatApiKeyAndroid": "test_qBYBuYuHRHYszdMyCaDuphXqqbK",
       "revenueCatEntitlementId": "pro",
       "nativelyProjectId": "9ee93226-144b-408b-b3f4-15415e01c151"
+    },
+    "notification": {
+      "icon": "./assets/notification-icon.png"
     }
   }
 }
