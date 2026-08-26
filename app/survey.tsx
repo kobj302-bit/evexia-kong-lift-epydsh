@@ -41,9 +41,6 @@ export default function SurveyScreen() {
   const [heightIn, setHeightIn] = useState(state.profile?.height ? String((state.profile.height || 70) % 12) : '10');
   const [heightCm, setHeightCm] = useState(state.profile?.height ? String(Math.round((state.profile.height || 70) * 2.54)) : '178');
   const [heightUnit, setHeightUnit] = useState<'ft' | 'cm'>(state.profile?.heightUnit || 'ft');
-  const [waist, setWaist] = useState(state.profile?.waist ? String(state.profile.waist) : '32');
-  const [neck, setNeck] = useState(state.profile?.neck ? String(state.profile.neck) : '15');
-  const [hip, setHip] = useState(state.profile?.hip ? String(state.profile.hip) : '38');
   const [weightUnit, setWeightUnit] = useState<'lbs' | 'kg'>(state.profile?.weightUnit || 'lbs');
   const [exp, setExp] = useState(state.profile?.exp || 'Beginner');
   const [yrs, setYrs] = useState(state.profile?.yrs != null ? String(state.profile.yrs) : '0');
@@ -150,9 +147,6 @@ export default function SurveyScreen() {
         injuries,
         height: heightInches,
         heightUnit,
-        waist: parseFloat(waist) || 32,
-        neck: parseFloat(neck) || 15,
-        hip: parseFloat(hip) || 38,
         weightUnit,
       },
       expertMode,
@@ -265,7 +259,7 @@ export default function SurveyScreen() {
         {step === 2 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>📏 Body Composition</Text>
-            <Text style={styles.stepSubtitle}>Real data = real analysis. This powers your FFMI, TDEE, Navy BF%, and Ascend scores.</Text>
+            <Text style={styles.stepSubtitle}>Real data = real analysis. This powers your FFMI, TDEE, BMI, and lean mass calculations.</Text>
 
             {/* Height unit toggle */}
             <View style={styles.field}>
@@ -329,32 +323,9 @@ export default function SurveyScreen() {
               <TextInput style={styles.input} value={bf} onChangeText={setBf} keyboardType="numeric" placeholder="15" placeholderTextColor={COLORS.textTertiary} />
             </View>
 
-            {/* Waist */}
-            <View style={styles.field}>
-              <Text style={styles.label}>Waist Circumference (inches)</Text>
-              <Text style={styles.fieldHint}>Measure at navel, relaxed</Text>
-              <TextInput style={styles.input} value={waist} onChangeText={setWaist} keyboardType="numeric" placeholder="32" placeholderTextColor={COLORS.textTertiary} />
-            </View>
-
-            {/* Neck */}
-            <View style={styles.field}>
-              <Text style={styles.label}>Neck Circumference (inches)</Text>
-              <Text style={styles.fieldHint}>Measure below larynx</Text>
-              <TextInput style={styles.input} value={neck} onChangeText={setNeck} keyboardType="numeric" placeholder="15" placeholderTextColor={COLORS.textTertiary} />
-            </View>
-
-            {/* Hip — females only */}
-            {sex === 'Female' && (
-              <View style={styles.field}>
-                <Text style={styles.label}>Hip Circumference (inches)</Text>
-                <Text style={styles.fieldHint}>Widest point — used for Navy BF formula</Text>
-                <TextInput style={styles.input} value={hip} onChangeText={setHip} keyboardType="numeric" placeholder="38" placeholderTextColor={COLORS.textTertiary} />
-              </View>
-            )}
-
             <View style={[styles.field, { backgroundColor: COLORS.surface2, borderRadius: 12, padding: 14, marginTop: 8 }]}>
               <Text style={{ fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 }}>
-                💡 These measurements power your Navy Body Fat %, FFMI (Fat-Free Mass Index), TDEE, BMI, lean mass, and Ascend facial/body analysis. You can update them anytime in Settings.
+                💡 These measurements power your FFMI (Fat-Free Mass Index), TDEE, BMI, and lean mass calculations. You can update them anytime in Settings.
               </Text>
             </View>
           </View>

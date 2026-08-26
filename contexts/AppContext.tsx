@@ -74,9 +74,6 @@ export interface AppState {
     injuries: string[];
     height: number;
     heightUnit: 'ft' | 'cm';
-    waist: number;
-    neck: number;
-    hip: number;
     weightUnit: 'lbs' | 'kg';
   };
   expertMode: boolean;
@@ -144,9 +141,6 @@ const DEFAULT_STATE: AppState = {
     injuries: [],
     height: 70,
     heightUnit: 'ft',
-    waist: 32,
-    neck: 15,
-    hip: 38,
     weightUnit: 'lbs',
   },
   expertMode: false,

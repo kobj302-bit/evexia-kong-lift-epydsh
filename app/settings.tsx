@@ -212,9 +212,6 @@ export default function SettingsScreen() {
                 injuries: [],
                 height: 70,
                 heightUnit: 'ft',
-                waist: 32,
-                neck: 15,
-                hip: 38,
                 weightUnit: 'lbs',
               },
             });
@@ -410,29 +407,6 @@ export default function SettingsScreen() {
                     {'%'}
                   </Text>
                 </View>
-                <View style={styles.measureRow}>
-                  <Text style={styles.measureLabel}>Waist</Text>
-                  <Text style={styles.measureValue}>
-                    {p.waist || 32}
-                    {' in'}
-                  </Text>
-                </View>
-                <View style={styles.measureRow}>
-                  <Text style={styles.measureLabel}>Neck</Text>
-                  <Text style={styles.measureValue}>
-                    {p.neck || 15}
-                    {' in'}
-                  </Text>
-                </View>
-                {p.sex === 'Female' && (
-                  <View style={styles.measureRow}>
-                    <Text style={styles.measureLabel}>Hip</Text>
-                    <Text style={styles.measureValue}>
-                      {p.hip || 38}
-                      {' in'}
-                    </Text>
-                  </View>
-                )}
                 <AnimatedPressable
                   onPress={() => {
                     console.log('[Settings] Edit Measurements pressed — navigating to survey');
